@@ -1,0 +1,178 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --primary: 221 70% 40%;
+    --primary-light: 221 70% 50%;
+    --primary-dark: 221 70% 30%;
+    
+    --secondary: 187 90% 26%;
+    --secondary-light: 187 90% 36%;
+    --secondary-dark: 187 90% 16%;
+    
+    --accent: 38 92% 50%;
+    --accent-light: 38 92% 60%;
+    --accent-dark: 38 92% 40%;
+    
+    --success: 142 72% 29%;
+    --warning: 38 92% 50%;
+    --error: 0 91% 43%;
+    
+    --background: 0 0% 100%;
+    --foreground: 222 47% 11%;
+    
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+    
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
+    
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    
+    --ring: 221 70% 40%;
+    
+    --radius: 0.5rem;
+  }
+  
+  .dark {
+    --primary: 221 70% 50%;
+    --primary-light: 221 70% 60%;
+    --primary-dark: 221 70% 40%;
+    
+    --secondary: 187 90% 36%;
+    --secondary-light: 187 90% 46%;
+    --secondary-dark: 187 90% 26%;
+    
+    --accent: 38 92% 50%;
+    --accent-light: 38 92% 60%;
+    --accent-dark: 38 92% 40%;
+    
+    --success: 142 72% 29%;
+    --warning: 38 92% 50%;
+    --error: 0 91% 43%;
+    
+    --background: 222 47% 11%;
+    --foreground: 210 40% 98%;
+    
+    --card: 222 47% 11%;
+    --card-foreground: 210 40% 98%;
+    
+    --popover: 222 47% 11%;
+    --popover-foreground: 210 40% 98%;
+    
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 20% 65%;
+    
+    --border: 217 33% 17%;
+    --input: 217 33% 17%;
+    
+    --ring: 221 70% 40%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground font-sans;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-medium tracking-tight;
+  }
+  h1 {
+    @apply text-3xl leading-tight;
+  }
+  h2 {
+    @apply text-2xl leading-tight;
+  }
+  h3 {
+    @apply text-xl leading-tight;
+  }
+}
+
+@layer components {
+  .sidebar-link {
+    @apply flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-primary/10 hover:text-primary-light;
+  }
+  
+  .sidebar-link.active {
+    @apply bg-primary/10 text-primary;
+  }
+  
+  .btn-primary {
+    @apply bg-primary text-white hover:bg-primary-light rounded-md px-4 py-2 text-sm font-medium transition-colors;
+  }
+  
+  .btn-secondary {
+    @apply bg-secondary text-white hover:bg-secondary-light rounded-md px-4 py-2 text-sm font-medium transition-colors;
+  }
+  
+  .btn-accent {
+    @apply bg-accent text-foreground hover:bg-accent-light rounded-md px-4 py-2 text-sm font-medium transition-colors;
+  }
+  
+  .card {
+    @apply bg-card text-card-foreground rounded-lg border p-6 shadow-sm transition-all;
+  }
+  
+  .fade-in {
+    @apply animate-fadeIn;
+  }
+  
+  .slide-in {
+    @apply animate-slideIn;
+  }
+  
+  .fade-out {
+    @apply animate-fadeOut;
+  }
+  
+  .slide-out {
+    @apply animate-slideOut;
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideIn {
+  from { transform: translateX(-10px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes fadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes slideOut {
+  from { transform: translateX(0); opacity: 1; }
+  to { transform: translateX(-10px); opacity: 0; }
+}
+
+@layer utilities {
+  .animate-fadeIn {
+    animation: fadeIn 0.3s ease-out forwards;
+  }
+  
+  .animate-slideIn {
+    animation: slideIn 0.3s ease-out forwards;
+  }
+  
+  .animate-fadeOut {
+    animation: fadeOut 0.3s ease-out forwards;
+  }
+  
+  .animate-slideOut {
+    animation: slideOut 0.3s ease-out forwards;
+  }
+}
