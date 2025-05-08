@@ -26,7 +26,9 @@ const TravelRequests: React.FC = () => {
     const matchesSearch = 
       request.travelerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       request.destination.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      request.id.toLowerCase().includes(searchTerm.toLowerCase());
+      request.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      request.projectCode.toLowerCase().includes(searchTerm.toLowerCase()) || // Added
+      request.source.toLowerCase().includes(searchTerm.toLowerCase()); // Added
       
     const matchesStatus = statusFilter === 'All' || request.status === statusFilter;
     const matchesType = typeFilter === 'All' || request.travelType === typeFilter;
@@ -97,7 +99,7 @@ const TravelRequests: React.FC = () => {
             </div>
             <input
               type="text"
-              placeholder="Search by traveler, destination or ID..."
+              placeholder="Search by traveler, destination, ID, project code, or source..."
               className="pl-10 pr-4 py-2 w-full rounded-md bg-muted focus:outline-none focus:ring-1 focus:ring-primary"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}

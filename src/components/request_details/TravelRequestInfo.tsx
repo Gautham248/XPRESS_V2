@@ -5,7 +5,8 @@ import {
   Calendar, 
   Plane, 
   Tag, 
-  DollarSign 
+  DollarSign,
+  Briefcase // Added for projectCode
 } from 'lucide-react';
 import { TravelRequest } from '../../data/mockData';
 
@@ -72,6 +73,14 @@ const TravelRequestInfo: React.FC<TravelRequestInfoProps> = ({
           </div>
           
           <div className="mb-4">
+            <p className="text-sm text-muted-foreground mb-1">Project Code</p>
+            <div className="flex items-center">
+              <Briefcase className="h-4 w-4 mr-2 text-muted-foreground" />
+              <span>{travelRequest.projectCode}</span>
+            </div>
+          </div>
+          
+          <div className="mb-4">
             <p className="text-sm text-muted-foreground mb-1">Travel Type</p>
             <div className="flex items-center">
               <Plane className="h-4 w-4 mr-2 text-muted-foreground" />
@@ -87,7 +96,7 @@ const TravelRequestInfo: React.FC<TravelRequestInfoProps> = ({
             </div>
           </div>
           
-          <div className="mb-4">
+          {/* <div className="mb-4">
             <p className="text-sm text-muted-foreground mb-1">Priority</p>
             <div className="flex items-center">
               <Tag className="h-4 w-4 mr-2 text-muted-foreground" />
@@ -97,15 +106,15 @@ const TravelRequestInfo: React.FC<TravelRequestInfoProps> = ({
                 {travelRequest.priority}
               </span>
             </div>
-          </div>
-          
+          </div> */}
+{/*           
           <div className="mb-4">
             <p className="text-sm text-muted-foreground mb-1">Estimated Cost</p>
             <div className="flex items-center">
               <DollarSign className="h-4 w-4 mr-2 text-muted-foreground" />
               <span className="font-medium">${travelRequest.estimatedCost.toLocaleString()}</span>
             </div>
-          </div>
+          </div> */}
         </div>
       </div>
     </div>

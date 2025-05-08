@@ -17,6 +17,14 @@ const TravelInfo: React.FC<TravelInfoProps> = ({ travelRequest }) => {
       <h3 className="text-lg font-semibold mb-6">Travel Information</h3>
       
       <div className="mb-4">
+        <p className="text-sm text-muted-foreground mb-1">Source</p>
+        <div className="flex items-center">
+          <MapPin className="h-4 w-4 mr-2 text-muted-foreground" />
+          <span>{travelRequest.source}</span>
+        </div>
+      </div>
+      
+      <div className="mb-4">
         <p className="text-sm text-muted-foreground mb-1">Destination</p>
         <div className="flex items-center">
           <MapPin className="h-4 w-4 mr-2 text-muted-foreground" />
