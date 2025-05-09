@@ -7,9 +7,9 @@ import {
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { format } from 'date-fns';
-import { TravelRequest, getStatusColor } from '../../data/mockData'; // Imported getStatusColor
+import { TravelRequest, getStatusColor } from '../../data/mockData';
 
-type Column = keyof TravelRequest | 'travelDates' | 'actions'; // Updated to include new fields
+type Column = keyof TravelRequest | 'travelDates' | 'actions';
 
 interface TravelRequestsTableProps {
   paginatedData: TravelRequest[];
@@ -49,8 +49,8 @@ const TravelRequestsTable: React.FC<TravelRequestsTableProps> = ({
           'source',
           'travelDates',
           'destination',
-          'departmentCode', // Added
-          'reportingManager', // Added
+          'departmentCode',
+          'reportingManager',
           'status',
           'actions',
         ];
@@ -69,8 +69,8 @@ const TravelRequestsTable: React.FC<TravelRequestsTableProps> = ({
     'source',
     'travelDates',
     'destination',
-    'departmentCode', // Added
-    'reportingManager', // Added
+    'departmentCode',
+    'reportingManager',
     'status',
     'actions',
   ];
@@ -242,229 +242,227 @@ const TravelRequestsTable: React.FC<TravelRequestsTableProps> = ({
         </div>
       </div>
 
-      {/* Table with Horizontal Scroll */}
+      {/* Table with horizontal scroll */}
       <div className="overflow-x-auto rounded-md border border-gray-200">
-        <div className="min-w-[1000px]">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="bg-gray-50 border-b border-gray-200">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="bg-gray-50 border-b border-gray-200">
+              {visibleColumns.includes('id') && (
+                <th
+                  className="text-left py-2 px-3 font-medium text-gray-600 cursor-pointer hover:text-gray-800 whitespace-nowrap"
+                  onClick={() => handleSort('id')}
+                >
+                  <div className="flex items-center">
+                    <span>Request ID</span>
+                    {getSortIcon('id')}
+                  </div>
+                </th>
+              )}
+              {visibleColumns.includes('travelerName') && (
+                <th
+                  className="text-left py-2 px-3 font-medium text-gray-600 cursor-pointer hover:text-gray-800 whitespace-nowrap"
+                  onClick={() => handleSort('travelerName')}
+                >
+                  <div className="flex items-center">
+                    <span>Traveler</span>
+                    {getSortIcon('travelerName')}
+                  </div>
+                </th>
+              )}
+              {visibleColumns.includes('projectCode') && (
+                <th
+                  className="text-left py-2 px-3 font-medium text-gray-600 cursor-pointer hover:text-gray-800 whitespace-nowrap"
+                  onClick={() => handleSort('projectCode')}
+                >
+                  <div className="flex items-center">
+                    <span>Project Code</span>
+                    {getSortIcon('projectCode')}
+                  </div>
+                </th>
+              )}
+              {visibleColumns.includes('travelType') && (
+                <th
+                  className="text-left py-2 px-3 font-medium text-gray-600 cursor-pointer hover:text-gray-800 whitespace-nowrap"
+                  onClick={() => handleSort('travelType')}
+                >
+                  <div className="flex items-center">
+                    <span>Type</span>
+                    {getSortIcon('travelType')}
+                  </div>
+                </th>
+              )}
+              {visibleColumns.includes('source') && (
+                <th
+                  className="text-left py-2 px-3 font-medium text-gray-600 cursor-pointer hover:text-gray-800 whitespace-nowrap"
+                  onClick={() => handleSort('source')}
+                >
+                  <div className="flex items-center">
+                    <span>Source</span>
+                    {getSortIcon('source')}
+                  </div>
+                </th>
+              )}
+              {visibleColumns.includes('travelDates') && (
+                <th
+                  className="text-left py-2 px-3 font-medium text-gray-600 cursor-pointer hover:text-gray-800 whitespace-nowrap"
+                  onClick={() => handleSort('departureDate')}
+                >
+                  <div className="flex items-center">
+                    <span>Travel Dates</span>
+                    {getSortIcon('departureDate')}
+                  </div>
+                </th>
+              )}
+              {visibleColumns.includes('destination') && (
+                <th
+                  className="text-left py-2 px-3 font-medium text-gray-600 cursor-pointer hover:text-gray-800 whitespace-nowrap"
+                  onClick={() => handleSort('destination')}
+                >
+                  <div className="flex items-center">
+                    <span>Destination</span>
+                    {getSortIcon('destination')}
+                  </div>
+                </th>
+              )}
+              {visibleColumns.includes('departmentCode') && (
+                <th
+                  className="text-left py-2 px-3 font-medium text-gray-600 cursor-pointer hover:text-gray-800 whitespace-nowrap"
+                  onClick={() => handleSort('departmentCode')}
+                >
+                  <div className="flex items-center">
+                    <span>Department</span>
+                    {getSortIcon('departmentCode')}
+                  </div>
+                </th>
+              )}
+              {visibleColumns.includes('reportingManager') && (
+                <th
+                  className="text-left py-2 px-3 font-medium text-gray-600 cursor-pointer hover:text-gray-800 whitespace-nowrap"
+                  onClick={() => handleSort('reportingManager')}
+                >
+                  <div className="flex items-center">
+                    <span>Manager</span>
+                    {getSortIcon('reportingManager')}
+                  </div>
+                </th>
+              )}
+              {visibleColumns.includes('status') && (
+                <th
+                  className="text-left py-2 px-3 font-medium text-gray-600 cursor-pointer hover:text-gray-800 whitespace-nowrap"
+                  onClick={() => handleSort('status')}
+                >
+                  <div className="flex items-center">
+                    <span>Status</span>
+                    {getSortIcon('status')}
+                  </div>
+                </th>
+              )}
+              {visibleColumns.includes('actions') && (
+                <th className="text-right py-2 px-3 font-medium text-gray-600 whitespace-nowrap">
+                  Actions
+                </th>
+              )}
+            </tr>
+          </thead>
+          <tbody>
+            {filteredData.map((request, index) => (
+              <tr
+                key={request.id}
+                className="border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors cursor-pointer"
+                onClick={() => handleRowClick(request.id)}
+              >
                 {visibleColumns.includes('id') && (
-                  <th
-                    className="text-left py-2 px-3 font-medium text-gray-600 cursor-pointer hover:text-gray-800 whitespace-nowrap"
-                    onClick={() => handleSort('id')}
-                  >
-                    <div className="flex items-center">
-                      <span>Request ID</span>
-                      {getSortIcon('id')}
-                    </div>
-                  </th>
+                  <td className="py-2 px-3 font-medium text-gray-800 whitespace-nowrap">{request.id}</td>
                 )}
                 {visibleColumns.includes('travelerName') && (
-                  <th
-                    className="text-left py-2 px-3 font-medium text-gray-600 cursor-pointer hover:text-gray-800 whitespace-nowrap"
-                    onClick={() => handleSort('travelerName')}
-                  >
-                    <div className="flex items-center">
-                      <span>Traveler</span>
-                      {getSortIcon('travelerName')}
-                    </div>
-                  </th>
+                  <td className="py-2 px-3 text-gray-700 whitespace-nowrap">{request.travelerName}</td>
                 )}
                 {visibleColumns.includes('projectCode') && (
-                  <th
-                    className="text-left py-2 px-3 font-medium text-gray-600 cursor-pointer hover:text-gray-800 whitespace-nowrap"
-                    onClick={() => handleSort('projectCode')}
-                  >
-                    <div className="flex items-center">
-                      <span>Project Code</span>
-                      {getSortIcon('projectCode')}
-                    </div>
-                  </th>
+                  <td className="py-2 px-3 text-gray-700 whitespace-nowrap">{request.projectCode}</td>
                 )}
                 {visibleColumns.includes('travelType') && (
-                  <th
-                    className="text-left py-2 px-3 font-medium text-gray-600 cursor-pointer hover:text-gray-800 whitespace-nowrap"
-                    onClick={() => handleSort('travelType')}
-                  >
-                    <div className="flex items-center">
-                      <span>Type</span>
-                      {getSortIcon('travelType')}
-                    </div>
-                  </th>
+                  <td className="py-2 px-3 whitespace-nowrap">
+                    <span
+                      className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                        request.travelType === 'Domestic'
+                          ? 'bg-blue-100 text-blue-800'
+                          : 'bg-purple-100 text-purple-800'
+                      }`}
+                    >
+                      {request.travelType}
+                    </span>
+                  </td>
                 )}
                 {visibleColumns.includes('source') && (
-                  <th
-                    className="text-left py-2 px-3 font-medium text-gray-600 cursor-pointer hover:text-gray-800 whitespace-nowrap"
-                    onClick={() => handleSort('source')}
-                  >
-                    <div className="flex items-center">
-                      <span>Source</span>
-                      {getSortIcon('source')}
-                    </div>
-                  </th>
+                  <td className="py-2 px-3 text-gray-700 whitespace-nowrap">{request.source}</td>
                 )}
                 {visibleColumns.includes('travelDates') && (
-                  <th
-                    className="text-left py-2 px-3 font-medium text-gray-600 cursor-pointer hover:text-gray-800 whitespace-nowrap"
-                    onClick={() => handleSort('departureDate')}
-                  >
+                  <td className="py-2 px-3 text-gray-700 whitespace-nowrap">
                     <div className="flex items-center">
-                      <span>Travel Dates</span>
-                      {getSortIcon('departureDate')}
+                      <Calendar className="h-3.5 w-3.5 mr-1.5 text-gray-500" />
+                      <span>
+                        {formatDate(request.departureDate)} - {formatDate(request.returnDate)}
+                      </span>
                     </div>
-                  </th>
+                  </td>
                 )}
                 {visibleColumns.includes('destination') && (
-                  <th
-                    className="text-left py-2 px-3 font-medium text-gray-600 cursor-pointer hover:text-gray-800 whitespace-nowrap"
-                    onClick={() => handleSort('destination')}
-                  >
-                    <div className="flex items-center">
-                      <span>Destination</span>
-                      {getSortIcon('destination')}
-                    </div>
-                  </th>
+                  <td className="py-2 px-3 text-gray-700 whitespace-nowrap">{request.destination}</td>
                 )}
                 {visibleColumns.includes('departmentCode') && (
-                  <th
-                    className="text-left py-2 px-3 font-medium text-gray-600 cursor-pointer hover:text-gray-800 whitespace-nowrap"
-                    onClick={() => handleSort('departmentCode')}
-                  >
-                    <div className="flex items-center">
-                      <span>Department</span>
-                      {getSortIcon('departmentCode')}
-                    </div>
-                  </th>
+                  <td className="py-2 px-3 text-gray-700 whitespace-nowrap">{request.departmentCode}</td>
                 )}
                 {visibleColumns.includes('reportingManager') && (
-                  <th
-                    className="text-left py-2 px-3 font-medium text-gray-600 cursor-pointer hover:text-gray-800 whitespace-nowrap"
-                    onClick={() => handleSort('reportingManager')}
-                  >
-                    <div className="flex items-center">
-                      <span>Manager</span>
-                      {getSortIcon('reportingManager')}
-                    </div>
-                  </th>
+                  <td className="py-2 px-3 text-gray-700 whitespace-nowrap">{request.reportingManager}</td>
                 )}
                 {visibleColumns.includes('status') && (
-                  <th
-                    className="text-left py-2 px-3 font-medium text-gray-600 cursor-pointer hover:text-gray-800 whitespace-nowrap"
-                    onClick={() => handleSort('status')}
-                  >
-                    <div className="flex items-center">
-                      <span>Status</span>
-                      {getSortIcon('status')}
-                    </div>
-                  </th>
+                  <td className="py-2 px-3 whitespace-nowrap">
+                    <span
+                      className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(request.status)}`}
+                    >
+                      {request.status}
+                    </span>
+                  </td>
                 )}
                 {visibleColumns.includes('actions') && (
-                  <th className="text-right py-2 px-3 font-medium text-gray-600 whitespace-nowrap">
-                    Actions
-                  </th>
+                  <td className="py-2 px-3 text-right space-x-2 whitespace-nowrap">
+                    <button
+                      className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRowClick(request.id);
+                      }}
+                    >
+                      View
+                    </button>
+                    {request.status === 'Pending' && (
+                      <>
+                        <button
+                          className="text-xs text-green-600 hover:text-green-800 font-medium"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            // Handle approve action
+                          }}
+                        >
+                          Approve
+                        </button>
+                        <button
+                          className="text-xs text-red-600 hover:text-red-800 font-medium"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            // Handle reject action
+                          }}
+                        >
+                          Reject
+                        </button>
+                      </>
+                    )}
+                  </td>
                 )}
               </tr>
-            </thead>
-            <tbody>
-              {filteredData.map((request, index) => (
-                <tr
-                  key={index}
-                  className="border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors cursor-pointer"
-                  onClick={() => handleRowClick(request.id)}
-                >
-                  {visibleColumns.includes('id') && (
-                    <td className="py-2 px-3 font-medium text-gray-800 whitespace-nowrap">{request.id}</td>
-                  )}
-                  {visibleColumns.includes('travelerName') && (
-                    <td className="py-2 px-3 text-gray-700 whitespace-nowrap">{request.travelerName}</td>
-                  )}
-                  {visibleColumns.includes('projectCode') && (
-                    <td className="py-2 px-3 text-gray-700 whitespace-nowrap">{request.projectCode}</td>
-                  )}
-                  {visibleColumns.includes('travelType') && (
-                    <td className="py-2 px-3 whitespace-nowrap">
-                      <span
-                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                          request.travelType === 'Domestic'
-                            ? 'bg-blue-100 text-blue-800'
-                            : 'bg-purple-100 text-purple-800'
-                        }`}
-                      >
-                        {request.travelType}
-                      </span>
-                    </td>
-                  )}
-                  {visibleColumns.includes('source') && (
-                    <td className="py-2 px-3 text-gray-700 whitespace-nowrap">{request.source}</td>
-                  )}
-                  {visibleColumns.includes('travelDates') && (
-                    <td className="py-2 px-3 text-gray-700 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <Calendar className="h-3.5 w-3.5 mr-1.5 text-gray-500" />
-                        <span>
-                          {formatDate(request.departureDate)} - {formatDate(request.returnDate)}
-                        </span>
-                      </div>
-                    </td>
-                  )}
-                  {visibleColumns.includes('destination') && (
-                    <td className="py-2 px-3 text-gray-700 whitespace-nowrap">{request.destination}</td>
-                  )}
-                  {visibleColumns.includes('departmentCode') && (
-                    <td className="py-2 px-3 text-gray-700 whitespace-nowrap">{request.departmentCode}</td>
-                  )}
-                  {visibleColumns.includes('reportingManager') && (
-                    <td className="py-2 px-3 text-gray-700 whitespace-nowrap">{request.reportingManager}</td>
-                  )}
-                  {visibleColumns.includes('status') && (
-                    <td className="py-2 px-3 whitespace-nowrap">
-                      <span
-                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(request.status)}`}
-                      >
-                        {request.status}
-                      </span>
-                    </td>
-                  )}
-                  {visibleColumns.includes('actions') && (
-                    <td className="py-2 px-3 text-right space-x-2 whitespace-nowrap">
-                      <button
-                        className="text-xs text-blue-600 hover:text-blue-800 font-medium"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleRowClick(request.id);
-                        }}
-                      >
-                        View
-                      </button>
-                      {request.status === 'Pending' && (
-                        <>
-                          <button
-                            className="text-xs text-green-600 hover:text-green-800 font-medium"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              // Handle approve action
-                            }}
-                          >
-                            Approve
-                          </button>
-                          <button
-                            className="text-xs text-red-600 hover:text-red-800 font-medium"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              // Handle reject action
-                            }}
-                          >
-                            Reject
-                          </button>
-                        </>
-                      )}
-                    </td>
-                  )}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+            ))}
+          </tbody>
+        </table>
       </div>
 
       {filteredData.length === 0 && (

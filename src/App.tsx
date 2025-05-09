@@ -44,7 +44,9 @@ function App() {
           <Route index element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard" element={<ManagerDashboard />} />
           <Route path="team-requests" element={<TravelRequests />} />
+          <Route path="team-requests/:id" element={<TravelRequestDetails />} />
           <Route path="my-requests" element={<TravelRequests />} />
+          <Route path="my-requests/:id" element={<TravelRequestDetails />} />
           <Route path="calendar" element={<Calendar />} />
         </Route>
 
@@ -58,6 +60,7 @@ function App() {
           <Route path="dashboard" element={<EmployeeDashboard />} />
           <Route path="new-request" element={<TravelRequests />} />
           <Route path="my-requests" element={<TravelRequests />} />
+          <Route path="my-requests/:id" element={<TravelRequestDetails />} />
           <Route path="calendar" element={<Calendar />} />
         </Route>
 
