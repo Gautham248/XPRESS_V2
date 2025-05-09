@@ -41,13 +41,15 @@ const TravelInfo: React.FC<TravelInfoProps> = ({ travelRequest }) => {
           </div>
         </div>
         
-        <div>
-          <p className="text-sm text-muted-foreground mb-1">Return Date</p>
-          <div className="flex items-center">
-            <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
-            <span>{travelRequest.returnDate}</span>
+        {travelRequest.returnDate && (
+          <div>
+            <p className="text-sm text-muted-foreground mb-1">Return Date</p>
+            <div className="flex items-center">
+              <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
+              <span>{travelRequest.returnDate}</span>
+            </div>
           </div>
-        </div>
+        )}
       </div>
       
       <div className="mb-4">
@@ -64,13 +66,15 @@ const TravelInfo: React.FC<TravelInfoProps> = ({ travelRequest }) => {
           </div>
         </div>
         
-        <div>
-          <p className="text-sm text-muted-foreground mb-1">Accommodation</p>
-          <div className="flex items-center">
-            <Hotel className="h-4 w-4 mr-2 text-muted-foreground" />
-            <span>{travelRequest.accommodationType}</span>
+        {travelRequest.accommodationType && travelRequest.accommodationType !== 'None' && (
+          <div>
+            <p className="text-sm text-muted-foreground mb-1">Accommodation</p>
+            <div className="flex items-center">
+              <Hotel className="h-4 w-4 mr-2 text-muted-foreground" />
+              <span>{travelRequest.accommodationType}</span>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
