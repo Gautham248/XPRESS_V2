@@ -78,7 +78,25 @@ const TravelRequests: React.FC = () => {
   };
 
   const handleRowClick = (requestId: string) => {
-    navigate(`/travel-requests/${requestId}`);
+    // Get user role from localStorage
+    const userString = localStorage.getItem('user');
+    const user = userString ? JSON.parse(userString) : null;
+    
+    if (!user) return;
+
+    // Determine the correct path based on user role and current location
+    const path = window.location.pathname;
+    let basePath = '';
+    
+    if (user.role === 'admin') {
+      basePath = '/admin/travel-requests';
+    } else if (user.role === 'manager') {
+      basePath = path.includes('team-requests') ? '/manager/team-requests' : '/manager/my-requests';
+    } else if (user.role === 'employee') {
+      basePath = '/employee/my-requests';
+    }
+    
+    navigate(`${basePath}/${requestId}`);
   };
   
   return (
