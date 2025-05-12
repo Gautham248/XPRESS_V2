@@ -244,7 +244,7 @@ const TravelRequestsTable: React.FC<TravelRequestsTableProps> = ({
 
       {/* Table with horizontal scroll */}
       <div className="overflow-x-auto rounded-md border border-gray-200">
-        <table className="w-full text-sm">
+        <table className="w-full text-sm min-w-[1000px]">
           <thead>
             <tr className="bg-gray-50 border-b border-gray-200">
               {visibleColumns.includes('id') && (
