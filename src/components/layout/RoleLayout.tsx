@@ -10,7 +10,8 @@ import {
   Settings, 
   LogOut, 
   ChevronLeft,
-  User
+  User,
+  PlusCircle
 } from 'lucide-react';
 
 interface NavItem {
@@ -37,6 +38,7 @@ const navConfig: Record<string, NavItem[]> = {
     { label: 'Dashboard', path: '/employee/dashboard', icon: <Home className="h-5 w-5" /> },
     // { label: 'New Request', path: '/employee/new-request', icon: <Briefcase className="h-5 w-5" /> },
     { label: 'My Requests', path: '/employee/my-requests', icon: <Briefcase className="h-5 w-5" /> },
+    // { label: 'New Request', path: '/employee/create-request', icon: <PlusCircle className="h-5 w-5" /> },
     // { label: 'Calendar', path: '/employee/calendar', icon: <Calendar className="h-5 w-5" /> }
   ]
 };
