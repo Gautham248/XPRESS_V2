@@ -28,7 +28,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
           <Plane className="h-6 w-6 text-primary" />
           <span className={`ml-2 text-xl font-semibold text-primary transition-opacity duration-200 
             ${isOpen ? 'opacity-100' : 'opacity-0 hidden'}`}>
-            TravelPro
+            Xpress
           </span>
         </div>
         <button 
