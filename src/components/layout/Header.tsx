@@ -32,7 +32,7 @@ const Header: React.FC<HeaderProps> = ({ pageTitle, toggleSidebar, sidebarOpen }
           <h1 className="text-xl font-semibold">{pageTitle}</h1>
         </div>
         
-        <div className="flex items-center space-x-3">
+        {/* <div className="flex items-center space-x-3">
           <div className={`relative ${searchOpen ? 'w-64' : 'w-10'} transition-all duration-300`}>
             <div className={`absolute inset-y-0 left-0 flex items-center pl-3 ${searchOpen ? 'pointer-events-none' : ''}`}>
               <button 
@@ -123,7 +123,7 @@ const Header: React.FC<HeaderProps> = ({ pageTitle, toggleSidebar, sidebarOpen }
               <ChevronDown className="h-4 w-4 ml-1 text-muted-foreground" />
             </div>
           </div>
-        </div>
+        </div> */}
       </div>
     </header>
   );
