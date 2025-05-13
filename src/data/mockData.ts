@@ -165,7 +165,7 @@ export const mockTravelRequests: TravelRequest[] = [
     travelerName: 'Robert Chen',
     travelType: 'Domestic',
     departureDate: '2025-02-25',
-    returnDate: '2025-02-27',
+    returnDate: '2025-02-25',
     source: 'Atlanta, GA',
     destination: 'Chicago, IL',
     purpose: 'Regional Sales Meeting',

@@ -1,16 +1,14 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { TravelRequest, mockTravelRequests } from '../../data/mockData';
 
-interface CalendarProps {
-  // Optional props could be added here if needed
-}
-
 interface TravelEvent {
-  type: 'Departure' | 'Return';
+  type: 'Departure' | 'Return' | 'Processing';
   request: TravelRequest;
 }
 
-const Calendar: React.FC<CalendarProps> = () => {
+function Calendar() {
+  const navigate = useNavigate();
   const [currentDate, setCurrentDate] = useState<Date>(() => {
     const now = new Date();
     const istOffset = 5.5 * 60 * 60 * 1000;
@@ -18,6 +16,7 @@ const Calendar: React.FC<CalendarProps> = () => {
   });
   const [view, setView] = useState<'Month' | 'Week'>('Month');
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [selectedEventType, setSelectedEventType] = useState<'Departure' | 'Return' | 'Processing' | null>(null);
   const [showDatePicker, setShowDatePicker] = useState<boolean>(false);
   const [pickerDate, setPickerDate] = useState<Date>(() => {
     const now = new Date();
@@ -25,44 +24,48 @@ const Calendar: React.FC<CalendarProps> = () => {
     return new Date(now.getTime() + istOffset);
   });
   const [pickerView, setPickerView] = useState<'Days' | 'Months'>('Days');
-  const [expandedDays, setExpandedDays] = useState<number[]>([]);
+  // const [expandedDays, setExpandedDays] = useState<number[]>([]);
   const datePickerRef = useRef<HTMLDivElement | null>(null);
 
-  const filteredRequests = mockTravelRequests.filter(
-    (request) => request.status === 'Tickets Dispatched'
-  );
+  const excludedStatuses = ['Tickets Dispatched', 'Rejected', 'In Transit', 'Closed', 'Returned'];
+  const filteredRequests = mockTravelRequests;
 
   const getEventsForDate = (date: Date): TravelEvent[] => {
     const istOffset = 5.5 * 60 * 60 * 1000;
     const adjustedDate = new Date(date.getTime() + istOffset);
-    
+
     const events: TravelEvent[] = [];
-    
+
     filteredRequests.forEach((request) => {
       const depDate = new Date(request.departureDate);
       const retDate = new Date(request.returnDate);
-      
+
       const adjustedDepDate = new Date(depDate.getTime() + istOffset);
       const adjustedRetDate = new Date(retDate.getTime() + istOffset);
-      
+
       const isDeparture =
         adjustedDepDate.getFullYear() === adjustedDate.getFullYear() &&
         adjustedDepDate.getMonth() === adjustedDate.getMonth() &&
         adjustedDepDate.getDate() === adjustedDate.getDate();
-        
+
       const isReturn =
         adjustedRetDate.getFullYear() === adjustedDate.getFullYear() &&
         adjustedRetDate.getMonth() === adjustedDate.getMonth() &&
         adjustedRetDate.getDate() === adjustedDate.getDate();
-        
-      if (isDeparture) {
+
+      const isProcessing = !excludedStatuses.includes(request.status);
+
+      if (isDeparture && request.status === 'Tickets Dispatched') {
         events.push({ type: 'Departure', request });
       }
-      if (isReturn) {
+      if (isReturn && request.status === 'Tickets Dispatched') {
         events.push({ type: 'Return', request });
       }
+      if ((isDeparture || isReturn) && isProcessing) {
+        events.push({ type: 'Processing', request });
+      }
     });
-    
+
     return events;
   };
 
@@ -70,32 +73,32 @@ const Calendar: React.FC<CalendarProps> = () => {
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const firstDayOfMonth = new Date(year, month, 1).getDay();
     const daysInPrevMonth = new Date(year, month, 0).getDate();
-    
+
     const prevMonthDays = Array.from({ length: firstDayOfMonth }, (_, i) => ({
       day: daysInPrevMonth - firstDayOfMonth + i + 1,
       currentMonth: false,
       month: month - 1 < 0 ? 11 : month - 1,
-      year: month - 1 < 0 ? year - 1 : year
+      year: month - 1 < 0 ? year - 1 : year,
     }));
-    
+
     const currentMonthDays = Array.from({ length: daysInMonth }, (_, i) => ({
       day: i + 1,
       currentMonth: true,
       month: month,
-      year: year
+      year: year,
     }));
-    
+
     const totalDaysDisplayed = 42;
     const nextMonthDays = Array.from(
-      { length: totalDaysDisplayed - (prevMonthDays.length + currentMonthDays.length) }, 
+      { length: totalDaysDisplayed - (prevMonthDays.length + currentMonthDays.length) },
       (_, i) => ({
         day: i + 1,
         currentMonth: false,
         month: month + 1 > 11 ? 0 : month + 1,
-        year: month + 1 > 11 ? year + 1 : year
+        year: month + 1 > 11 ? year + 1 : year,
       })
     );
-    
+
     return [...prevMonthDays, ...currentMonthDays, ...nextMonthDays];
   };
 
@@ -113,7 +116,7 @@ const Calendar: React.FC<CalendarProps> = () => {
 
   const monthsArray = [
     'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
   ];
 
   const weekdayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -125,6 +128,7 @@ const Calendar: React.FC<CalendarProps> = () => {
       setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate() - 7));
     }
     setSelectedDate(null);
+    setSelectedEventType(null);
   };
 
   const handleNext = (): void => {
@@ -134,6 +138,7 @@ const Calendar: React.FC<CalendarProps> = () => {
       setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate() + 7));
     }
     setSelectedDate(null);
+    setSelectedEventType(null);
   };
 
   const handlePickerPrevYear = (): void => {
@@ -169,6 +174,7 @@ const Calendar: React.FC<CalendarProps> = () => {
       setCurrentDate(startOfSelectedWeek);
     }
     setSelectedDate(null);
+    setSelectedEventType(null);
     setShowDatePicker(false);
   };
 
@@ -189,6 +195,7 @@ const Calendar: React.FC<CalendarProps> = () => {
   const handleDateClick = (day: number, month: number, year: number): void => {
     const clickedDate = new Date(year, month, day);
     setSelectedDate(clickedDate);
+    setSelectedEventType(null);
   };
 
   const today = new Date();
@@ -203,7 +210,8 @@ const Calendar: React.FC<CalendarProps> = () => {
       setCurrentDate(startOfSelectedWeek);
     }
     setView(newView);
-    setExpandedDays([]);
+    
+    setSelectedEventType(null);
   };
 
   useEffect(() => {
@@ -263,23 +271,7 @@ const Calendar: React.FC<CalendarProps> = () => {
     );
   };
 
-  const renderEventBox = (event: TravelEvent): JSX.Element => {
-    const isDeparture = event.type === 'Departure';
-    return (
-      <div
-        className={`${
-          isDeparture 
-            ? 'bg-blue-50 border-l-2 border-blue-500' 
-            : 'bg-green-50 border-l-2 border-green-500'
-        } px-1 py-2 rounded-md text-sm mt-1 shadow-sm hover:shadow transition-shadow duration-200`}
-      >
-        <div className={`font-medium text-[12px] ${isDeparture ? 'text-blue-700' : 'text-green-700'}`}>
-          {event.type}
-        </div>
-        <div className="text-[8px] text-gray-600">{event.request.travelerName}</div>
-      </div>
-    );
-  };
+ 
 
   const renderDatePickerDaysGrid = (): JSX.Element => {
     return (
@@ -315,9 +307,9 @@ const Calendar: React.FC<CalendarProps> = () => {
             </div>
           ))}
           {pickerMonthDays.map((dayInfo, idx) => {
-            const isToday = 
-              dayInfo.year === todayIST.getFullYear() && 
-              dayInfo.month === todayIST.getMonth() && 
+            const isToday =
+              dayInfo.year === todayIST.getFullYear() &&
+              dayInfo.month === todayIST.getMonth() &&
               dayInfo.day === todayIST.getDate();
             return (
               <div
@@ -337,6 +329,84 @@ const Calendar: React.FC<CalendarProps> = () => {
     );
   };
 
+
+  const getEventCounts = (events: TravelEvent[]) => {
+    const counts = {
+      Departure: 0,
+      Return: 0,
+      Processing: 0,
+    };
+
+    events.forEach((event) => {
+      if (event.type === 'Departure') counts.Departure++;
+      if (event.type === 'Return') counts.Return++;
+      if (event.type === 'Processing') counts.Processing++;
+    });
+
+    return counts;
+  };
+
+  const renderEventCards = (day: Date, events: TravelEvent[]) => {
+    const counts = getEventCounts(events);
+    const cards = [];
+
+    if (counts.Departure > 0) {
+      cards.push(
+        <div
+          key="departure"
+          className={`bg-blue-50 border-l-4 border-blue-500 p-2 rounded-md text-sm cursor-pointer hover:bg-blue-100 transition-colors duration-200`}
+          onClick={() => {
+            setSelectedDate(day);
+            setSelectedEventType('Departure');
+          }}
+        >
+          <div className="text-blue-700 font-medium">Departures</div>
+          <div className="text-gray-600">{counts.Departure}</div>
+        </div>
+      );
+    }
+
+    if (counts.Return > 0) {
+      cards.push(
+        <div
+          key="return"
+          className={`bg-green-50 border-l-4 border-green-500 p-2 rounded-md text-sm cursor-pointer hover:bg-green-100 transition-colors duration-200`}
+          onClick={() => {
+            setSelectedDate(day);
+            setSelectedEventType('Return');
+          }}
+        >
+          <div className="text-green-700 font-medium">Returns</div>
+          <div className="text-gray-600">{counts.Return}</div>
+        </div>
+      );
+    }
+
+    if (counts.Processing > 0) {
+      cards.push(
+        <div
+          key="processing"
+          className={`bg-yellow-50 border-l-4 border-yellow-500 p-2 rounded-md text-sm cursor-pointer hover:bg-yellow-100 transition-colors duration-200`}
+          onClick={() => {
+            setSelectedDate(day);
+            setSelectedEventType('Processing');
+          }}
+        >
+          <div className="text-yellow-700 font-medium">Processing</div>
+          <div className="text-gray-600">{counts.Processing}</div>
+        </div>
+      );
+    }
+
+    return cards.length > 0 ? (
+      <div className="flex flex-col space-y-2">
+        {cards}
+      </div>
+    ) : (
+      <div className="text-gray-500 text-sm text-center py-2">No events</div>
+    );
+  };
+
   const handleViewMore = (dayIndex: number): void => {
     setExpandedDays((prev) => [...prev, dayIndex]);
   };
@@ -346,7 +416,7 @@ const Calendar: React.FC<CalendarProps> = () => {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-semibold text-gray-800">Travel Calendar</h1>
       </div>
-      
+
       <div className="flex gap-4">
         <div className="flex-[0.65] bg-white rounded-lg shadow-sm p-4">
           <div className="flex items-center mb-4">
@@ -383,7 +453,7 @@ const Calendar: React.FC<CalendarProps> = () => {
                 pickerView === 'Months' ? renderMonthSelectionGrid() : renderDatePickerDaysGrid()
               )}
             </div>
-            
+
             <div className="flex items-center">
               <button
                 className="px-2 py-1 text-gray-600 hover:text-gray-800"
@@ -398,7 +468,7 @@ const Calendar: React.FC<CalendarProps> = () => {
                 {'>'}
               </button>
             </div>
-            
+
             <div className="ml-auto">
               <div className="flex space-x-2">
                 <button
@@ -485,9 +555,9 @@ const Calendar: React.FC<CalendarProps> = () => {
                         {day.toLocaleDateString('en-US', { weekday: 'short' })}
                       </div>
                       <div
-                        className={`h-10 flex items-center justify-center rounded-md cursor-pointer 
+                        className={`h-10 flex items-center justify-center rounded-md cursor-pointer
                           ${isSelected ? 'bg-blue-100' : 'bg-gray-50'}
-                          ${isToday ? 'bg-blue-200' : ''} 
+                          ${isToday ? 'bg-blue-200' : ''}
                           hover:bg-gray-200 hover:shadow-sm hover:border hover:border-gray-300 transition-all duration-200`}
                         onClick={() => handleDateClick(day.getDate(), day.getMonth(), day.getFullYear())}
                       >
@@ -499,25 +569,7 @@ const Calendar: React.FC<CalendarProps> = () => {
                         )}
                       </div>
                       <div className="flex-1 mt-2 flex flex-col space-y-1 overflow-auto">
-                        {events.length > 0 ? (
-                          <>
-                            {visibleEvents.map((event, idx) => (
-                              <div key={`${event.type}-${event.request.id}-${idx}`} className="mb-1">
-                                {renderEventBox(event)}
-                              </div>
-                            ))}
-                            {events.length > 3 && !isExpanded && (
-                              <button
-                                className="text-blue-500 text-sm mt-2 flex items-center justify-center"
-                                onClick={() => handleViewMore(index)}
-                              >
-                                View More ({remainingEvents})
-                              </button>
-                            )}
-                          </>
-                        ) : (
-                          <div className="text-gray-500 text-sm text-center py-2">No events</div>
-                        )}
+                        {renderEventCards(day, events)}
                       </div>
                     </div>
                   );
@@ -549,18 +601,28 @@ const Calendar: React.FC<CalendarProps> = () => {
           </div>
 
           {selectedDate ? (
-            getEventsForDate(selectedDate).length > 0 ? (
-              getEventsForDate(selectedDate).map((event, idx) => (
-                <div key={`${event.type}-${event.request.id}-${idx}`} className="bg-gray-50 p-3 rounded-md mb-2 border-l-4 border-blue-500">
-                  <p className="text-gray-800 font-medium">{event.request.travelerName}</p>
-                  <p className="text-gray-600 text-sm">{event.type}</p>
-                  <p className="text-gray-600 text-sm">Project: {event.request.projectCode}</p>
-                  <p className="text-gray-600 text-sm">ID: {event.request.id}</p>
-                </div>
-              ))
-            ) : (
-              <p className="text-gray-600">No travel requests for this date.</p>
-            )
+            <div className="max-h-[400px] overflow-y-auto space-y-2">
+              {getEventsForDate(selectedDate).length > 0 ? (
+                getEventsForDate(selectedDate)
+                  .filter((event) => !selectedEventType || event.type === selectedEventType)
+                  .map((event, idx) => (
+                    <div
+                      key={`${event.type}-${event.request.id}-${idx}`}
+                      className={`bg-gray-50 p-3 rounded-md border-l-4 cursor-pointer
+                        ${event.type === 'Departure' ? 'border-blue-500' : event.type === 'Return' ? 'border-green-500' : 'border-yellow-500'}
+                        hover:bg-gray-100 transition-colors duration-200`}
+                      onClick={() => navigate(`/admin/travel-requests/${event.request.id}`)}
+                    >
+                      <p className="text-gray-800 font-medium">{event.request.travelerName}</p>
+                      <p className="text-gray-600 text-sm">{event.type}</p>
+                      <p className="text-gray-600 text-sm">Project: {event.request.projectCode}</p>
+                      <p className="text-gray-600 text-sm">ID: {event.request.id}</p>
+                    </div>
+                  ))
+              ) : (
+                <p className="text-gray-600">No travel requests for this date.</p>
+              )}
+            </div>
           ) : (
             <p className="text-gray-600">Select a date to view details.</p>
           )}
