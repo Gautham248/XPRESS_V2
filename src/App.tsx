@@ -34,6 +34,9 @@ function App() {
           <Route path="calendar" element={<Calendar />} />
           <Route path="reports" element={<Reports />} />
           <Route path="settings" element={<Settings />} />
+          <Route path="documents" element={<Documents />} />
+          <Route path="create-request" element={<CreateRequest />} />
+        
         </Route>
 
         {/* Manager Routes */}

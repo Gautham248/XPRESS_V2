@@ -43,7 +43,6 @@ const TravelRequests: React.FC = () => {
           'departmentCode',
           'reportingManager',
           'status',
-          'estimatedCost',
           'actions',
         ];
   });
@@ -64,7 +63,6 @@ const TravelRequests: React.FC = () => {
     'departmentCode',
     'reportingManager',
     'status',
-    'estimatedCost',
     'actions',
   ];
 
@@ -327,9 +325,7 @@ const TravelRequests: React.FC = () => {
                               ? 'Department'
                               : column === 'reportingManager'
                                 ? 'Manager'
-                                : column === 'estimatedCost'
-                                  ? 'Cost'
-                                  : column.charAt(0).toUpperCase() + column.slice(1)}
+                                : column.charAt(0).toUpperCase() + column.slice(1)}
                     </button>
                   ))}
                 </div>
@@ -338,13 +334,13 @@ const TravelRequests: React.FC = () => {
           </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[1400px]">
+        <div className="overflow-x-auto max-w-[1000px] border border-gray-200 rounded-md">
+          <table className="w-full">
             <thead>
               <tr className="border-b">
                 {visibleColumns.includes('id') && (
                   <th 
-                    className="text-left py-3 px-4 font-medium text-muted-foreground cursor-pointer hover:text-foreground"
+                    className="text-left py-3 px-4 font-medium text-muted-foreground cursor-pointer hover:text-foreground whitespace-nowrap"
                     onClick={() => handleSort('id')}
                   >
                     <div className="flex items-center">
@@ -355,7 +351,7 @@ const TravelRequests: React.FC = () => {
                 )}
                 {visibleColumns.includes('travelerName') && (
                   <th 
-                    className="text-left py-3 px-4 font-medium text-muted-foreground cursor-pointer hover:text-foreground"
+                    className="text-left py-3 px-4 font-medium text-muted-foreground cursor-pointer hover:text-foreground whitespace-nowrap"
                     onClick={() => handleSort('travelerName')}
                   >
                     <div className="flex items-center">
@@ -366,7 +362,7 @@ const TravelRequests: React.FC = () => {
                 )}
                 {visibleColumns.includes('projectCode') && (
                   <th 
-                    className="text-left py-3 px-4 font-medium text-muted-foreground cursor-pointer hover:text-foreground"
+                    className="text-left py-3 px-4 font-medium text-muted-foreground cursor-pointer hover:text-foreground whitespace-nowrap"
                     onClick={() => handleSort('projectCode')}
                   >
                     <div className="flex items-center">
@@ -377,7 +373,7 @@ const TravelRequests: React.FC = () => {
                 )}
                 {visibleColumns.includes('travelType') && (
                   <th 
-                    className="text-left py-3 px-4 font-medium text-muted-foreground cursor-pointer hover:text-foreground"
+                    className="text-left py-3 px-4 font-medium text-muted-foreground cursor-pointer hover:text-foreground whitespace-nowrap"
                     onClick={() => handleSort('travelType')}
                   >
                     <div className="flex items-center">
@@ -388,7 +384,7 @@ const TravelRequests: React.FC = () => {
                 )}
                 {visibleColumns.includes('source') && (
                   <th 
-                    className="text-left py-3 px-4 font-medium text-muted-foreground cursor-pointer hover:text-foreground"
+                    className="text-left py-3 px-4 font-medium text-muted-foreground cursor-pointer hover:text-foreground whitespace-nowrap"
                     onClick={() => handleSort('source')}
                   >
                     <div className="flex items-center">
@@ -399,7 +395,7 @@ const TravelRequests: React.FC = () => {
                 )}
                 {visibleColumns.includes('travelDates') && (
                   <th 
-                    className="text-left py-3 px-4 font-medium text-muted-foreground cursor-pointer hover:text-foreground"
+                    className="text-left py-3 px-4 font-medium text-muted-foreground cursor-pointer hover:text-foreground whitespace-nowrap"
                     onClick={() => handleSort('departureDate')}
                   >
                     <div className="flex items-center">
@@ -410,7 +406,7 @@ const TravelRequests: React.FC = () => {
                 )}
                 {visibleColumns.includes('destination') && (
                   <th 
-                    className="text-left py-3 px-4 font-medium text-muted-foreground cursor-pointer hover:text-foreground"
+                    className="text-left py-3 px-4 font-medium text-muted-foreground cursor-pointer hover:text-foreground whitespace-nowrap"
                     onClick={() => handleSort('destination')}
                   >
                     <div className="flex items-center">
@@ -421,7 +417,7 @@ const TravelRequests: React.FC = () => {
                 )}
                 {visibleColumns.includes('departmentCode') && (
                   <th 
-                    className="text-left py-3 px-4 font-medium text-muted-foreground cursor-pointer hover:text-foreground"
+                    className="text-left py-3 px-4 font-medium text-muted-foreground cursor-pointer hover:text-foreground whitespace-nowrap"
                     onClick={() => handleSort('departmentCode')}
                   >
                     <div className="flex items-center">
@@ -432,7 +428,7 @@ const TravelRequests: React.FC = () => {
                 )}
                 {visibleColumns.includes('reportingManager') && (
                   <th 
-                    className="text-left py-3 px-4 font-medium text-muted-foreground cursor-pointer hover:text-foreground"
+                    className="text-left py-3 px-4 font-medium text-muted-foreground cursor-pointer hover:text-foreground whitespace-nowrap"
                     onClick={() => handleSort('reportingManager')}
                   >
                     <div className="flex items-center">
@@ -443,7 +439,7 @@ const TravelRequests: React.FC = () => {
                 )}
                 {visibleColumns.includes('status') && (
                   <th 
-                    className="text-left py-3 px-4 font-medium text-muted-foreground cursor-pointer hover:text-foreground"
+                    className="text-left py-3 px-4 font-medium text-muted-foreground cursor-pointer hover:text-foreground whitespace-nowrap"
                     onClick={() => handleSort('status')}
                   >
                     <div className="flex items-center">
@@ -452,19 +448,8 @@ const TravelRequests: React.FC = () => {
                     </div>
                   </th>
                 )}
-                {visibleColumns.includes('estimatedCost') && (
-                  <th 
-                    className="text-left py-3 px-4 font-medium text-muted-foreground cursor-pointer hover:text-foreground"
-                    onClick={() => handleSort('estimatedCost')}
-                  >
-                    <div className="flex items-center">
-                      <span>Cost</span>
-                      {getSortIcon('estimatedCost')}
-                    </div>
-                  </th>
-                )}
                 {visibleColumns.includes('actions') && (
-                  <th className="text-right py-3 px-4 font-medium text-muted-foreground">
+                  <th className="text-right py-3 px-4 font-medium text-muted-foreground whitespace-nowrap">
                     Actions
                   </th>
                 )}
@@ -478,22 +463,22 @@ const TravelRequests: React.FC = () => {
                   onClick={() => handleRowClick(request.id)}
                 >
                   {visibleColumns.includes('id') && (
-                    <td className="py-3 px-4 font-medium">
+                    <td className="py-3 px-4 font-medium whitespace-nowrap">
                       {request.id}
                     </td>
                   )}
                   {visibleColumns.includes('travelerName') && (
-                    <td className="py-3 px-4">
+                    <td className="py-3 px-4 whitespace-nowrap">
                       {request.travelerName}
                     </td>
                   )}
                   {visibleColumns.includes('projectCode') && (
-                    <td className="py-3 px-4">
+                    <td className="py-3 px-4 whitespace-nowrap">
                       {request.projectCode}
                     </td>
                   )}
                   {visibleColumns.includes('travelType') && (
-                    <td className="py-3 px-4">
+                    <td className="py-3 px-4 whitespace-nowrap">
                       <span 
                         className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                           request.travelType === 'Domestic' 
@@ -506,12 +491,12 @@ const TravelRequests: React.FC = () => {
                     </td>
                   )}
                   {visibleColumns.includes('source') && (
-                    <td className="py-3 px-4">
+                    <td className="py-3 px-4 whitespace-nowrap">
                       {request.source}
                     </td>
                   )}
                   {visibleColumns.includes('travelDates') && (
-                    <td className="py-3 px-4">
+                    <td className="py-3 px-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <Calendar className="h-3 w-3 mr-1 text-muted-foreground" />
                         <span>
@@ -521,22 +506,22 @@ const TravelRequests: React.FC = () => {
                     </td>
                   )}
                   {visibleColumns.includes('destination') && (
-                    <td className="py-3 px-4">
+                    <td className="py-3 px-4 whitespace-nowrap">
                       {request.destination}
                     </td>
                   )}
                   {visibleColumns.includes('departmentCode') && (
-                    <td className="py-3 px-4">
+                    <td className="py-3 px-4 whitespace-nowrap">
                       {request.departmentCode}
                     </td>
                   )}
                   {visibleColumns.includes('reportingManager') && (
-                    <td className="py-3 px-4">
+                    <td className="py-3 px-4 whitespace-nowrap">
                       {request.reportingManager}
                     </td>
                   )}
                   {visibleColumns.includes('status') && (
-                    <td className="py-3 px-4">
+                    <td className="py-3 px-4 whitespace-nowrap">
                       <span 
                         className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(request.status)}`}
                       >
@@ -544,13 +529,8 @@ const TravelRequests: React.FC = () => {
                       </span>
                     </td>
                   )}
-                  {visibleColumns.includes('estimatedCost') && (
-                    <td className="py-3 px-4 font-medium">
-                      ${request.estimatedCost.toLocaleString()}
-                    </td>
-                  )}
                   {visibleColumns.includes('actions') && (
-                    <td className="py-3 px-4 text-right space-x-2">
+                    <td className="py-3 px-4 text-right space-x-2 whitespace-nowrap">
                       <button 
                         className="text-sm text-primary hover:text-primary-light font-medium"
                         onClick={(e) => {
