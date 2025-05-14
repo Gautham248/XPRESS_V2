@@ -13,6 +13,7 @@ import Reports from './pages/admin/Reports';
 import Settings from './pages/admin/Settings';
 import NotFound from './components/not_found/NotFound';
 import Documents from './components/document/Documents';
+import CreateRequest from './pages/employee/CreateRequest';
 
 function App() {
   return (
@@ -64,6 +65,7 @@ function App() {
           <Route path="my-requests" element={<TravelRequests />} />
           <Route path="my-requests/:id" element={<TravelRequestDetails />} />
           <Route path="calendar" element={<Calendar />} />
+          <Route path="create-request" element={<CreateRequest />} />
         </Route>
 
         <Route path="*" element={<NotFound />} />
