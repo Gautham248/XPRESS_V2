@@ -10,6 +10,7 @@ import { mockTravelRequests, TravelRequest } from '../../data/mockData';
 import TravelRequestInfo from './TravelRequestInfo';
 import ApprovalTimeline from './ApprovalTimeline';
 import TravelInfo from './TravelInfo';
+import TicketComponent from './ticket_options/TicketOptionsComponent';
 
 const TravelRequestDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -102,7 +103,7 @@ const TravelRequestDetails: React.FC = () => {
         </div>
       </div>
       
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-3 grid-rows-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
           <TravelRequestInfo 
             travelRequest={travelRequest}
@@ -116,7 +117,13 @@ const TravelRequestDetails: React.FC = () => {
         <div>
           <ApprovalTimeline travelRequest={travelRequest} />
         </div>
+
+        <div>
+          <TicketComponent travelRequest={travelRequest} />
+        </div>
       </div>
+
+      
     </div>
   );
 };
