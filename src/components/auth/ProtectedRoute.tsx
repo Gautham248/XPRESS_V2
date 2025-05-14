@@ -9,7 +9,7 @@ interface ProtectedRouteProps {
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles }) => {
   const location = useLocation();
   
-
+  // Check if user is authenticated
   const userString = localStorage.getItem('user');
   if (!userString) {
     return <Navigate to="/login" state={{ from: location }} replace />;
@@ -17,7 +17,9 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles 
 
   const user = JSON.parse(userString);
 
+  // Check if user has required role
   if (!allowedRoles.includes(user.role)) {
+    // Redirect to appropriate dashboard based on user's role
     const dashboardPath = `/${user.role}/dashboard`;
     return <Navigate to={dashboardPath} replace />;
   }

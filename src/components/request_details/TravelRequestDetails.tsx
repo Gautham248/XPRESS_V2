@@ -24,12 +24,12 @@ const TravelRequestDetails: React.FC = () => {
         <p className="text-muted-foreground mb-6">
           The travel request you're looking for could not be found.
         </p>
-        {/* <button 
+        <button 
           className="btn-primary"
           onClick={() => navigate('/travel-requests')}
         >
           Back to Travel Requests
-        </button> */}
+        </button>
       </div>
     );
   }
@@ -66,12 +66,12 @@ const TravelRequestDetails: React.FC = () => {
     <div className="space-y-6 animate-fadeIn">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div className="flex items-center">
-          {/* <button 
+          <button 
             className="mr-4 p-1.5 rounded-md text-muted-foreground hover:bg-muted transition-colors"
             onClick={() => navigate('/travel-requests')}
           >
             <ArrowLeft className="h-5 w-5" />
-          </button> */}
+          </button>
           <div>
             <h2 className="text-2xl font-semibold">
               {travelRequest.id} - {travelRequest.purpose}
