@@ -119,7 +119,7 @@ const TravelRequestDetails: React.FC = () => {
         </div>
 
         <div>
-          <TicketComponent travelRequest={travelRequest} currentUserEmail={'admin@xpress.com'} />
+          <TicketComponent travelRequest={travelRequest} />
         </div>
       </div>
 

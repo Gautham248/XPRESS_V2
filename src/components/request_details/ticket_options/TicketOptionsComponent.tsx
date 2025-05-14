@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { TravelRequest } from '../../../data/mockData';
-import { users, User } from '../../../data/users';
 import {
     Plus,
     Upload,
@@ -9,8 +8,7 @@ import {
     Save,
     X,
     Download,
-    CheckSquare,
-  } from 'lucide-react';
+} from 'lucide-react';
 
 interface TicketOption {
   id: string;
@@ -20,10 +18,15 @@ interface TicketOption {
 
 interface TicketProps {
   travelRequest: TravelRequest;
-  currentUserEmail: string;
 }
 
-const TicketOptionComponent: React.FC<TicketProps> = ({ travelRequest, currentUserEmail }) => {
+interface User {
+  id: string;
+  email: string;
+  role: string;
+}
+
+const TicketOptionComponent: React.FC<TicketProps> = ({ travelRequest }) => {
   const [userRole, setUserRole] = useState<string | null>(null);
   const [ticketOptions, setTicketOptions] = useState<TicketOption[]>([]);
   const [newOption, setNewOption] = useState<string>('');
@@ -31,9 +34,14 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ travelRequest, currentUs
   const [editText, setEditText] = useState<string>('');
 
   useEffect(() => {
-    const currentUser = users.find((user: User) => user.email === currentUserEmail);
-    setUserRole(currentUser ? currentUser.role : null);
-  }, [currentUserEmail]);
+    const userData = localStorage.getItem('user');
+    if (userData) {
+      const user: User = JSON.parse(userData);
+      setUserRole(user.role);
+    } else {
+      setUserRole(null);
+    }
+  }, []);
 
   const handleAddOption = () => {
     if (newOption.trim()) {
@@ -135,14 +143,14 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ travelRequest, currentUs
               />
               <div className="mt-2 flex gap-2">
                 <button
-                    className="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 flex items-center gap-2"
+                    className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 flex items-center gap-2"
                     onClick={() => handleSaveEdit(option.id)}
                 >
                     <Save size={16} />
                     Save
                 </button>
                 <button
-                    className="mt-2 ml-2 px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 flex items-center gap-2"
+                    className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 flex items-center gap-2"
                     onClick={() => setEditingOption(null)}
                 >
                     <X size={16} />
@@ -200,13 +208,13 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ travelRequest, currentUs
                 className="flex items-center gap-1 px-2 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600"
                 onClick={() => handleEditOption(option)}
               >
-                <Edit />
+                <Edit size={16} />
               </button>
               <button
                 className="flex items-center gap-1 px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600"
                 onClick={() => handleDeleteOption(option.id)}
               >
-                <Trash />
+                <Trash size={16} />
               </button>
             </div>
           </div>
@@ -217,7 +225,7 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ travelRequest, currentUs
           className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
           onClick={handleUploadOptions}
         >
-          <Upload /> Upload Selected Option
+          <Upload size={16} /> Upload Selected Option
         </button>
       )}
     </div>
@@ -249,7 +257,7 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ travelRequest, currentUs
             className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
             onClick={handleDownloadTickets}
           >
-            <Download /> Download Tickets
+            <Download size={16} /> Download Tickets
           </button>
         )}
       </div>
