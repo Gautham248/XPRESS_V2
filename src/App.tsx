@@ -8,7 +8,7 @@ import ManagerDashboard from './pages/manager/Dashboard';
 import EmployeeDashboard from './pages/employee/Dashboard';
 import TravelRequests from './components/table/TravelRequests';
 import TravelRequestDetails from './components/request_details/TravelRequestDetails';
-import Calendar from './pages/admin/Calendar';
+import Calendar from './pages/admin/calendar/Calendar';
 import Reports from './pages/admin/Reports';
 import Settings from './pages/admin/Settings';
 import NotFound from './components/not_found/NotFound';
