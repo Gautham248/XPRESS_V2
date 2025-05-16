@@ -704,7 +704,7 @@ export const mockTravelRequests: TravelRequest[] = [
   }
 ];
 
-// The rest of the file remains unchanged
+
 export interface DashboardStat {
   label: string;
   value: number;

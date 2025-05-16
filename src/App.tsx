@@ -8,11 +8,12 @@ import ManagerDashboard from './pages/manager/Dashboard';
 import EmployeeDashboard from './pages/employee/Dashboard';
 import TravelRequests from './components/table/TravelRequests';
 import TravelRequestDetails from './components/request_details/TravelRequestDetails';
-import Calendar from './pages/admin/Calendar';
+import Calendar from './pages/admin/calendar/Calendar';
 import Reports from './pages/admin/Reports';
 import Settings from './pages/admin/Settings';
 import NotFound from './components/not_found/NotFound';
-import CreateRequest from './pages/employee/CreateRequest';
+import CreateRequest from './components/Create Request/CreateRequest';
+import Documents from './components/document/Documents';
 
 function App() {
   return (
@@ -34,6 +35,9 @@ function App() {
           <Route path="calendar" element={<Calendar />} />
           <Route path="reports" element={<Reports />} />
           <Route path="settings" element={<Settings />} />
+          <Route path="documents" element={<Documents />} />
+          {/* <Route path="create-request" element={<CreateRequest />} /> */}
+        
         </Route>
 
         {/* Manager Routes */}
@@ -59,11 +63,12 @@ function App() {
         }>
           <Route index element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard" element={<EmployeeDashboard />} />
-          <Route path="new-request" element={<TravelRequests />} />
+          <Route path="new-request" element={<CreateRequest />} />
           <Route path="my-requests" element={<TravelRequests />} />
           <Route path="my-requests/:id" element={<TravelRequestDetails />} />
-          <Route path="calendar" element={<Calendar />} />
           <Route path="create-request" element={<CreateRequest />} />
+          
+          <Route path="calendar" element={<Calendar />} />
         </Route>
 
         <Route path="*" element={<NotFound />} />
