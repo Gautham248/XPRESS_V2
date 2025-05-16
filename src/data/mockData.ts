@@ -36,6 +36,25 @@ export interface TicketOption {
   selected: boolean;
 }
 
+
+export const dummyTicketOptions = [
+  {
+    id: 'option-1',
+    description: 'MH 117 S 31MAR 1*TRVKUL DK1 0005 0645 31MAR',
+    selected: false
+  },
+  {
+    id: 'option-2',
+    description: 'AH 117 S 31MAR 1*TRVKUL DK1 0005 0645 31MAR',
+    selected: false
+  },
+  {
+    id: 'option-3',
+    description: 'NM 117 S 31MAR 1*TRVKUL DK1 0005 0645 31MAR',
+    selected: true
+  }
+];
+
 // Helper function to get status color
 export const getStatusColor = (status: string) => {
   switch (status) {

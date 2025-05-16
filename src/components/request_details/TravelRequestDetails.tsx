@@ -103,8 +103,8 @@ const TravelRequestDetails: React.FC = () => {
         </div>
       </div>
       
-      <div className="grid grid-cols-3 grid-rows-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
+      <div className="grid grid-cols-2 lg:grid-cols-2 gap-4 h-auto">
+        <div className="lg:col-span-1 space-y-6">
           <TravelRequestInfo 
             travelRequest={travelRequest}
             getStatusColor={getStatusColor}
@@ -114,11 +114,9 @@ const TravelRequestDetails: React.FC = () => {
           <TravelInfo travelRequest={travelRequest} />
         </div>
         
-        <div>
+        <div className="lg:col-span-1 space-y-6">
           <ApprovalTimeline travelRequest={travelRequest} />
-        </div>
 
-        <div>
           <TicketComponent travelRequest={travelRequest} />
         </div>
       </div>

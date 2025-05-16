@@ -3,6 +3,7 @@ import { TravelRequest } from '../../../data/mockData';
 import AdminTicketOptionsView from './AdminTicketOption';
 import ManagerTicketOptionsView from './ManagerTicketOption';
 import EmployeeTicketOptionsView from './EmployeeTicketOption';
+import { dummyTicketOptions } from '../../../data/mockData';
 
 interface TicketOption {
   id: string;
@@ -20,27 +21,9 @@ interface User {
   role: string;
 }
 
-const dummyTicketOptions = [
-  {
-    id: 'option-1',
-    description: 'Flight Booking',
-    selected: false
-  },
-  {
-    id: 'option-2',
-    description: 'Hotel Reservation',
-    selected: false
-  },
-  {
-    id: 'option-3',
-    description: 'Travel Insurance',
-    selected: true
-  }
-];
-
 const TicketOptionComponent: React.FC<TicketProps> = ({ travelRequest }) => {
   const [userRole, setUserRole] = useState<string | null>(null);
-  const [ticketOptions, setTicketOptions] = useState<TicketOption[]>([]);
+  const [ticketOptions, setTicketOptions] = useState<TicketOption[]>(dummyTicketOptions);
   const [newOption, setNewOption] = useState<string>('');
   const [editingOption, setEditingOption] = useState<string | null>(null);
   const [editText, setEditText] = useState<string>('');
@@ -118,43 +101,48 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ travelRequest }) => {
   };
 
   return (
-    <div className="p-8 border rounded-xl bg-gray-50 shadow-md space-y-8 mb-6">
-      <h3 className="text-xl font-bold text-gray-800">Ticket Options - Request #{travelRequest.id}</h3>
-      {userRole === 'admin' && (
-        <AdminTicketOptionsView
-          ticketOptions={ticketOptions}
-          newOption={newOption}
-          editingOption={editingOption}
-          editText={editText}
-          onChangeNewOption={setNewOption}
-          onAddOption={handleAddOption}
-          onEditOption={handleEditOption}
-          onDeleteOption={handleDeleteOption}
-          onSaveEdit={handleSaveEdit}
-          onCancelEdit={() => setEditingOption(null)}
-          onChangeEditText={setEditText}
-          onUploadOptions={handleUploadOptions}
-        />
-      )}
+    <div className="h-[480px] overflow-hidden border rounded-lg bg-white shadow mb-6">
+      <div className="sticky top-0 z-10 bg-white p-4 border-b">
+        <h3 className="text-lg font-semibold">Ticket Options</h3>
+      </div>
 
-      {userRole === 'manager' && (
-        <ManagerTicketOptionsView
-          ticketOptions={ticketOptions}
-          onSelectOption={handleSelectOption}
-          onEditOption={handleEditOption}
-          onDeleteOption={handleDeleteOption}
-          onUploadOptions={handleUploadOptions}
-        />
-      )}
+      <div className="p-4 overflow-y-auto h-[calc(100%-64px)] space-y-6">
+        {userRole === 'admin' && (
+          <AdminTicketOptionsView
+            ticketOptions={ticketOptions}
+            newOption={newOption}
+            editingOption={editingOption}
+            editText={editText}
+            onChangeNewOption={setNewOption}
+            onAddOption={handleAddOption}
+            onEditOption={handleEditOption}
+            onDeleteOption={handleDeleteOption}
+            onSaveEdit={handleSaveEdit}
+            onCancelEdit={() => setEditingOption(null)}
+            onChangeEditText={setEditText}
+            onUploadOptions={handleUploadOptions}
+          />
+        )}
 
-      {userRole === 'employee' && (
-        <EmployeeTicketOptionsView
-          ticketOptions={ticketOptions}
-          onDownloadTickets={handleDownloadTickets}
-        />
-      )}
+        {userRole === 'manager' && (
+          <ManagerTicketOptionsView
+            ticketOptions={ticketOptions}
+            onSelectOption={handleSelectOption}
+            onEditOption={handleEditOption}
+            onDeleteOption={handleDeleteOption}
+            onUploadOptions={handleUploadOptions}
+          />
+        )}
 
+        {userRole === 'employee' && (
+          <EmployeeTicketOptionsView
+            ticketOptions={ticketOptions}
+            onDownloadTickets={handleDownloadTickets}
+          />
+        )}
+      </div>
     </div>
+
   );
 };
 
