@@ -103,7 +103,7 @@ const TravelRequests: React.FC = () => {
     <div className="space-y-6 animate-fadeIn">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <h2 className="text-2xl font-semibold">Travel Requests</h2>
-        <button className="btn-primary flex items-center">
+        <button className="btn-primary flex items-center"   onClick={() => navigate(`/employee/create-request`)}>
           <PlusCircle className="h-4 w-4 mr-2" />
           New Request
         </button>

@@ -12,7 +12,7 @@ import Calendar from './pages/admin/Calendar';
 import Reports from './pages/admin/Reports';
 import Settings from './pages/admin/Settings';
 import NotFound from './components/not_found/NotFound';
-// import CreateRequest from './pages/employee/CreateRequest';
+import CreateRequest from './components/Create Request/CreateRequest';
 import Documents from './components/document/Documents';
 
 function App() {
@@ -63,9 +63,11 @@ function App() {
         }>
           <Route index element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard" element={<EmployeeDashboard />} />
-          <Route path="new-request" element={<TravelRequests />} />
+          <Route path="new-request" element={<CreateRequest />} />
           <Route path="my-requests" element={<TravelRequests />} />
           <Route path="my-requests/:id" element={<TravelRequestDetails />} />
+          <Route path="create-request" element={<CreateRequest />} />
+          
           <Route path="calendar" element={<Calendar />} />
         </Route>
 
