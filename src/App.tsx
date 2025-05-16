@@ -36,7 +36,7 @@ function App() {
           <Route path="reports" element={<Reports />} />
           <Route path="settings" element={<Settings />} />
           <Route path="documents" element={<Documents />} />
-          <Route path="create-request" element={<CreateRequest />} />
+          {/* <Route path="create-request" element={<CreateRequest />} /> */}
         
         </Route>
 
