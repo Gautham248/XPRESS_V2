@@ -40,25 +40,37 @@ const AdminTicketOptionsView: React.FC<Props> = ({
           value={newOption}
           onChange={(e) => onChangeNewOption(e.target.value)}
         />
-        <button
-          className="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 flex items-center gap-2"
-          onClick={onAddOption}
-        >
-          <Plus size={16} /> Add Option
-        </button>
+        <div className='flex justify-between'>
+          {ticketOptions.length > 0 ? (
+            <button
+              className=" mt-2 flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+              onClick={onUploadOptions}
+            >
+              <Upload size={16} />
+              Upload Options
+            </button>
+          ) : (<button
+            className=" mt-2 flex items-center gap-2 px-4 py-2 bg-gray-300 text-white rounded"
+            onClick={onUploadOptions}
+            disabled={true}
+          >
+            <Upload size={16} />
+            Upload Options
+          </button>)}
+
+          <button
+            className="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 flex items-center gap-2"
+            onClick={onAddOption}
+          >
+            <Plus size={16} /> Add Option
+          </button>
+        </div>
       </div>
 
-      {ticketOptions.length > 0 && (
-        <button
-          className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
-          onClick={onUploadOptions}
-        >
-          <Upload size={16} />
-          Upload Options
-        </button>
-      )}
 
-      {ticketOptions.map(option => (
+      {ticketOptions.length === 0 ? (
+        <p className="text-gray-500 italic">No ticket options added yet.</p>
+      ) : (ticketOptions.map(option => (
         <div key={option.id} className="p-4 border rounded-md bg-white shadow">
           {editingOption === option.id ? (
             <div>
@@ -102,7 +114,8 @@ const AdminTicketOptionsView: React.FC<Props> = ({
             </div>
           )}
         </div>
-      ))}
+      ))
+      )}
     </div>
   );
 };
