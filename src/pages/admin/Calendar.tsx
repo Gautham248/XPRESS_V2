@@ -607,7 +607,7 @@ function Calendar() {
                   .filter((event) => !selectedEventType || event.type === selectedEventType)
                   .map((event, idx) => (
                     <div
-                      key={`${event.type}-${event.request.id}-${idx}`}
+                      key={`${idx}`}
                       className={`bg-gray-50 p-3 rounded-md border-l-4 cursor-pointer
                         ${event.type === 'Departure' ? 'border-blue-500' : event.type === 'Return' ? 'border-green-500' : 'border-yellow-500'}
                         hover:bg-gray-100 transition-colors duration-200`}

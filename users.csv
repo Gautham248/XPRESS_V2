@@ -1,0 +1,4 @@
+id,email,password,firstName,lastName,role,departmentNumber,departmentName,isActive,lastLogin,createdAt,updatedAt
+1,admin@xpress.com,admin123,Admin,User,admin,ADMIN-01,Administration,true,,2024-01-01T00:00:00Z,2024-01-01T00:00:00Z
+2,manager@xpress.com,manager123,Manager,User,manager,IT-01,Information Technology,true,,2024-01-01T00:00:00Z,2024-01-01T00:00:00Z
+3,employee@xpress.com,employee123,Employee,User,employee,IT-02,Information Technology,true,,2024-01-01T00:00:00Z,2024-01-01T00:00:00Z
