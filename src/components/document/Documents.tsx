@@ -88,13 +88,7 @@ const visaFormConfig: VisaFormField[] = [
 ];
 
 const identificationFormConfig: IdentificationFormField[] = [
-  {
-    key: 'type',
-    label: 'ID Type',
-    type: 'select',
-    options: ['National ID', "Driver's License", 'Social Security'],
-    required: true,
-  },
+  { key: 'type', label: 'ID Type', type: 'select', options: ['National ID', "Driver's License", 'Social Security'], required: true,},
   { key: 'idNumber', label: 'ID Number', type: 'text', required: true },
   { key: 'issuingCountry', label: 'Issuing Country', type: 'text', required: true },
   { key: 'issueDate', label: 'Issue Date', type: 'date', maxDate: new Date(), required: true },
@@ -199,7 +193,7 @@ function FileUploader({ onFileSelect }: FileUploaderProps) {
       <label htmlFor="document" className="cursor-pointer flex flex-col items-center">
         <Upload className="h-8 w-8 text-gray-500 mb-2" />
         <span className="text-sm font-medium text-gray-700">
-          {selectedFile ? selectedFile.name : 'Click to upload or drag and drop'}
+          {selectedFile ? selectedFile.name : 'Click to upload'}
         </span>
         <span className="text-xs text-gray-500 mt-1">PDF, JPG or PNG (max. 10MB)</span>
       </label>
