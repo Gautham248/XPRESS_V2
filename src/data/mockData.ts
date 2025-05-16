@@ -29,6 +29,13 @@ export interface TimelineEvent {
   details?: string;
 }
 
+// Ticket Options interface
+export interface TicketOption {
+  id: string;
+  description: string;
+  selected: boolean;
+}
+
 // Helper function to get status color
 export const getStatusColor = (status: string) => {
   switch (status) {
