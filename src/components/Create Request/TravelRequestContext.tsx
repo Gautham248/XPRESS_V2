@@ -1,14 +1,14 @@
 import React, { createContext, useContext, useReducer, ReactNode } from 'react';
-import { Address } from './LocationSearch';
+// import { Address } from './LocationSearch';
 
 interface Location {
   country: string;
   city: string;
+  state?: string;
   label: string;
   value: string;
 }
 
-// Define state interface
 interface TravelRequestState {
   travelType: 'domestic' | 'international';
   tripType: 'oneWay' | 'roundTrip';
@@ -29,7 +29,6 @@ interface TravelRequestState {
   reason: string;
 }
 
-// Define action types
 type TravelRequestAction =
   | { type: 'SET_TRAVEL_TYPE'; payload: 'domestic' | 'international' }
   | { type: 'SET_TRIP_TYPE'; payload: 'oneWay' | 'roundTrip' }
@@ -124,6 +123,7 @@ const TravelRequestContext = createContext<TravelRequestContextType | undefined>
 // Create provider
 interface TravelRequestProviderProps {
   children: ReactNode;
+  
 }
 
 export const TravelRequestProvider: React.FC<TravelRequestProviderProps> = ({ children }) => {

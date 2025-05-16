@@ -13,6 +13,7 @@ import Reports from './pages/admin/Reports';
 import Settings from './pages/admin/Settings';
 import NotFound from './components/not_found/NotFound';
 import CreateRequest from './components/Create Request/CreateRequest';
+import Documents from './components/document/Documents';
 
 function App() {
   return (

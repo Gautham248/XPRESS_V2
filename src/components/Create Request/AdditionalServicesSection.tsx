@@ -17,12 +17,24 @@ const AdditionalServicesSection: React.FC = () => {
   } = state;
 
   const handlePickupLocationSelect = (location: any) => {
-    const locationString = `${location.city || location.town || location.village || ''}, ${location.state || ''}, ${location.country || ''}`;
+    // Create a more detailed location string that includes the state when available
+    const locationString = [
+      location.city || location.town || location.village || '',
+      location.state || '',
+      location.country || ''
+    ].filter(Boolean).join(", ");
+    
     dispatch({ type: 'SET_PICKUP_LOCATION', payload: locationString });
   };
 
   const handleDropoffLocationSelect = (location: any) => {
-    const locationString = `${location.city || location.town || location.village || ''}, ${location.state || ''}, ${location.country || ''}`;
+    // Create a more detailed location string that includes the state when available
+    const locationString = [
+      location.city || location.town || location.village || '',
+      location.state || '',
+      location.country || ''
+    ].filter(Boolean).join(", ");
+    
     dispatch({ type: 'SET_DROPOFF_LOCATION', payload: locationString });
   };
 
@@ -69,6 +81,7 @@ const AdditionalServicesSection: React.FC = () => {
                 <LocationSearch 
                   onSelect={handlePickupLocationSelect}
                   placeholder="Search for pickup location..."
+                  maxCustomLength={100}
                 />
                 {pickupLocation && (
                   <div className="mt-2 p-2 bg-primary/5 rounded-md text-sm">
@@ -121,6 +134,7 @@ const AdditionalServicesSection: React.FC = () => {
                 <LocationSearch 
                   onSelect={handleDropoffLocationSelect}
                   placeholder="Search for drop-off location..."
+                  maxCustomLength={100}
                 />
                 {dropoffLocation && (
                   <div className="mt-2 p-2 bg-primary/5 rounded-md text-sm">

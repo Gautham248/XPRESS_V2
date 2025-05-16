@@ -1,3 +1,4 @@
+// File: src/components/TravelRequest/TravelDetailsSection.tsx
 import React from 'react';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
@@ -21,8 +22,13 @@ const TravelDetailsSection: React.FC = () => {
     const sourceLocation = {
       country: location.country || '',
       city: location.city || location.town || location.village || '',
-      label: location.label || `${location.city || location.town || location.village || ''}, ${location.country || ''}`,
-      value: location.value || `${location.city || location.town || location.village || ''}-${location.country || ''}`.toLowerCase().replace(/\s+/g, '-')
+      state: location.state || '',  // Include state in the location data
+      label: location.label || [
+        location.city || location.town || location.village || '',
+        location.state || '',
+        location.country || ''
+      ].filter(Boolean).join(", "),
+      value: location.value || `${location.city || location.town || location.village || ''}-${location.state || ''}-${location.country || ''}`.toLowerCase().replace(/\s+/g, '-')
     };
     dispatch({ type: 'SET_SOURCE', payload: sourceLocation });
   };
@@ -31,8 +37,13 @@ const TravelDetailsSection: React.FC = () => {
     const destinationLocation = {
       country: location.country || '',
       city: location.city || location.town || location.village || '',
-      label: location.label || `${location.city || location.town || location.village || ''}, ${location.country || ''}`,
-      value: location.value || `${location.city || location.town || location.village || ''}-${location.country || ''}`.toLowerCase().replace(/\s+/g, '-')
+      state: location.state || '',  // Include state in the location data
+      label: location.label || [
+        location.city || location.town || location.village || '',
+        location.state || '',
+        location.country || ''
+      ].filter(Boolean).join(", "),
+      value: location.value || `${location.city || location.town || location.village || ''}-${location.state || ''}-${location.country || ''}`.toLowerCase().replace(/\s+/g, '-')
     };
     dispatch({ type: 'SET_DESTINATION', payload: destinationLocation });
   };
@@ -58,10 +69,11 @@ const TravelDetailsSection: React.FC = () => {
               <LocationSearch 
                 onSelect={handleSourceSelect}
                 placeholder="Search for source location..."
+                maxCustomLength={100}
               />
               {source && (
                 <div className="mt-2 p-2 bg-primary/5 rounded-md text-sm">
-                  <p><strong>Selected:</strong> {source.city}, {source.country}</p>
+                  <p><strong>Selected:</strong> {source.label || [source.city, source.state, source.country].filter(Boolean).join(", ")}</p>
                 </div>
               )}
             </label>
@@ -73,10 +85,11 @@ const TravelDetailsSection: React.FC = () => {
               <LocationSearch 
                 onSelect={handleDestinationSelect}
                 placeholder="Search for destination location..."
+                maxCustomLength={100}
               />
               {destination && (
                 <div className="mt-2 p-2 bg-primary/5 rounded-md text-sm">
-                  <p><strong>Selected:</strong> {destination.city}, {destination.country}</p>
+                  <p><strong>Selected:</strong> {destination.label || [destination.city, destination.state, destination.country].filter(Boolean).join(", ")}</p>
                 </div>
               )}
             </label>

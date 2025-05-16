@@ -773,10 +773,4 @@ export interface TopDestination {
   percentOfTotal: number;
 }
 
-export const topDestinations: TopDestination[] = [
-  { destination: 'New York, NY', count: 32, percentOfTotal: 22.5 },
-  { destination: 'San Francisco, CA', count: 24, percentOfTotal: 16.9 },
-  { destination: 'London, UK', count: 18, percentOfTotal: 12.7 },
-  { destination: 'Chicago, IL', count: 15, percentOfTotal: 10.6 },
-  { destination: 'Tokyo, Japan', count: 12, percentOfTotal: 8.5 }
-];
+  
