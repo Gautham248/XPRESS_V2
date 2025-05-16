@@ -63,11 +63,12 @@ function App() {
         }>
           <Route index element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard" element={<EmployeeDashboard />} />
-          <Route path="new-request" element={<TravelRequests />} />
+          <Route path="new-request" element={<CreateRequest />} />
           <Route path="my-requests" element={<TravelRequests />} />
           <Route path="my-requests/:id" element={<TravelRequestDetails />} />
-          <Route path="calendar" element={<Calendar />} />
           <Route path="create-request" element={<CreateRequest />} />
+          
+          <Route path="calendar" element={<Calendar />} />
         </Route>
 
         <Route path="*" element={<NotFound />} />
