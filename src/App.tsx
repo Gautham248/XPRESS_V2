@@ -12,7 +12,7 @@ import Calendar from './pages/admin/Calendar';
 import Reports from './pages/admin/Reports';
 import Settings from './pages/admin/Settings';
 import NotFound from './components/not_found/NotFound';
-import CreateRequest from './pages/employee/CreateRequest';
+import Documents from './components/document/Documents';
 
 function App() {
   return (
@@ -34,6 +34,7 @@ function App() {
           <Route path="calendar" element={<Calendar />} />
           <Route path="reports" element={<Reports />} />
           <Route path="settings" element={<Settings />} />
+          <Route path="documents" element={<Documents />} />
         </Route>
 
         {/* Manager Routes */}
@@ -63,7 +64,6 @@ function App() {
           <Route path="my-requests" element={<TravelRequests />} />
           <Route path="my-requests/:id" element={<TravelRequestDetails />} />
           <Route path="calendar" element={<Calendar />} />
-          <Route path="create-request" element={<CreateRequest />} />
         </Route>
 
         <Route path="*" element={<NotFound />} />
