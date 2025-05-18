@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Download, Calendar, Briefcase, DollarSign, Plane } from 'lucide-react';
 import StatCard from './StatCard';
@@ -68,7 +67,7 @@ const Reports: React.FC = () => {
 
   // Dynamic airline data from filtered requests
   const getAirlineDistribution = () => {
-    const airlineCounts = {};
+    const airlineCounts: Record<string, number> = {};
     
     filteredRequests
       .filter(req => req.airline && tripStatuses.includes(req.status))
@@ -76,19 +75,11 @@ const Reports: React.FC = () => {
         airlineCounts[req.airline] = (airlineCounts[req.airline] || 0) + 1;
       });
     
-    // If no airline data is available, use sample data
-    if (Object.keys(airlineCounts).length === 0) {
-      return [
-        { name: 'AirIndia', value: 2 },
-        { name: 'IndiGo', value: 1 },
-        { name: 'AirAsia', value: 1 },
-        { name: 'Delta Airlines', value: 1 }
-      ];
-    }
+
     
     return Object.entries(airlineCounts).map(([name, value]) => ({
       name,
-      value
+      value: value as number
     }));
   };
 
@@ -96,7 +87,7 @@ const Reports: React.FC = () => {
   
   // Get agency distribution data
   const getAgencyDistribution = () => {
-    const agencyCounts = {};
+    const agencyCounts: Record<string, number> = {};
     
     filteredRequests
       .filter(req => req.travelAgency && tripStatuses.includes(req.status))
@@ -116,7 +107,7 @@ const Reports: React.FC = () => {
     
     return Object.entries(agencyCounts).map(([name, value]) => ({
       name,
-      value
+      value: value as number
     }));
   };
 
