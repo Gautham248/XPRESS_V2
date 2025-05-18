@@ -6,23 +6,23 @@ import EmployeeTicketOptionsView from './EmployeeTicketOption';
 import { dummyTicketOptions } from '../../../data/mockData';
 import { useModal } from '../confirmation_modal/hooks/useModal';
 import ConfirmationModal from '../confirmation_modal/ConfirmationModal';
- 
+
 interface TicketOption {
   id: string;
   description: string;
   selected: boolean;
 }
- 
+
 interface TicketProps {
   travelRequest: TravelRequest;
 }
- 
+
 interface User {
   id: string;
   email: string;
   role: string;
 }
- 
+
 const TicketOptionComponent: React.FC<TicketProps> = ({ travelRequest }) => {
   const [userRole, setUserRole] = useState<string | null>(null);
   const [ticketOptions, setTicketOptions] = useState<TicketOption[]>(dummyTicketOptions);
@@ -30,7 +30,7 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ travelRequest }) => {
   const [editingOption, setEditingOption] = useState<string | null>(null);
   const [editText, setEditText] = useState<string>('');
   const [agencyName, setAgencyName] = useState('');
- 
+
   const {
     isOpen,
     title,
@@ -39,7 +39,7 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ travelRequest }) => {
     openModal,
     closeModal
   } = useModal();
- 
+
   useEffect(() => {
     const userData = localStorage.getItem('user');
     if (userData) {
@@ -49,7 +49,7 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ travelRequest }) => {
       setUserRole(null);
     }
   }, []);
- 
+
   const handleAddOption = () => {
     if (newOption.trim()) {
       setTicketOptions([
@@ -63,16 +63,16 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ travelRequest }) => {
       setNewOption('');
     }
   };
- 
+
   const handleDeleteOption = (optionId: string) => {
     openModal('Delete this option?', () => {
       setTicketOptions(ticketOptions.filter(option => option.id !== optionId));
     }, 'Delete Option');
   };
- 
+
   const handleUploadOptions = () => {
     if (ticketOptions.length === 0) {
-      openModal('No options to upload.', () => {}, 'Upload Ticket Options');
+      openModal('No options to upload.', () => { }, 'Upload Ticket Options');
       return;
     }
     const confirmUpload = () => {
@@ -80,7 +80,7 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ travelRequest }) => {
     };
     openModal('Are you sure you want to upload these ticket options?', confirmUpload, 'Upload Ticket Options');
   };
- 
+
   const handleSelectOption = (optionId: string) => {
     if (userRole !== 'manager') return;
     const updatedOptions = ticketOptions.map(option =>
@@ -88,12 +88,12 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ travelRequest }) => {
     );
     setTicketOptions(updatedOptions);
   };
- 
+
   const handleEditOption = (option: TicketOption) => {
     setEditingOption(option.id);
     setEditText(option.description);
   };
- 
+
   const handleSaveEdit = (optionId: string) => {
     const confirmSave = () => {
       const updatedOptions = ticketOptions.map(option =>
@@ -105,33 +105,35 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ travelRequest }) => {
     };
     openModal('Save changes to this option?', confirmSave, 'Edit Option');
   };
- 
+
   const handleDownloadTickets = () => {
     if (travelRequest.status !== 'Tickets Selected') {
-      openModal('No tickets selected for download.', () => {}, 'Download Tickets');
+      openModal('No tickets selected for download.', () => { }, 'Download Tickets');
       return;
     }
     console.log('Downloading tickets for request:', travelRequest.id);
   };
- 
+
   return (
     <>
       <div className="h-[480px] overflow-y-auto border rounded-lg bg-white shadow mb-6">
         <div className="sticky top-0 z-10 bg-white p-4 border-b">
           <h3 className="text-lg font-semibold">Ticket Options</h3>
         </div>
- 
+
         <div className="p-4 overflow-y-auto h-[calc(100%-64px)] space-y-6">
           {/* Travel Agency Name Input */}
-          <h5 className="text-md font-normal">Travel Agency:</h5>
-          <input
-            type="text"
-            placeholder="Enter travel agency name"
-            className="w-full p-2 mb-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-            value={agencyName}
-            onChange={(e) => setAgencyName(e.target.value)}
-          />
-          <hr/>
+          <div>
+            <h5 className="text-md font-normal mb-2">Travel Agency:</h5>
+            <input
+              type="text"
+              placeholder="Enter travel agency name"
+              className="w-full p-2 mb-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={agencyName}
+              onChange={(e) => setAgencyName(e.target.value)}
+            />
+          </div>
+          <hr />
           {userRole === 'admin' && (
             <AdminTicketOptionsView
               ticketOptions={ticketOptions}
@@ -148,7 +150,7 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ travelRequest }) => {
               onUploadOptions={handleUploadOptions}
             />
           )}
- 
+
           {userRole === 'manager' && (
             <ManagerTicketOptionsView
               ticketOptions={ticketOptions}
@@ -158,7 +160,7 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ travelRequest }) => {
               onUploadOptions={handleUploadOptions}
             />
           )}
- 
+
           {userRole === 'employee' && (
             <EmployeeTicketOptionsView
               ticketOptions={ticketOptions}
@@ -167,7 +169,7 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ travelRequest }) => {
           )}
         </div>
       </div>
- 
+
       <ConfirmationModal
         isOpen={isOpen}
         title={title}
@@ -178,5 +180,5 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ travelRequest }) => {
     </>
   );
 };
- 
+
 export default TicketOptionComponent;
