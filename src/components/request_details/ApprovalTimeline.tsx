@@ -1,20 +1,20 @@
 import React, { useState } from 'react';
-import { 
-  Check, 
-  Clock, 
-  X 
+import {
+  Check,
+  Clock,
+  X
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { TravelRequest } from '../../data/mockData';
 import TimelineModal from './TimelineModal';
-
+ 
 interface ApprovalTimelineProps {
   travelRequest: TravelRequest;
 }
-
+ 
 const ApprovalTimeline: React.FC<ApprovalTimelineProps> = ({ travelRequest }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
-
+ 
   // Default timeline if no timeline field is provided
   const defaultTimeline = [
     {
@@ -73,10 +73,10 @@ const ApprovalTimeline: React.FC<ApprovalTimelineProps> = ({ travelRequest }) =>
           },
         ]),
   ];
-
+ 
   // Use the timeline field if available, otherwise fall back to default
   const timeline = travelRequest.timeline
-    ? travelRequest.timeline.map((event, index) => ({
+    ? travelRequest.timeline.map((event, _index) => ({
         id: event.id,
         status: event.type.charAt(0).toUpperCase() + event.type.slice(1),
         date: format(new Date(event.date), 'dd-MM-yyyy HH:mm'),
@@ -86,14 +86,14 @@ const ApprovalTimeline: React.FC<ApprovalTimelineProps> = ({ travelRequest }) =>
         rejected: event.type === 'rejection',
       }))
     : defaultTimeline;
-
+ 
   // Show only the first 2 steps in the preview
   const previewTimeline = timeline.slice(0, 2);
-
+ 
   return (
     <div className="card mb-6 p-6 bg-white rounded-lg shadow">
       <h3 className="text-lg font-semibold mb-6">Approval Timeline</h3>
-
+ 
       <div className="space-y-6">
         {previewTimeline.map((step, index) => (
           <div key={step.id} className="flex items-start relative">
@@ -162,7 +162,7 @@ const ApprovalTimeline: React.FC<ApprovalTimelineProps> = ({ travelRequest }) =>
           </div>
         ))}
       </div>
-
+ 
       {/* View More Button - Always shown */}
       <div className="mt-4">
         <button
@@ -172,7 +172,7 @@ const ApprovalTimeline: React.FC<ApprovalTimelineProps> = ({ travelRequest }) =>
           View More
         </button>
       </div>
-
+ 
       {/* Modal for Full Timeline */}
       {isModalOpen && (
         <TimelineModal
@@ -183,5 +183,5 @@ const ApprovalTimeline: React.FC<ApprovalTimelineProps> = ({ travelRequest }) =>
     </div>
   );
 };
-
+ 
 export default ApprovalTimeline;
