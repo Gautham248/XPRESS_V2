@@ -134,6 +134,7 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ travelRequest }) => {
             />
           </div>
           <hr />
+          <h5 className="text-md font-normal">Ticket Option:</h5>
           {userRole === 'admin' && (
             <AdminTicketOptionsView
               ticketOptions={ticketOptions}

@@ -62,6 +62,7 @@ const ApprovalTimeline: React.FC<ApprovalTimelineProps> = ({ travelRequest }) =>
     : activeRequestStatus
       ? REQUEST_STATUSES.slice(latestCompletedIndex + 2)
       : REQUEST_STATUSES.slice(latestCompletedIndex + 1);
+      
   const defaultTimeline: TimelineStep[] = [
     {
       id: '1',

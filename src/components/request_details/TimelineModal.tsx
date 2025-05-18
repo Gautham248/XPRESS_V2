@@ -44,7 +44,7 @@ const TimelineModal: React.FC<TimelineModalProps> = ({ timeline, onClose }) => {
                   className={`absolute left-[1rem] top-[2rem] w-0.5 h-[calc(100%-1rem)] ${
                     step.rejected
                       ? 'bg-red-200'
-                      : step.completed
+                      : step.completed || step.isModified
                       ? 'bg-green-200'
                       : 'bg-gray-200'
                   }`}
@@ -57,7 +57,7 @@ const TimelineModal: React.FC<TimelineModalProps> = ({ timeline, onClose }) => {
                     ? 'bg-red-100 text-red-600'
                     : step.active
                     ? 'bg-purple-100 text-purple-500'
-                    : step.completed
+                    : step.completed || step.isModified
                     ? 'bg-green-100 text-green-500'
                     : 'bg-gray-100 text-gray-400'
                 }`}
@@ -78,7 +78,7 @@ const TimelineModal: React.FC<TimelineModalProps> = ({ timeline, onClose }) => {
                       ? 'text-red-600'
                       : step.active
                       ? 'text-purple-600'
-                      : step.completed
+                      : step.completed || step.isModified
                       ? 'text-green-600'
                       : 'text-gray-400'
                   }`}
@@ -91,7 +91,7 @@ const TimelineModal: React.FC<TimelineModalProps> = ({ timeline, onClose }) => {
                       ? 'text-red-500'
                       : step.active
                       ? 'text-purple-500'
-                      : step.completed
+                      : step.completed || step.isModified
                       ? 'text-gray-500'
                       : 'text-gray-400'
                   }`}
