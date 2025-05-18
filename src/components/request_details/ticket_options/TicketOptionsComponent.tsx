@@ -118,13 +118,13 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ travelRequest }) => {
     <>
       <div className="h-[480px] overflow-y-auto border rounded-lg bg-white shadow mb-6">
         <div className="sticky top-0 z-10 bg-white p-4 border-b">
-          <h3 className="text-lg font-semibold">Ticket Options</h3>
+          <h3 className="text-lg font-semibold">Tickets</h3>
         </div>
 
         <div className="p-4 overflow-y-auto h-[calc(100%-64px)] space-y-6">
           {/* Travel Agency Name Input */}
           <div>
-            <h5 className="text-md font-normal mb-2">Travel Agency:</h5>
+            <h5 className="text-md font-medium mb-2">Travel Agency:</h5>
             <input
               type="text"
               placeholder="Enter travel agency name"
@@ -134,7 +134,7 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ travelRequest }) => {
             />
           </div>
           <hr />
-          <h5 className="text-md font-normal">Ticket Option:</h5>
+          <h5 className="text-md font-medium">Ticket Option:</h5>
           {userRole === 'admin' && (
             <AdminTicketOptionsView
               ticketOptions={ticketOptions}
