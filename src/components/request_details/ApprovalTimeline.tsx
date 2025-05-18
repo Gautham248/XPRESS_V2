@@ -81,14 +81,14 @@ const ApprovalTimeline: React.FC<ApprovalTimelineProps> = ({ travelRequest }) =>
         status: event.type.charAt(0).toUpperCase() + event.type.slice(1),
         date: format(new Date(event.date), 'dd-MM-yyyy HH:mm'),
         description: event.description,
-        completed: event.type !== 'submission' || travelRequest.status !== 'Pending',
-        active: event.type === 'submission' && travelRequest.status === 'Pending',
-        rejected: event.type === 'rejection',
+        completed: event.type !== 'pending' || travelRequest.status !== 'Pending',
+        active: event.type === 'pending' && travelRequest.status === 'Pending',
+        rejected: event.type === 'Rejected',
       }))
     : defaultTimeline;
  
   // Show only the first 2 steps in the preview
-  const previewTimeline = timeline.slice(0, 2);
+  const previewTimeline = timeline.slice(0, 2).reverse();
  
   return (
     <div className="card mb-6 p-6 bg-white rounded-lg shadow">

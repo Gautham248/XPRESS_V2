@@ -22,7 +22,7 @@ export interface TravelRequest {
 
 export interface TimelineEvent {
   id: string;
-  type: 'submission' | 'approval' | 'rejection' | 'modification' | 'completion' | 'managerApproval' | 'duHeadApproval' | 'ticketsSelected' | 'ticketsDispatched' | 'inTransit' | 'returned' | 'closed';
+  type: 'pending' | 'Approved' | 'Rejected' | 'Modified' | 'Completed' | 'Manager Approved' | 'DU Head Approved' | 'Tickets Selected' | 'Tickets Dispatched' | 'In-transit' | 'Returned' | 'Closed';
   date: string;
   actor: string;
   description: string;
@@ -108,7 +108,7 @@ export const mockTravelRequests: TravelRequest[] = [
     timeline: [
       {
         id: 'TL-001',
-        type: 'submission',
+        type: 'pending',
         date: '2023-05-20T09:30:00',
         actor: 'John Smith',
         description: 'Travel request submitted',
@@ -116,7 +116,7 @@ export const mockTravelRequests: TravelRequest[] = [
       },
       {
         id: 'TL-002',
-        type: 'modification',
+        type: 'Modified',
         date: '2023-05-21T14:15:00',
         actor: 'John Smith',
         description: 'Updated accommodation details',
@@ -124,7 +124,7 @@ export const mockTravelRequests: TravelRequest[] = [
       },
       {
         id: 'TL-003',
-        type: 'managerApproval',
+        type: 'Manager Approved',
         date: '2023-05-22T10:00:00',
         actor: 'Sarah Parker',
         description: 'Request approved by manager',
@@ -154,7 +154,7 @@ export const mockTravelRequests: TravelRequest[] = [
     timeline: [
       {
         id: 'TL-001',
-        type: 'submission',
+        type: 'pending',
         date: '2023-06-01T11:20:00',
         actor: 'Emily Johnson',
         description: 'Travel request submitted',
@@ -162,7 +162,7 @@ export const mockTravelRequests: TravelRequest[] = [
       },
       {
         id: 'TL-002',
-        type: 'modification',
+        type: 'Modified',
         date: '2023-06-02T09:45:00',
         actor: 'Emily Johnson',
         description: 'Updated cost estimation',
@@ -170,7 +170,7 @@ export const mockTravelRequests: TravelRequest[] = [
       },
       {
         id: 'TL-003',
-        type: 'managerApproval',
+        type: 'Manager Approved',
         date: '2023-06-03T14:00:00',
         actor: 'Michael Davis',
         description: 'Request approved by manager',
@@ -178,7 +178,7 @@ export const mockTravelRequests: TravelRequest[] = [
       },
       {
         id: 'TL-004',
-        type: 'ticketsSelected',
+        type: 'Tickets Selected',
         date: '2023-06-04T09:00:00',
         actor: 'Emily Johnson',
         description: 'Tickets selected',
@@ -208,7 +208,7 @@ export const mockTravelRequests: TravelRequest[] = [
     timeline: [
       {
         id: 'TL-001',
-        type: 'submission',
+        type: 'pending',
         date: '2023-05-28T10:00:00',
         actor: 'Robert Chen',
         description: 'Travel request submitted',
@@ -216,7 +216,7 @@ export const mockTravelRequests: TravelRequest[] = [
       },
       {
         id: 'TL-002',
-        type: 'managerApproval',
+        type: 'Manager Approved',
         date: '2023-05-29T15:30:00',
         actor: 'Sarah Parker',
         description: 'Request approved by manager',
@@ -224,7 +224,7 @@ export const mockTravelRequests: TravelRequest[] = [
       },
       {
         id: 'TL-003',
-        type: 'ticketsSelected',
+        type: 'Tickets Selected',
         date: '2023-05-30T09:00:00',
         actor: 'Robert Chen',
         description: 'Tickets selected',
@@ -232,7 +232,7 @@ export const mockTravelRequests: TravelRequest[] = [
       },
       {
         id: 'TL-004',
-        type: 'ticketsDispatched',
+        type: 'Tickets Dispatched',
         date: '2023-05-31T11:00:00',
         actor: 'Travel Desk',
         description: 'Tickets dispatched',
@@ -262,7 +262,7 @@ export const mockTravelRequests: TravelRequest[] = [
     timeline: [
       {
         id: 'TL-001',
-        type: 'submission',
+        type: 'pending',
         date: '2023-06-10T08:00:00',
         actor: 'Lisa Wong',
         description: 'Travel request submitted',
@@ -270,7 +270,7 @@ export const mockTravelRequests: TravelRequest[] = [
       },
       {
         id: 'TL-002',
-        type: 'modification',
+        type: 'Modified',
         date: '2023-06-11T13:00:00',
         actor: 'Lisa Wong',
         description: 'Updated travel dates',
@@ -278,7 +278,7 @@ export const mockTravelRequests: TravelRequest[] = [
       },
       {
         id: 'TL-003',
-        type: 'managerApproval',
+        type: 'Manager Approved',
         date: '2023-06-12T10:00:00',
         actor: 'David Wilson',
         description: 'Request approved by manager',
@@ -286,7 +286,7 @@ export const mockTravelRequests: TravelRequest[] = [
       },
       {
         id: 'TL-004',
-        type: 'duHeadApproval',
+        type: 'DU Head Approved',
         date: '2023-06-13T09:00:00',
         actor: 'David Wilson',
         description: 'Request approved by DU Head',
@@ -316,7 +316,7 @@ export const mockTravelRequests: TravelRequest[] = [
     timeline: [
       {
         id: 'TL-001',
-        type: 'submission',
+        type: 'pending',
         date: '2023-06-15T09:00:00',
         actor: 'Michael Taylor',
         description: 'Travel request submitted',
@@ -324,7 +324,7 @@ export const mockTravelRequests: TravelRequest[] = [
       },
       {
         id: 'TL-002',
-        type: 'rejection',
+        type: 'Rejected',
         date: '2023-06-16T14:00:00',
         actor: 'Jennifer Lee',
         description: 'Request rejected by manager',
@@ -354,7 +354,7 @@ export const mockTravelRequests: TravelRequest[] = [
     timeline: [
       {
         id: 'TL-001',
-        type: 'submission',
+        type: 'pending',
         date: '2023-05-25T10:00:00',
         actor: 'Samantha Davis',
         description: 'Travel request submitted',
@@ -362,7 +362,7 @@ export const mockTravelRequests: TravelRequest[] = [
       },
       {
         id: 'TL-002',
-        type: 'managerApproval',
+        type: 'Manager Approved',
         date: '2023-05-26T15:00:00',
         actor: 'Michael Davis',
         description: 'Request approved by manager',
@@ -370,7 +370,7 @@ export const mockTravelRequests: TravelRequest[] = [
       },
       {
         id: 'TL-003',
-        type: 'ticketsSelected',
+        type: 'Tickets Selected',
         date: '2023-05-27T09:00:00',
         actor: 'Samantha Davis',
         description: 'Tickets selected',
@@ -378,7 +378,7 @@ export const mockTravelRequests: TravelRequest[] = [
       },
       {
         id: 'TL-004',
-        type: 'ticketsDispatched',
+        type: 'Tickets Dispatched',
         date: '2023-05-28T11:00:00',
         actor: 'Travel Desk',
         description: 'Tickets dispatched',
@@ -386,7 +386,7 @@ export const mockTravelRequests: TravelRequest[] = [
       },
       {
         id: 'TL-005',
-        type: 'inTransit',
+        type: 'In-transit',
         date: '2023-06-30T08:00:00',
         actor: 'System',
         description: 'Traveler in transit',
@@ -394,7 +394,7 @@ export const mockTravelRequests: TravelRequest[] = [
       },
       {
         id: 'TL-006',
-        type: 'returned',
+        type: 'Returned',
         date: '2023-07-02T18:00:00',
         actor: 'System',
         description: 'Traveler returned',
@@ -402,7 +402,7 @@ export const mockTravelRequests: TravelRequest[] = [
       },
       {
         id: 'TL-007',
-        type: 'closed',
+        type: 'Closed',
         date: '2023-07-03T09:00:00',
         actor: 'Michael Davis',
         description: 'Request closed',
@@ -432,7 +432,7 @@ export const mockTravelRequests: TravelRequest[] = [
     timeline: [
       {
         id: 'TL-001',
-        type: 'submission',
+        type: 'pending',
         date: '2023-06-20T09:00:00',
         actor: 'David Wilson',
         description: 'Travel request submitted',
@@ -462,7 +462,7 @@ export const mockTravelRequests: TravelRequest[] = [
     timeline: [
       {
         id: 'TL-001',
-        type: 'submission',
+        type: 'pending',
         date: '2023-06-05T10:00:00',
         actor: 'James Brown',
         description: 'Travel request submitted',
@@ -470,7 +470,7 @@ export const mockTravelRequests: TravelRequest[] = [
       },
       {
         id: 'TL-002',
-        type: 'managerApproval',
+        type: 'Manager Approved',
         date: '2023-06-06T14:00:00',
         actor: 'Jennifer Lee',
         description: 'Request approved by manager',
@@ -478,7 +478,7 @@ export const mockTravelRequests: TravelRequest[] = [
       },
       {
         id: 'TL-003',
-        type: 'ticketsSelected',
+        type: 'Tickets Selected',
         date: '2023-06-07T09:00:00',
         actor: 'James Brown',
         description: 'Tickets selected',
@@ -486,7 +486,7 @@ export const mockTravelRequests: TravelRequest[] = [
       },
       {
         id: 'TL-004',
-        type: 'ticketsDispatched',
+        type: 'Tickets Dispatched',
         date: '2023-06-08T11:00:00',
         actor: 'Travel Desk',
         description: 'Tickets dispatched',
@@ -494,7 +494,7 @@ export const mockTravelRequests: TravelRequest[] = [
       },
       {
         id: 'TL-005',
-        type: 'inTransit',
+        type: 'In-transit',
         date: '2023-07-05T08:00:00',
         actor: 'System',
         description: 'Traveler in transit',
@@ -524,7 +524,7 @@ export const mockTravelRequests: TravelRequest[] = [
     timeline: [
       {
         id: 'TL-001',
-        type: 'submission',
+        type: 'pending',
         date: '2023-06-25T09:00:00',
         actor: 'Alex Martinez',
         description: 'Travel request submitted',
@@ -532,7 +532,7 @@ export const mockTravelRequests: TravelRequest[] = [
       },
       {
         id: 'TL-002',
-        type: 'managerApproval',
+        type: 'Manager Approved',
         date: '2023-06-26T14:00:00',
         actor: 'David Wilson',
         description: 'Request approved by manager',
@@ -540,7 +540,7 @@ export const mockTravelRequests: TravelRequest[] = [
       },
       {
         id: 'TL-003',
-        type: 'ticketsSelected',
+        type: 'Tickets Selected',
         date: '2023-06-27T09:00:00',
         actor: 'Alex Martinez',
         description: 'Tickets selected',
@@ -570,7 +570,7 @@ export const mockTravelRequests: TravelRequest[] = [
     timeline: [
       {
         id: 'TL-001',
-        type: 'submission',
+        type: 'pending',
         date: '2023-06-12T09:00:00',
         actor: 'Jennifer Lee',
         description: 'Travel request submitted',
@@ -578,7 +578,7 @@ export const mockTravelRequests: TravelRequest[] = [
       },
       {
         id: 'TL-002',
-        type: 'managerApproval',
+        type: 'Manager Approved',
         date: '2023-06-13T14:00:00',
         actor: 'Michael Davis',
         description: 'Request approved by manager',
@@ -586,7 +586,7 @@ export const mockTravelRequests: TravelRequest[] = [
       },
       {
         id: 'TL-003',
-        type: 'ticketsSelected',
+        type: 'Tickets Selected',
         date: '2023-06-14T09:00:00',
         actor: 'Jennifer Lee',
         description: 'Tickets selected',
@@ -594,7 +594,7 @@ export const mockTravelRequests: TravelRequest[] = [
       },
       {
         id: 'TL-004',
-        type: 'ticketsDispatched',
+        type: 'Tickets Dispatched',
         date: '2023-06-15T11:00:00',
         actor: 'Travel Desk',
         description: 'Tickets dispatched',
@@ -602,7 +602,7 @@ export const mockTravelRequests: TravelRequest[] = [
       },
       {
         id: 'TL-005',
-        type: 'inTransit',
+        type: 'In-transit',
         date: '2023-07-12T08:00:00',
         actor: 'System',
         description: 'Traveler in transit',
@@ -610,7 +610,7 @@ export const mockTravelRequests: TravelRequest[] = [
       },
       {
         id: 'TL-006',
-        type: 'returned',
+        type: 'Returned',
         date: '2023-07-14T18:00:00',
         actor: 'System',
         description: 'Traveler returned',
@@ -640,7 +640,7 @@ export const mockTravelRequests: TravelRequest[] = [
     timeline: [
       {
         id: 'TL-001',
-        type: 'submission',
+        type: 'pending',
         date: '2023-06-28T09:00:00',
         actor: 'Sophie Miller',
         description: 'Travel request submitted',
@@ -670,7 +670,7 @@ export const mockTravelRequests: TravelRequest[] = [
     timeline: [
       {
         id: 'TL-001',
-        type: 'submission',
+        type: 'pending',
         date: '2023-06-15T09:00:00',
         actor: 'William Jackson',
         description: 'Travel request submitted',
@@ -678,7 +678,7 @@ export const mockTravelRequests: TravelRequest[] = [
       },
       {
         id: 'TL-002',
-        type: 'managerApproval',
+        type: 'Manager Approved',
         date: '2023-06-16T14:00:00',
         actor: 'David Wilson',
         description: 'Request approved by manager',
@@ -686,7 +686,7 @@ export const mockTravelRequests: TravelRequest[] = [
       },
       {
         id: 'TL-003',
-        type: 'ticketsSelected',
+        type: 'Tickets Selected',
         date: '2023-06-17T09:00:00',
         actor: 'William Jackson',
         description: 'Tickets selected',
@@ -694,7 +694,7 @@ export const mockTravelRequests: TravelRequest[] = [
       },
       {
         id: 'TL-004',
-        type: 'ticketsDispatched',
+        type: 'Tickets Dispatched',
         date: '2023-06-18T11:00:00',
         actor: 'Travel Desk',
         description: 'Tickets dispatched',
