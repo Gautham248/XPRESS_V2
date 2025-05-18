@@ -57,12 +57,12 @@ const ApprovalTimeline: React.FC<ApprovalTimelineProps> = ({ travelRequest }) =>
     : REQUEST_STATUSES[latestCompletedIndex + 1];
 
   // Determine incomplete request status
-  const incompleteRequestStatuses = isRejected || isFullyCompleted
-    ? []
-    : activeRequestStatus
-      ? REQUEST_STATUSES.slice(latestCompletedIndex + 2)
-      : REQUEST_STATUSES.slice(latestCompletedIndex + 1);
-      
+  // const incompleteRequestStatuses = isRejected || isFullyCompleted
+  //   ? []
+  //   : activeRequestStatus
+  //     ? REQUEST_STATUSES.slice(latestCompletedIndex + 2)
+  //     : REQUEST_STATUSES.slice(latestCompletedIndex + 1);
+
   const defaultTimeline: TimelineStep[] = [
     {
       id: '1',
