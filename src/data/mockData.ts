@@ -29,6 +29,32 @@ export interface TimelineEvent {
   details?: string;
 }
 
+// Ticket Options interface
+export interface TicketOption {
+  id: string;
+  description: string;
+  selected: boolean;
+}
+
+
+export const dummyTicketOptions = [
+  {
+    id: 'option-1',
+    description: 'MH 117, TRV-KUL, 31 MAR 00:05 - 31 MAR 06:45',
+    selected: false
+  },
+  {
+    id: 'option-2',
+    description: 'AH 21, TRV-KUL, 31 MAR 01:30 - 31 MAR 08:00',
+    selected: false
+  },
+  {
+    id: 'option-3',
+    description: 'NM 318, TRV-KUL, 30 MAR 11:45 - 31 MAR 05:05',
+    selected: true
+  }
+];
+
 // Helper function to get status color
 export const getStatusColor = (status: string) => {
   switch (status) {

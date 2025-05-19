@@ -67,12 +67,12 @@ const TravelRequestDetails: React.FC = () => {
     <div className="space-y-6 animate-fadeIn">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div className="flex items-center">
-          <button 
+          {/* <button 
             className="mr-4 p-1.5 rounded-md text-muted-foreground hover:bg-muted transition-colors"
             onClick={() => navigate('/travel-requests')}
           >
             <ArrowLeft className="h-5 w-5" />
-          </button>
+          </button> */}
           <div>
             <h2 className="text-2xl font-semibold">
               {travelRequest.id} - {travelRequest.purpose}
@@ -103,8 +103,8 @@ const TravelRequestDetails: React.FC = () => {
         </div>
       </div>
       
-      <div className="grid grid-cols-3 grid-rows-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
+      <div className="grid grid-cols-2 lg:grid-cols-2 gap-4 h-auto">
+        <div className="lg:col-span-1 space-y-6">
           <TravelRequestInfo 
             travelRequest={travelRequest}
             getStatusColor={getStatusColor}
@@ -114,11 +114,9 @@ const TravelRequestDetails: React.FC = () => {
           <TravelInfo travelRequest={travelRequest} />
         </div>
         
-        <div>
+        <div className="lg:col-span-1 space-y-6">
           <ApprovalTimeline travelRequest={travelRequest} />
-        </div>
 
-        <div>
           <TicketComponent travelRequest={travelRequest} />
         </div>
       </div>
