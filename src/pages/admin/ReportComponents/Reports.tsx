@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Download, Calendar, Briefcase, DollarSign, Plane, ChevronDown } from 'lucide-react';
 import DatePicker from 'react-datepicker';
-import type { PopperModifier } from 'react-datepicker';
+// import type { PopperModifier } from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import StatCard from './StatCard';
 import AirlineDistributionChart from './AirlineDistributionChart';
