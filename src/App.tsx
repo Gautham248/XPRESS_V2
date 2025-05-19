@@ -9,7 +9,7 @@ import EmployeeDashboard from './pages/employee/Dashboard';
 import TravelRequests from './components/table/TravelRequests';
 import TravelRequestDetails from './components/request_details/TravelRequestDetails';
 import Calendar from './pages/admin/calendar/Calendar';
-import Reports from './pages/admin/Reports';
+import Reports from './pages/admin/ReportComponents/Reports';
 import Settings from './pages/admin/Settings';
 import NotFound from './components/not_found/NotFound';
 import CreateRequest from './components/Create Request/CreateRequest';
