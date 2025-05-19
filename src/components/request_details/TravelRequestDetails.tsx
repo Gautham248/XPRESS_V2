@@ -1,23 +1,22 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { 
-  ArrowLeft, 
-  Check, 
-  X, 
-  FileText 
+import {
+  Check,
+  X,
+  FileText
 } from 'lucide-react';
 import { mockTravelRequests, TravelRequest } from '../../data/mockData';
 import TravelRequestInfo from './TravelRequestInfo';
 import ApprovalTimeline from './ApprovalTimeline';
 import TravelInfo from './TravelInfo';
 import TicketComponent from './ticket_options/TicketOptionsComponent';
-
+ 
 const TravelRequestDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  
+ 
   const travelRequest = mockTravelRequests.find(request => request.id === id) as TravelRequest;
-  
+ 
   if (!travelRequest) {
     return (
       <div className="card my-8 p-8 text-center">
@@ -25,7 +24,7 @@ const TravelRequestDetails: React.FC = () => {
         <p className="text-muted-foreground mb-6">
           The travel request you're looking for could not be found.
         </p>
-        <button 
+        <button
           className="btn-primary"
           onClick={() => navigate('/travel-requests')}
         >
@@ -34,7 +33,7 @@ const TravelRequestDetails: React.FC = () => {
       </div>
     );
   }
-  
+ 
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'Approved':
@@ -49,7 +48,7 @@ const TravelRequestDetails: React.FC = () => {
         return 'bg-muted text-muted-foreground';
     }
   };
-  
+ 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case 'High':
@@ -62,12 +61,12 @@ const TravelRequestDetails: React.FC = () => {
         return 'bg-muted text-muted-foreground';
     }
   };
-  
+ 
   return (
     <div className="space-y-6 animate-fadeIn">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div className="flex items-center">
-          {/* <button 
+          {/* <button
             className="mr-4 p-1.5 rounded-md text-muted-foreground hover:bg-muted transition-colors"
             onClick={() => navigate('/travel-requests')}
           >
@@ -82,7 +81,7 @@ const TravelRequestDetails: React.FC = () => {
             </p>
           </div>
         </div>
-        
+       
         <div className="flex space-x-3">
           {travelRequest.status === 'Pending' && (
             <>
@@ -102,28 +101,28 @@ const TravelRequestDetails: React.FC = () => {
           </button>
         </div>
       </div>
-      
+     
       <div className="grid grid-cols-2 lg:grid-cols-2 gap-4 h-auto">
         <div className="lg:col-span-1 space-y-6">
-          <TravelRequestInfo 
+          <TravelRequestInfo
             travelRequest={travelRequest}
             getStatusColor={getStatusColor}
             getPriorityColor={getPriorityColor}
           />
-          
+         
           <TravelInfo travelRequest={travelRequest} />
         </div>
-        
+       
         <div className="lg:col-span-1 space-y-6">
           <ApprovalTimeline travelRequest={travelRequest} />
-
+ 
           <TicketComponent travelRequest={travelRequest} />
         </div>
       </div>
-
-      
+ 
+     
     </div>
   );
 };
-
+ 
 export default TravelRequestDetails;

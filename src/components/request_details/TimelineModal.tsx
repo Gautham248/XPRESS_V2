@@ -5,7 +5,7 @@ import {
   X 
 } from 'lucide-react';
 
-interface TimelineStep {
+export interface TimelineStep {
   id: string;
   status: string;
   date: string;
@@ -13,6 +13,7 @@ interface TimelineStep {
   completed: boolean;
   active?: boolean;
   rejected?: boolean;
+  isModified?: boolean;
 }
 
 interface TimelineModalProps {
@@ -25,7 +26,7 @@ const TimelineModal: React.FC<TimelineModalProps> = ({ timeline, onClose }) => {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
       <div className="bg-white rounded-lg shadow-lg w-full max-w-lg p-6 max-h-[80vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-semibold">Full Request Timeline</h2>
+          <h2 className="text-xl font-semibold">Request Closure Timeline</h2>
           <button
             className="text-gray-500 hover:text-gray-700"
             onClick={onClose}
@@ -43,7 +44,7 @@ const TimelineModal: React.FC<TimelineModalProps> = ({ timeline, onClose }) => {
                   className={`absolute left-[1rem] top-[2rem] w-0.5 h-[calc(100%-1rem)] ${
                     step.rejected
                       ? 'bg-red-200'
-                      : step.completed
+                      : step.completed || step.isModified
                       ? 'bg-green-200'
                       : 'bg-gray-200'
                   }`}
@@ -56,7 +57,7 @@ const TimelineModal: React.FC<TimelineModalProps> = ({ timeline, onClose }) => {
                     ? 'bg-red-100 text-red-600'
                     : step.active
                     ? 'bg-purple-100 text-purple-500'
-                    : step.completed
+                    : step.completed || step.isModified
                     ? 'bg-green-100 text-green-500'
                     : 'bg-gray-100 text-gray-400'
                 }`}
@@ -77,7 +78,7 @@ const TimelineModal: React.FC<TimelineModalProps> = ({ timeline, onClose }) => {
                       ? 'text-red-600'
                       : step.active
                       ? 'text-purple-600'
-                      : step.completed
+                      : step.completed || step.isModified
                       ? 'text-green-600'
                       : 'text-gray-400'
                   }`}
@@ -90,7 +91,7 @@ const TimelineModal: React.FC<TimelineModalProps> = ({ timeline, onClose }) => {
                       ? 'text-red-500'
                       : step.active
                       ? 'text-purple-500'
-                      : step.completed
+                      : step.completed || step.isModified
                       ? 'text-gray-500'
                       : 'text-gray-400'
                   }`}

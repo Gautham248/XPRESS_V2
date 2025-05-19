@@ -4,6 +4,8 @@ import AdminTicketOptionsView from './AdminTicketOption';
 import ManagerTicketOptionsView from './ManagerTicketOption';
 import EmployeeTicketOptionsView from './EmployeeTicketOption';
 import { dummyTicketOptions } from '../../../data/mockData';
+import { useModal } from '../confirmation_modal/hooks/useModal';
+import ConfirmationModal from '../confirmation_modal/ConfirmationModal';
 
 interface TicketOption {
   id: string;
@@ -27,6 +29,16 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ travelRequest }) => {
   const [newOption, setNewOption] = useState<string>('');
   const [editingOption, setEditingOption] = useState<string | null>(null);
   const [editText, setEditText] = useState<string>('');
+  const [agencyName, setAgencyName] = useState('');
+
+  const {
+    isOpen,
+    title,
+    content,
+    buttons,
+    openModal,
+    closeModal
+  } = useModal();
 
   useEffect(() => {
     const userData = localStorage.getItem('user');
@@ -53,19 +65,20 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ travelRequest }) => {
   };
 
   const handleDeleteOption = (optionId: string) => {
-    if (window.confirm('Delete this option?')) {
+    openModal('Delete this option?', () => {
       setTicketOptions(ticketOptions.filter(option => option.id !== optionId));
-    }
+    }, 'Delete Option');
   };
 
   const handleUploadOptions = () => {
     if (ticketOptions.length === 0) {
-      alert('No options to upload.');
+      openModal('No options to upload.', () => { }, 'Upload Ticket Options');
       return;
     }
-    if (window.confirm('Are you sure you want to upload these ticket options?')) {
+    const confirmUpload = () => {
       console.log('Uploading ticket options:', ticketOptions);
-    }
+    };
+    openModal('Are you sure you want to upload these ticket options?', confirmUpload, 'Upload Ticket Options');
   };
 
   const handleSelectOption = (optionId: string) => {
@@ -82,67 +95,90 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ travelRequest }) => {
   };
 
   const handleSaveEdit = (optionId: string) => {
-    if (window.confirm('Save changes to this option?')) {
+    const confirmSave = () => {
       const updatedOptions = ticketOptions.map(option =>
         option.id === optionId ? { ...option, description: editText } : option
       );
       setTicketOptions(updatedOptions);
       setEditingOption(null);
       setEditText('');
-    }
+    };
+    openModal('Save changes to this option?', confirmSave, 'Edit Option');
   };
 
   const handleDownloadTickets = () => {
     if (travelRequest.status !== 'Tickets Selected') {
-      alert('No tickets selected for download.');
+      openModal('No tickets selected for download.', () => { }, 'Download Tickets');
       return;
     }
     console.log('Downloading tickets for request:', travelRequest.id);
   };
 
   return (
-    <div className="h-[480px] overflow-hidden border rounded-lg bg-white shadow mb-6">
-      <div className="sticky top-0 z-10 bg-white p-4 border-b">
-        <h3 className="text-lg font-semibold">Ticket Options</h3>
+    <>
+      <div className="h-[480px] overflow-y-auto border rounded-lg bg-white shadow mb-6">
+        <div className="sticky top-0 z-10 bg-white p-4 border-b">
+          <h3 className="text-lg font-semibold">Tickets</h3>
+        </div>
+
+        <div className="p-4 overflow-y-auto h-[calc(100%-64px)] space-y-6">
+          {/* Travel Agency Name Input */}
+          <div>
+            <h5 className="text-md font-medium mb-2">Travel Agency:</h5>
+            <input
+              type="text"
+              placeholder="Enter travel agency name"
+              className="w-full p-2 mb-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={agencyName}
+              onChange={(e) => setAgencyName(e.target.value)}
+            />
+          </div>
+          <hr />
+          <h5 className="text-md font-medium">Ticket Option:</h5>
+          {userRole === 'admin' && (
+            <AdminTicketOptionsView
+              ticketOptions={ticketOptions}
+              newOption={newOption}
+              editingOption={editingOption}
+              editText={editText}
+              onChangeNewOption={setNewOption}
+              onAddOption={handleAddOption}
+              onEditOption={handleEditOption}
+              onDeleteOption={handleDeleteOption}
+              onSaveEdit={handleSaveEdit}
+              onCancelEdit={() => setEditingOption(null)}
+              onChangeEditText={setEditText}
+              onUploadOptions={handleUploadOptions}
+            />
+          )}
+
+          {userRole === 'manager' && (
+            <ManagerTicketOptionsView
+              ticketOptions={ticketOptions}
+              onSelectOption={handleSelectOption}
+              onEditOption={handleEditOption}
+              onDeleteOption={handleDeleteOption}
+              onUploadOptions={handleUploadOptions}
+            />
+          )}
+
+          {userRole === 'employee' && (
+            <EmployeeTicketOptionsView
+              ticketOptions={ticketOptions}
+              onDownloadTickets={handleDownloadTickets}
+            />
+          )}
+        </div>
       </div>
 
-      <div className="p-4 overflow-y-auto h-[calc(100%-64px)] space-y-6">
-        {userRole === 'admin' && (
-          <AdminTicketOptionsView
-            ticketOptions={ticketOptions}
-            newOption={newOption}
-            editingOption={editingOption}
-            editText={editText}
-            onChangeNewOption={setNewOption}
-            onAddOption={handleAddOption}
-            onEditOption={handleEditOption}
-            onDeleteOption={handleDeleteOption}
-            onSaveEdit={handleSaveEdit}
-            onCancelEdit={() => setEditingOption(null)}
-            onChangeEditText={setEditText}
-            onUploadOptions={handleUploadOptions}
-          />
-        )}
-
-        {userRole === 'manager' && (
-          <ManagerTicketOptionsView
-            ticketOptions={ticketOptions}
-            onSelectOption={handleSelectOption}
-            onEditOption={handleEditOption}
-            onDeleteOption={handleDeleteOption}
-            onUploadOptions={handleUploadOptions}
-          />
-        )}
-
-        {userRole === 'employee' && (
-          <EmployeeTicketOptionsView
-            ticketOptions={ticketOptions}
-            onDownloadTickets={handleDownloadTickets}
-          />
-        )}
-      </div>
-    </div>
-
+      <ConfirmationModal
+        isOpen={isOpen}
+        title={title}
+        content={content}
+        buttons={buttons}
+        onClose={closeModal}
+      />
+    </>
   );
 };
 
