@@ -4,26 +4,54 @@ import { CheckCircle, AlertCircle, X, Eye, Check, X as XIcon } from 'lucide-reac
 import { mockTravelRequests, getStatusColor } from '../../data/mockData';
 import { format } from 'date-fns';
 
-const Dashboard = () => {
+// Define TypeScript interfaces
+interface TravelRequest {
+  id: string;
+  status: string;
+  travelType: string;
+  travelerName: string;
+  departureDate: string | null;
+  returnDate: string | null;
+  reportingManager: string | null;
+}
+
+interface ColumnWidth {
+  tick: number;
+  actions: number;
+  status: number;
+  type: number;
+  traveler: number;
+  travelDates: number;
+  manager: number;
+}
+
+interface ToastState {
+  visible: boolean;
+  message: string;
+  type: 'success' | 'error' | 'info';
+  deletedItem: TravelRequest | null;
+  deletedIndex: number | null;
+}
+
+const Dashboard: React.FC = () => {
   const navigate = useNavigate();
-  const [tableData, setTableData] = useState(mockTravelRequests);
-  const tableRef = useRef(null);
-  const [resizing, setResizing] = useState(false);
-  const [startX, setStartX] = useState(0);
-  const [tableHeight, setTableHeight] = useState(0);
-  const [columnWidths, setColumnWidths] = useState({
-    tick: 150,
+  const [tableData, setTableData] = useState<TravelRequest[]>(mockTravelRequests);
+  const tableRef = useRef<HTMLTableElement>(null);
+  const [resizing, setResizing] = useState<boolean>(false);
+  const [startX, setStartX] = useState<number>(0);
+  const [tableHeight, setTableHeight] = useState<number>(0);
+  const [columnWidths, setColumnWidths] = useState<ColumnWidth>({
+    tick: 80,
     actions: 200,
-    status: 150,
-    type: 150,
+    status: 120,
+    type: 120,
     traveler: 150,
-    department: 150,
     travelDates: 200,
     manager: 150
   });
-  const [activeColumn, setActiveColumn] = useState(null);
+  const [activeColumn, setActiveColumn] = useState<keyof ColumnWidth | null>(null);
   
-  const [toast, setToast] = useState({
+  const [toast, setToast] = useState<ToastState>({
     visible: false,
     message: '',
     type: 'info',
@@ -31,7 +59,7 @@ const Dashboard = () => {
     deletedIndex: null,
   });
 
-  const handleViewClick = (item, e) => {
+  const handleViewClick = (item: TravelRequest, e: React.MouseEvent) => {
     e.stopPropagation();
     const userString = localStorage.getItem('user');
     const user = userString ? JSON.parse(userString) : null;
@@ -39,18 +67,14 @@ const Dashboard = () => {
 
     const path = window.location.pathname;
     let basePath = '';
-    if (user.role === 'admin') {
-      basePath = '/admin/travel-requests';
-    } else if (user.role === 'manager') {
-      basePath = path.includes('team-requests') ? '/manager/team-requests' : '/manager/my-requests';
-    } else if (user.role === 'employee') {
-      basePath = '/employee/my-requests';
-    }
+  
+    basePath = '/admin/travel-requests';
+    
 
     navigate(`${basePath}/${item.id}`);
   };
 
-  const handleMarkDone = (item, e) => {
+  const handleMarkDone = (item: TravelRequest, e: React.MouseEvent) => {
     e.stopPropagation();
     const itemIndex = tableData.findIndex(data => data.id === item.id);
     const deletedItem = tableData[itemIndex];
@@ -76,7 +100,7 @@ const Dashboard = () => {
   };
 
   const handleUndoDelete = () => {
-    if (toast.deletedItem && toast.deletedIndex !== undefined) {
+    if (toast.deletedItem && toast.deletedIndex !== null) {
       const newTableData = [...tableData];
       newTableData.splice(toast.deletedIndex, 0, toast.deletedItem);
       setTableData(newTableData);
@@ -84,27 +108,27 @@ const Dashboard = () => {
     }
   };
 
-  const getTypeColor = (type) => {
+  const getTypeColor = (type: string): string => {
     return type === 'Domestic' ? 'bg-blue-100 text-blue-800' : 'bg-teal-100 text-teal-800';
   };
 
-  const formatDate = (date) => {
+  const formatDate = (date: string): string => {
     return format(new Date(date), 'dd-MM-yyyy');
   };
 
-  const handleActionClick = (e, action, request) => {
+  const handleActionClick = (e: React.MouseEvent, action: string, request: TravelRequest) => {
     e.stopPropagation();
     console.log(`${action} clicked for request ${request.id}`);
   };
 
-  const handleResizeStart = (e, column) => {
+  const handleResizeStart = (e: React.MouseEvent, column: keyof ColumnWidth) => {
     e.preventDefault();
     setResizing(true);
     setStartX(e.clientX);
     setActiveColumn(column);
   };
 
-  const handleResizeMove = (e) => {
+  const handleResizeMove = (e: MouseEvent) => {
     if (!resizing || !activeColumn) return;
     
     const diff = e.clientX - startX;
@@ -137,9 +161,14 @@ const Dashboard = () => {
   useEffect(() => {
     const updateTableHeight = () => {
       if (tableRef.current) {
-        const headerHeight = tableRef.current.querySelector('thead tr').offsetHeight;
-        const bodyHeight = tableRef.current.querySelector('tbody').offsetHeight;
-        setTableHeight(headerHeight + bodyHeight);
+        const headerRow = tableRef.current.querySelector('thead tr');
+        const tbody = tableRef.current.querySelector('tbody');
+        
+        if (headerRow && tbody) {
+          const headerHeight = headerRow.clientHeight;
+          const bodyHeight = tbody.clientHeight;
+          setTableHeight(headerHeight + bodyHeight);
+        }
       }
     };
 
@@ -153,13 +182,32 @@ const Dashboard = () => {
 
   const rowHeight = 60;
 
-  const renderResizer = (column) => (
+  const renderResizer = (column: keyof ColumnWidth) => (
     <div 
-      className={`absolute top-0 right-0 w-[3px] bg-gray-300 cursor-col-resize hover:bg-blue-500 ${resizing && activeColumn === column ? 'bg-blue-500' : ''}`}
+      className={`absolute top-0 right-0 w-[3px] h-full bg-gray-300 cursor-col-resize hover:bg-blue-500 ${resizing && activeColumn === column ? 'bg-blue-500' : ''}`}
       onMouseDown={(e) => handleResizeStart(e, column)}
       style={{ height: `${tableHeight}px`, zIndex: 40 }}
     />
   );
+
+  // Dynamically generate the style for the table
+  const getTableStyles = () => {
+    // Calculate total width
+    const totalWidth = Object.values(columnWidths).reduce((acc, width) => acc + width, 0);
+    return {
+      minWidth: `${totalWidth}px`
+    };
+  };
+
+  // Style function for each column
+  const getColumnStyle = (column: keyof ColumnWidth) => {
+    return {
+      width: `${columnWidths[column]}px`,
+      minWidth: `${columnWidths[column]}px`,
+      maxWidth: `${columnWidths[column]}px`,
+      position: 'relative' as const
+    };
+  };
 
   return (
     <div className="w-full max-w-full overflow-hidden">
@@ -193,38 +241,38 @@ const Dashboard = () => {
       <div className="shadow-md rounded-lg bg-white overflow-hidden max-w-full">
         <div className="w-full relative">
           <div className="overflow-x-auto overflow-y-auto max-h-[500px] w-full scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
-            <table ref={tableRef} className="w-full border-separate border-spacing-0">
+            <table 
+              ref={tableRef} 
+              className="w-full border-separate border-spacing-0"
+              style={getTableStyles()}
+            >
               <thead>
                 <tr className="bg-gray-50 border-b-2 border-gray-300">
-                  <th style={{ width: `${columnWidths.tick}px` }} className="sticky top-0 left-0 z-40 bg-gray-50 border-r border-gray-200">
+                  <th style={getColumnStyle('tick')} className="sticky top-0 left-0 z-40 bg-gray-50 border-r border-gray-200">
                     <div className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"></div>
                     {renderResizer('tick')}
                   </th>
-                  <th style={{ width: `${columnWidths.actions}px` }} className="sticky top-0 z-30 bg-gray-50">
+                  <th style={getColumnStyle('actions')} className="sticky top-0 z-30 bg-gray-50">
                     <div className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</div>
                     {renderResizer('actions')}
                   </th>
-                  <th style={{ width: `${columnWidths.status}px` }} className="sticky top-0 z-30 bg-gray-50">
+                  <th style={getColumnStyle('status')} className="sticky top-0 z-30 bg-gray-50">
                     <div className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</div>
                     {renderResizer('status')}
                   </th>
-                  <th style={{ width: `${columnWidths.type}px` }} className="sticky top-0 z-30 bg-gray-50">
+                  <th style={getColumnStyle('type')} className="sticky top-0 z-30 bg-gray-50">
                     <div className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</div>
                     {renderResizer('type')}
                   </th>
-                  <th style={{ width: `${columnWidths.traveler}px` }} className="sticky top-0 z-30 bg-gray-50">
+                  <th style={getColumnStyle('traveler')} className="sticky top-0 z-30 bg-gray-50">
                     <div className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Traveler</div>
                     {renderResizer('traveler')}
                   </th>
-                  <th style={{ width: `${columnWidths.department}px` }} className="sticky top-0 z-30 bg-gray-50">
-                    <div className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Department</div>
-                    {renderResizer('department')}
-                  </th>
-                  <th style={{ width: `${columnWidths.travelDates}px` }} className="sticky top-0 z-30 bg-gray-50">
+                  <th style={getColumnStyle('travelDates')} className="sticky top-0 z-30 bg-gray-50">
                     <div className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Travel Dates</div>
                     {renderResizer('travelDates')}
                   </th>
-                  <th style={{ width: `${columnWidths.manager}px` }} className="sticky top-0 z-30 bg-gray-50">
+                  <th style={getColumnStyle('manager')} className="sticky top-0 z-30 bg-gray-50">
                     <div className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Manager</div>
                     {renderResizer('manager')}
                   </th>
@@ -233,7 +281,7 @@ const Dashboard = () => {
               <tbody>
                 {tableData.map((request, index) => (
                   <tr key={request.id} className="hover:bg-gray-50 relative">
-                    <td className="sticky left-0 z-20 bg-white border-r border-gray-200 mt-2 border-gray-200">
+                    <td style={getColumnStyle('tick')} className="sticky left-0 z-20 bg-white border-r border-gray-200 border-gray-200">
                       <div 
                         className="flex h-full items-center justify-center border-b border-gray-200" 
                         style={{ height: `${rowHeight}px` }}
@@ -254,7 +302,7 @@ const Dashboard = () => {
                         />
                       )}
                     </td>
-                    <td style={{ width: `${columnWidths.actions}px` }} className="border-b border-gray-200 relative">
+                    <td style={getColumnStyle('actions')} className="border-b border-gray-200 relative">
                       <div className="px-4 py-4 whitespace-nowrap">
                         <div className="flex space-x-1">
                           <button
@@ -292,7 +340,7 @@ const Dashboard = () => {
                         />
                       )}
                     </td>
-                    <td style={{ width: `${columnWidths.status}px` }} className="border-b border-gray-200 relative">
+                    <td style={getColumnStyle('status')} className="border-b border-gray-200 relative">
                       <div className="px-4 py-4 whitespace-nowrap">
                         <span
                           className={`px-2 py-1 inline-flex text-xs leading-5 font-medium rounded-full ${getStatusColor(
@@ -309,7 +357,7 @@ const Dashboard = () => {
                         />
                       )}
                     </td>
-                    <td style={{ width: `${columnWidths.type}px` }} className="border-b border-gray-200 relative">
+                    <td style={getColumnStyle('type')} className="border-b border-gray-200 relative">
                       <div className="px-4 py-4 whitespace-nowrap">
                         <span
                           className={`px-2 py-1 inline-flex text-xs leading-5 font-medium rounded-full ${getTypeColor(
@@ -326,7 +374,7 @@ const Dashboard = () => {
                         />
                       )}
                     </td>
-                    <td style={{ width: `${columnWidths.traveler}px` }} className="border-b border-gray-200 relative">
+                    <td style={getColumnStyle('traveler')} className="border-b border-gray-200 relative">
                       <div className="px-4 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900">{request.travelerName}</div>
                       </div>
@@ -337,18 +385,7 @@ const Dashboard = () => {
                         />
                       )}
                     </td>
-                    <td style={{ width: `${columnWidths.department}px` }} className="border-b border-gray-200 relative">
-                      <div className="px-4 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{request.departmentCode}</div>
-                      </div>
-                      {index === tableData.length - 1 && (
-                        <div 
-                          className="absolute bottom-0 left-0 right-0 h-[1px] bg-gray-200"
-                          style={{ zIndex: 1 }}
-                        />
-                      )}
-                    </td>
-                    <td style={{ width: `${columnWidths.travelDates}px` }} className="border-b border-gray-200 relative">
+                    <td style={getColumnStyle('travelDates')} className="border-b border-gray-200 relative">
                       <div className="px-4 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-900">
                           {request.departureDate && request.returnDate
@@ -363,7 +400,7 @@ const Dashboard = () => {
                         />
                       )}
                     </td>
-                    <td style={{ width: `${columnWidths.manager}px` }} className="border-b border-gray-200 relative">
+                    <td style={getColumnStyle('manager')} className="border-b border-gray-200 relative">
                       <div className="px-4 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-900">{request.reportingManager || 'N/A'}</div>
                       </div>

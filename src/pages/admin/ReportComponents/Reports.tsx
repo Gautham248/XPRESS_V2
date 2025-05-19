@@ -5,7 +5,7 @@ import AirlineDistributionChart from './AirlineDistributionChart';
 import TravelAgencyBarChart from './TravelAgencyBarChart';
 import { mockTravelRequests } from '../../../data/mockData';
 
-
+// Define type for travel requests
 
 const Reports: React.FC = () => {
   const [startDate, setStartDate] = useState<string>('');
@@ -72,14 +72,14 @@ const Reports: React.FC = () => {
     filteredRequests
       .filter(req => req.airline && tripStatuses.includes(req.status))
       .forEach(req => {
-        airlineCounts[req.airline] = (airlineCounts[req.airline] || 0) + 1;
+        if (req.airline) {
+          airlineCounts[req.airline] = (airlineCounts[req.airline] || 0) + 1;
+        }
       });
-    
-
     
     return Object.entries(airlineCounts).map(([name, value]) => ({
       name,
-      value: value as number
+      value
     }));
   };
 
@@ -92,7 +92,9 @@ const Reports: React.FC = () => {
     filteredRequests
       .filter(req => req.travelAgency && tripStatuses.includes(req.status))
       .forEach(req => {
-        agencyCounts[req.travelAgency] = (agencyCounts[req.travelAgency] || 0) + 1;
+        if (req.travelAgency) {
+          agencyCounts[req.travelAgency] = (agencyCounts[req.travelAgency] || 0) + 1;
+        }
       });
 
     // If no agency data is available, use sample data
@@ -107,7 +109,7 @@ const Reports: React.FC = () => {
     
     return Object.entries(agencyCounts).map(([name, value]) => ({
       name,
-      value: value as number
+      value
     }));
   };
 

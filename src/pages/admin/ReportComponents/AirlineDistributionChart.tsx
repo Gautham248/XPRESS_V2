@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 
@@ -14,12 +15,20 @@ const AirlineDistributionChart: React.FC<AirlineDistributionChartProps> = ({ cha
   const COLORS = ['#D8BFD8', '#FFC0CB', '#00CED1', '#FFA500'];
   const totalTrips = chartData.reduce((sum, item) => sum + item.value, 0);
 
-  // Custom renderer for the pie chart labels (only numbers)
-  const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, index, value }) => {
+  // Custom renderer for the pie chart labels with explicit typing
+  const renderCustomizedLabel = (props: any) => {
+    const { cx, cy, midAngle, innerRadius, outerRadius, value } = props;
+    
+    // Handle potential undefined values
+    if (cx === undefined || cy === undefined || midAngle === undefined || 
+        innerRadius === undefined || outerRadius === undefined) {
+      return null;
+    }
+    
     const RADIAN = Math.PI / 180;
-    const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
-    const x = cx + radius * Math.cos(-midAngle * RADIAN);
-    const y = cy + radius * Math.sin(-midAngle * RADIAN);
+    const radius = Number(innerRadius) + (Number(outerRadius) - Number(innerRadius)) * 0.5;
+    const x = Number(cx) + radius * Math.cos(-midAngle * RADIAN);
+    const y = Number(cy) + radius * Math.sin(-midAngle * RADIAN);
 
     return (
       <text x={x} y={y} fill="black" textAnchor="middle" dominantBaseline="central" fontSize={14} fontWeight="bold">
