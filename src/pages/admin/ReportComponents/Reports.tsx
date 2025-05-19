@@ -1,18 +1,48 @@
+
 import React, { useState } from 'react';
-import { Download, Calendar, Briefcase, DollarSign, Plane } from 'lucide-react';
+import { Download, Calendar, Briefcase, DollarSign, Plane, ChevronDown } from 'lucide-react';
+import DatePicker from 'react-datepicker';
+import type { PopperModifier } from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 import StatCard from './StatCard';
 import AirlineDistributionChart from './AirlineDistributionChart';
 import TravelAgencyBarChart from './TravelAgencyBarChart';
 import { mockTravelRequests } from '../../../data/mockData';
+import { format } from 'date-fns';
 
 // Define type for travel requests
+interface TravelRequest {
+  requestDate: string;
+  status: string;
+  travelType: string;
+  estimatedCost: number;
+  airline?: string;
+  travelAgency?: string;
+}
 
 const Reports: React.FC = () => {
-  const [startDate, setStartDate] = useState<string>('');
-  const [endDate, setEndDate] = useState<string>('');
+  const [dateRange, setDateRange] = useState<[Date | null, Date | null]>([null, null]);
+  const [startDate, endDate] = dateRange;
+  
+  // Define the correct type for PopperModifier
+  const modifiers: PopperModifier[] = [
+    {
+      name: "offset",
+      options: {
+        offset: [0, 8],
+      },
+    },
+    {
+      name: "preventOverflow",
+      options: {
+        rootBoundary: "viewport",
+        padding: 8,
+      },
+    },
+  ];
 
   // Filter requests based on date range if provided
-  const filteredRequests = mockTravelRequests.filter((request) => {
+  const filteredRequests = mockTravelRequests.filter((request: TravelRequest) => {
     const requestDate = new Date(request.requestDate);
     const start = startDate ? new Date(startDate) : new Date('1900-01-01');
     const end = endDate ? new Date(endDate) : new Date('9999-12-31');
@@ -23,46 +53,46 @@ const Reports: React.FC = () => {
   const totalRequests = filteredRequests.length;
 
   const approvedStatuses = ['Tickets Dispatched', 'In-transit', 'Returned', 'Closed'];
-  const approvedRequests = filteredRequests.filter((r) =>
+  const approvedRequests = filteredRequests.filter((r: TravelRequest) =>
     approvedStatuses.includes(r.status)
   ).length;
 
   const rejectedRequests = filteredRequests.filter(
-    (r) => r.status === 'Rejected'
+    (r: TravelRequest) => r.status === 'Rejected'
   ).length;
 
   const pendingRequests = totalRequests - approvedRequests - rejectedRequests;
 
   // Second Box: Total Cost for Approved Requests (Domestic and International)
-  const approvedRequestsData = filteredRequests.filter((r) =>
+  const approvedRequestsData = filteredRequests.filter((r: TravelRequest) =>
     approvedStatuses.includes(r.status)
   );
 
   const totalCost = approvedRequestsData.reduce(
-    (sum, request) => sum + request.estimatedCost,
+    (sum: number, request: TravelRequest) => sum + request.estimatedCost,
     0
   );
 
   const domesticCost = approvedRequestsData
-    .filter((r) => r.travelType === 'Domestic')
-    .reduce((sum, request) => sum + request.estimatedCost, 0);
+    .filter((r: TravelRequest) => r.travelType === 'Domestic')
+    .reduce((sum: number, request: TravelRequest) => sum + request.estimatedCost, 0);
 
   const internationalCost = approvedRequestsData
-    .filter((r) => r.travelType === 'International')
-    .reduce((sum, request) => sum + request.estimatedCost, 0);
+    .filter((r: TravelRequest) => r.travelType === 'International')
+    .reduce((sum: number, request: TravelRequest) => sum + request.estimatedCost, 0);
 
   // Third Box: Total Number of Trips (Domestic and International)
   const tripStatuses = ['Tickets Dispatched', 'In-transit', 'Returned', 'Closed'];
-  const totalTrips = filteredRequests.filter((r) =>
+  const totalTrips = filteredRequests.filter((r: TravelRequest) =>
     tripStatuses.includes(r.status)
   ).length;
 
   const domesticTrips = filteredRequests
-    .filter((r) => tripStatuses.includes(r.status) && r.travelType === 'Domestic')
+    .filter((r: TravelRequest) => tripStatuses.includes(r.status) && r.travelType === 'Domestic')
     .length;
 
   const internationalTrips = filteredRequests
-    .filter((r) => tripStatuses.includes(r.status) && r.travelType === 'International')
+    .filter((r: TravelRequest) => tripStatuses.includes(r.status) && r.travelType === 'International')
     .length;
 
   // Dynamic airline data from filtered requests
@@ -70,8 +100,8 @@ const Reports: React.FC = () => {
     const airlineCounts: Record<string, number> = {};
     
     filteredRequests
-      .filter(req => req.airline && tripStatuses.includes(req.status))
-      .forEach(req => {
+      .filter((req: TravelRequest) => req.airline && tripStatuses.includes(req.status))
+      .forEach((req: TravelRequest) => {
         if (req.airline) {
           airlineCounts[req.airline] = (airlineCounts[req.airline] || 0) + 1;
         }
@@ -90,14 +120,13 @@ const Reports: React.FC = () => {
     const agencyCounts: Record<string, number> = {};
     
     filteredRequests
-      .filter(req => req.travelAgency && tripStatuses.includes(req.status))
-      .forEach(req => {
+      .filter((req: TravelRequest) => req.travelAgency && tripStatuses.includes(req.status))
+      .forEach((req: TravelRequest) => {
         if (req.travelAgency) {
           agencyCounts[req.travelAgency] = (agencyCounts[req.travelAgency] || 0) + 1;
         }
       });
 
-    // If no agency data is available, use sample data
     if (Object.keys(agencyCounts).length === 0) {
       return [
         { name: 'TA-1', value: 2 },
@@ -115,34 +144,52 @@ const Reports: React.FC = () => {
 
   const agencyData = getAgencyDistribution();
 
+  // Custom input for DatePicker to look like a button
+  const CustomDateInput = React.forwardRef<
+    HTMLButtonElement,
+    { value: string; onClick: () => void }
+  >(({ value, onClick }, ref) => {
+    const displayText = value
+      ? value
+      : 'Select date range';
+
+    return (
+      <button
+        type="button"
+        className="flex items-center justify-between px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors min-w-56"
+        onClick={onClick}
+        ref={ref}
+      >
+        <div className="flex items-center">
+          <Calendar className="h-4 w-4 mr-2" />
+          <span className="text-sm">{displayText}</span>
+        </div>
+        <ChevronDown className="h-4 w-4 ml-2" />
+      </button>
+    );
+  });
+
   return (
     <div className="space-y-6 animate-fadeIn">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <h2 className="text-2xl font-semibold">Travel Reports & Analytics</h2>
 
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
-            <div className="relative">
-              <Calendar className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
-              <input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className="pl-10 pr-3 py-2 bg-muted rounded-md text-sm min-w-36"
-                placeholder="Start Date"
-              />
-            </div>
-            <span className="text-sm text-muted-foreground">to</span>
-            <div className="relative">
-              <Calendar className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
-              <input
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className="pl-10 pr-3 py-2 bg-muted rounded-md text-sm min-w-36"
-                placeholder="End Date"
-              />
-            </div>
+          {/* Fix for calendar picker display issues */}
+          <div className="relative z-50">
+            <DatePicker
+              selectsRange
+              startDate={startDate}
+              endDate={endDate}
+              onChange={(update: [Date | null, Date | null]) => setDateRange(update)}
+              customInput={<CustomDateInput />}
+              dateFormat="dd-MM-yyyy"
+              isClearable
+              popperPlacement="bottom-end"
+              popperModifiers={modifiers}
+              popperClassName="z-50"
+              calendarClassName="shadow-lg border border-gray-200 bg-white"
+            />
           </div>
 
           <button className="btn-primary flex items-center">
@@ -153,7 +200,6 @@ const Reports: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* First Box: Total Requests */}
         <StatCard 
           title="Total Requests"
           value={totalRequests}
@@ -184,7 +230,6 @@ const Reports: React.FC = () => {
           </div>
         </StatCard>
 
-        {/* Second Box: Total Cost */}
         <StatCard 
           title="Total Cost"
           value={`$${totalCost.toLocaleString()}`}
@@ -211,7 +256,6 @@ const Reports: React.FC = () => {
           </div>
         </StatCard>
 
-        {/* Third Box: Total Number of Trips */}
         <StatCard 
           title="Total Trips"
           value={totalTrips}
@@ -241,14 +285,13 @@ const Reports: React.FC = () => {
         </StatCard>
       </div>
 
-      {/* New Section: Bar Chart and Pie Chart */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Bar Chart: Travel Agency Usage */}
         <TravelAgencyBarChart chartData={agencyData} />
-
-        {/* Pie Chart: Airline Distribution */}
         <AirlineDistributionChart chartData={airlineData} />
       </div>
+      
+     
+    
     </div>
   );
 };
