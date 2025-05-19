@@ -1,22 +1,22 @@
 import React from 'react';
-import { 
-  Briefcase, 
-  Clock, 
-  Plane, 
-  DollarSign, 
-  TrendingUp, 
+import {
+  Briefcase,
+  Clock,
+  Plane,
+  DollarSign,
+  TrendingUp,
   TrendingDown,
   Calendar,
   MapPin
 } from 'lucide-react';
-import { 
-  dashboardStats, 
-  upcomingTrips, 
+import {
+  dashboardStats,
+  upcomingTrips,
   travelExpensesByMonth,
-  topDestinations 
+  topDestinations
 } from '../../data/mockData';
 import { format, parseISO } from 'date-fns';
-
+ 
 const Dashboard: React.FC = () => {
   return (
     <div className="space-y-6 animate-fadeIn">
@@ -51,7 +51,7 @@ const Dashboard: React.FC = () => {
           );
         })}
       </div>
-
+ 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
           <div className="card h-full">
@@ -63,17 +63,17 @@ const Dashboard: React.FC = () => {
                 <option>All Time</option>
               </select>
             </div>
-            
+           
             <div className="h-64 relative">
               {/* This would normally be a chart component */}
               <div className="absolute inset-0 flex items-end justify-between px-2">
                 {travelExpensesByMonth.map((expense, index) => (
                   <div key={index} className="flex flex-col items-center w-1/6">
                     <div className="w-full flex flex-col items-center space-y-1">
-                      <div className="w-full bg-primary/20 rounded-t-sm" 
+                      <div className="w-full bg-primary/20 rounded-t-sm"
                         style={{ height: `${expense.international / 1000}px` }}>
                       </div>
-                      <div className="w-full bg-primary rounded-t-sm" 
+                      <div className="w-full bg-primary rounded-t-sm"
                         style={{ height: `${expense.domestic / 1000}px` }}>
                       </div>
                     </div>
@@ -81,12 +81,12 @@ const Dashboard: React.FC = () => {
                   </div>
                 ))}
               </div>
-              
+             
               <div className="absolute top-1/2 left-0 transform -translate-y-1/2 -rotate-90 text-xs text-muted-foreground">
                 Amount (USD)
               </div>
             </div>
-            
+           
             <div className="flex items-center justify-center space-x-6 mt-4">
               <div className="flex items-center">
                 <div className="w-3 h-3 rounded-sm bg-primary mr-2"></div>
@@ -99,7 +99,7 @@ const Dashboard: React.FC = () => {
             </div>
           </div>
         </div>
-        
+       
         <div>
           <div className="card h-full">
             <div className="flex items-center justify-between mb-6">
@@ -108,7 +108,7 @@ const Dashboard: React.FC = () => {
                 View All
               </button>
             </div>
-            
+           
             <div className="space-y-4">
               {topDestinations.map((destination, index) => (
                 <div key={index} className="flex items-center">
@@ -121,8 +121,8 @@ const Dashboard: React.FC = () => {
                       <span className="text-sm">{destination.count} trips</span>
                     </div>
                     <div className="w-full bg-muted rounded-full h-2">
-                      <div 
-                        className="bg-primary h-2 rounded-full" 
+                      <div
+                        className="bg-primary h-2 rounded-full"
                         style={{ width: `${destination.percentOfTotal}%` }}
                       ></div>
                     </div>
@@ -133,7 +133,7 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
       </div>
-
+ 
       <div className="card">
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-lg font-semibold">Upcoming Trips</h3>
@@ -142,7 +142,7 @@ const Dashboard: React.FC = () => {
             View Calendar
           </button>
         </div>
-        
+       
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
@@ -157,8 +157,8 @@ const Dashboard: React.FC = () => {
             </thead>
             <tbody>
               {upcomingTrips.map((trip, index) => (
-                <tr 
-                  key={index} 
+                <tr
+                  key={index}
                   className="border-b last:border-0 hover:bg-muted/50 transition-colors"
                 >
                   <td className="py-3 px-4">{trip.id}</td>
@@ -166,12 +166,12 @@ const Dashboard: React.FC = () => {
                   <td className="py-3 px-4">{trip.dates}</td>
                   <td className="py-3 px-4">{trip.traveler}</td>
                   <td className="py-3 px-4">
-                    <span 
+                    <span
                       className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        trip.status === 'Approved' 
-                          ? 'bg-success/20 text-success' 
-                          : trip.status === 'Pending' 
-                            ? 'bg-warning/20 text-warning' 
+                        trip.status === 'Approved'
+                          ? 'bg-success/20 text-success'
+                          : trip.status === 'Pending'
+                            ? 'bg-warning/20 text-warning'
                             : 'bg-error/20 text-error'
                       }`}
                     >
@@ -192,7 +192,7 @@ const Dashboard: React.FC = () => {
     </div>
   );
 };
-
+ 
 const getIconComponent = (iconName: string) => {
   switch (iconName) {
     case 'Briefcase':
@@ -207,7 +207,7 @@ const getIconComponent = (iconName: string) => {
       return Briefcase;
   }
 };
-
+ 
 const getIconBackgroundColor = (iconName: string) => {
   switch (iconName) {
     case 'Briefcase':
@@ -222,5 +222,6 @@ const getIconBackgroundColor = (iconName: string) => {
       return 'bg-primary';
   }
 };
-
+ 
 export default Dashboard;
+ 

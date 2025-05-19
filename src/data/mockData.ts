@@ -17,6 +17,8 @@ export interface TravelRequest {
   reportingManager: string;
   priority: 'Low' | 'Medium' | 'High';
   projectCode: string;
+  travelAgency?: string;
+  airline?: string;
   timeline?: TimelineEvent[];
 }
 
@@ -105,6 +107,7 @@ export const mockTravelRequests: TravelRequest[] = [
     reportingManager: 'Sarah Parker',
     priority: 'Medium',
     projectCode: 'PRJ001',
+
     timeline: [
       {
         id: 'TL-001',
@@ -151,6 +154,7 @@ export const mockTravelRequests: TravelRequest[] = [
     reportingManager: 'Michael Davis',
     priority: 'High',
     projectCode: 'PRJ002',
+    
     timeline: [
       {
         id: 'TL-001',
@@ -205,6 +209,8 @@ export const mockTravelRequests: TravelRequest[] = [
     reportingManager: 'Sarah Parker',
     priority: 'Medium',
     projectCode: 'PRJ003',
+    travelAgency: "TA-1",
+    airline: "AirIndia",
     timeline: [
       {
         id: 'TL-001',
@@ -335,7 +341,7 @@ export const mockTravelRequests: TravelRequest[] = [
   {
     id: 'TR-2023-006',
     travelerName: 'Samantha Davis',
-    travelType: 'Domestic',
+    travelType: 'International',
     departureDate: '2025-02-20',
     returnDate: '2025-02-22',
     source: 'Houston, TX',
@@ -351,6 +357,8 @@ export const mockTravelRequests: TravelRequest[] = [
     reportingManager: 'Michael Davis',
     priority: 'Medium',
     projectCode: 'PRJ006',
+    travelAgency: "TA-2",
+    airline: "IndiGo",
     timeline: [
       {
         id: 'TL-001',
@@ -459,6 +467,8 @@ export const mockTravelRequests: TravelRequest[] = [
     reportingManager: 'Jennifer Lee',
     priority: 'Low',
     projectCode: 'PRJ008',
+    travelAgency: "TA-3",
+    airline: "AirAsia",
     timeline: [
       {
         id: 'TL-001',
@@ -567,6 +577,8 @@ export const mockTravelRequests: TravelRequest[] = [
     reportingManager: 'Michael Davis',
     priority: 'Medium',
     projectCode: 'PRJ010',
+    travelAgency: "TA-4",
+    airline: "AirIndia",
     timeline: [
       {
         id: 'TL-001',
@@ -667,6 +679,8 @@ export const mockTravelRequests: TravelRequest[] = [
     reportingManager: 'David Wilson',
     priority: 'Medium',
     projectCode: 'PRJ012',
+    travelAgency: "TA-1",
+    airline: "Delta Airlines",
     timeline: [
       {
         id: 'TL-001',
