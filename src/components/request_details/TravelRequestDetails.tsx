@@ -10,6 +10,7 @@ import TravelRequestInfo from './TravelRequestInfo';
 import ApprovalTimeline from './ApprovalTimeline';
 import TravelInfo from './TravelInfo';
 import TicketComponent from './ticket_options/TicketOptionsComponent';
+import TravelInfoBanner from './TravelInfoBanner';
  
 const TravelRequestDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -100,6 +101,10 @@ const TravelRequestDetails: React.FC = () => {
             Export
           </button>
         </div>
+      </div>
+
+      <div>
+        <TravelInfoBanner travelRequest={travelRequest} />
       </div>
      
       <div className="grid grid-cols-2 lg:grid-cols-2 gap-4 h-auto">
