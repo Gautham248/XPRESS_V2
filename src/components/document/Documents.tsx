@@ -1,4 +1,4 @@
-import React, { useState, useReducer } from 'react';
+import React, { useState, useReducer, useEffect } from 'react';
 import DocumentTabs from './DocumentTabs';
 import DocumentForm from './DocumentForm';
 import DocumentList from './DocumentList';
@@ -51,22 +51,34 @@ const formReducer = (state: DocumentState, action: Action): DocumentState => {
 
 function Documents() {
   const [activeTab, setActiveTab] = useState<DocumentType>('passport');
-  const [selectedFile, setSelectedFile] = useState<File | null | undefined>(null);
+  const [selectedFiles, setSelectedFiles] = useState<Record<DocumentType, File | null>>({
+    passport: null,
+    visa: null,
+    identification: null,
+  });
   const [state, dispatch] = useReducer(formReducer, initialState);
   const [showValidation, setShowValidation] = useState(false);
 
+  useEffect(() => {
+    setShowValidation(false);
+  }, [activeTab]);
+
   const handleUpload = (e: React.FormEvent) => {
     e.preventDefault();
-    setShowValidation(true); // Trigger validation
+    setShowValidation(true);
 
-    if (!selectedFile) {
-      return; // Prevent submission if no file is selected
+    if (!selectedFiles[activeTab]) {
+      return;
     }
 
-    console.log('Uploading document:', selectedFile, 'Form data:', state[activeTab]);
+    console.log('Uploading document:', selectedFiles[activeTab], 'Form data:', state[activeTab]);
     dispatch({ type: 'RESET_FORM', docType: activeTab });
-    setSelectedFile(null);
-    setShowValidation(false); // Reset validation after submission
+    setSelectedFiles((prev) => ({ ...prev, [activeTab]: null }));
+    setShowValidation(false);
+  };
+
+  const handleFileSelect = (file: File | null) => {
+    setSelectedFiles((prev) => ({ ...prev, [activeTab]: file }));
   };
 
   return (
@@ -80,18 +92,22 @@ function Documents() {
           <div className="space-y-6">
             <div>
               <h3 className="text-lg font-semibold text-gray-800 mb-4">Upload New Document</h3>
-              <FileUploader onFileSelect={setSelectedFile} showValidation={showValidation} />
+              <FileUploader
+                onFileSelect={handleFileSelect}
+                showValidation={showValidation}
+                selectedFile={selectedFiles[activeTab]}
+              />
             </div>
             <DocumentForm docType={activeTab} formState={state[activeTab]} dispatch={dispatch} />
             <div className="flex justify-end">
               <button
                 type="submit"
                 className={`px-4 py-2 rounded-md text-white transition-colors ${
-                  selectedFile
+                  selectedFiles[activeTab]
                     ? 'bg-blue-600 hover:bg-blue-700'
                     : 'bg-gray-400 cursor-not-allowed'
                 }`}
-                disabled={!selectedFile}
+                disabled={!selectedFiles[activeTab]}
               >
                 Upload Document
               </button>
@@ -99,7 +115,7 @@ function Documents() {
           </div>
         </form>
         <DocumentList docType={activeTab} />
-      </div>
+      </div>               
     </div>
   );
 }

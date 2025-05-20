@@ -17,45 +17,44 @@ export interface TravelRequest {
   reportingManager: string;
   priority: 'Low' | 'Medium' | 'High';
   projectCode: string;
+  travelAgency?: string;
+  airline?: string;
   timeline?: TimelineEvent[];
 }
 
 export interface TimelineEvent {
   id: string;
-  type: 'submission' | 'approval' | 'rejection' | 'modification' | 'completion' | 'managerApproval' | 'duHeadApproval' | 'ticketsSelected' | 'ticketsDispatched' | 'inTransit' | 'returned' | 'closed';
+  type: 'pending' | 'Approved' | 'Rejected' | 'Modified' | 'Completed' | 'Manager Approved' | 'DU Head Approved' | 'Tickets Selected' | 'Tickets Dispatched' | 'In-transit' | 'Returned' | 'Closed';
   date: string;
   actor: string;
   description: string;
   details?: string;
 }
 
-// Ticket Options interface
 export interface TicketOption {
   id: string;
   description: string;
   selected: boolean;
 }
 
-
 export const dummyTicketOptions = [
   {
     id: 'option-1',
-    description: 'MH 117, TRV-KUL, 31 MAR 00:05 - 31 MAR 06:45',
+    description: 'MH 117, TRV-KUL, 31 MAR 2025 00:05 - 31 MAR 2025 06:45',
     selected: false
   },
   {
     id: 'option-2',
-    description: 'AH 21, TRV-KUL, 31 MAR 01:30 - 31 MAR 08:00',
+    description: 'AH 21, TRV-KUL, 31 MAR 2025 01:30 - 31 MAR 2025 08:00',
     selected: false
   },
   {
     id: 'option-3',
-    description: 'NM 318, TRV-KUL, 30 MAR 11:45 - 31 MAR 05:05',
+    description: 'NM 318, TRV-KUL, 30 MAR 2025 11:45 - 31 MAR 2025 05:05',
     selected: true
   }
 ];
 
-// Helper function to get status color
 export const getStatusColor = (status: string) => {
   switch (status) {
     case 'Pending':
@@ -87,7 +86,7 @@ export const getStatusColor = (status: string) => {
 
 export const mockTravelRequests: TravelRequest[] = [
   {
-    id: 'TR-2023-001',
+    id: 'TR-2025-001',
     travelerName: 'John Smith',
     travelType: 'Domestic',
     departureDate: '2025-02-15',
@@ -99,7 +98,7 @@ export const mockTravelRequests: TravelRequest[] = [
     estimatedCost: 2500,
     transportationType: 'Flight',
     accommodationType: 'Hotel',
-    requestDate: '2023-05-20',
+    requestDate: '2025-01-10',
     departmentCode: 'MKT-01',
     managerName: 'Sarah Parker',
     reportingManager: 'Sarah Parker',
@@ -108,24 +107,24 @@ export const mockTravelRequests: TravelRequest[] = [
     timeline: [
       {
         id: 'TL-001',
-        type: 'submission',
-        date: '2023-05-20T09:30:00',
+        type: 'pending',
+        date: '2025-01-10T09:30:00',
         actor: 'John Smith',
         description: 'Travel request submitted',
         details: 'Initial submission for Marketing Conference'
       },
       {
         id: 'TL-002',
-        type: 'modification',
-        date: '2023-05-21T14:15:00',
+        type: 'Modified',
+        date: '2025-01-11T14:15:00',
         actor: 'John Smith',
         description: 'Updated accommodation details',
         details: 'Changed hotel preference to Marriott'
       },
       {
         id: 'TL-003',
-        type: 'managerApproval',
-        date: '2023-05-22T10:00:00',
+        type: 'Manager Approved',
+        date: '2025-01-12T10:00:00',
         actor: 'Sarah Parker',
         description: 'Request approved by manager',
         details: 'Approved with standard travel policy compliance'
@@ -133,7 +132,7 @@ export const mockTravelRequests: TravelRequest[] = [
     ]
   },
   {
-    id: 'TR-2023-002',
+    id: 'TR-2025-002',
     travelerName: 'Emily Johnson',
     travelType: 'International',
     departureDate: '2025-03-10',
@@ -145,7 +144,7 @@ export const mockTravelRequests: TravelRequest[] = [
     estimatedCost: 4800,
     transportationType: 'Flight',
     accommodationType: 'Hotel',
-    requestDate: '2023-06-01',
+    requestDate: '2025-02-01',
     departmentCode: 'SLS-03',
     managerName: 'Michael Davis',
     reportingManager: 'Michael Davis',
@@ -154,32 +153,32 @@ export const mockTravelRequests: TravelRequest[] = [
     timeline: [
       {
         id: 'TL-001',
-        type: 'submission',
-        date: '2023-06-01T11:20:00',
+        type: 'pending',
+        date: '2025-02-01T11:20:00',
         actor: 'Emily Johnson',
         description: 'Travel request submitted',
         details: 'Initial submission for London client meeting'
       },
       {
         id: 'TL-002',
-        type: 'modification',
-        date: '2023-06-02T09:45:00',
+        type: 'Modified',
+        date: '2025-02-02T09:45:00',
         actor: 'Emily Johnson',
         description: 'Updated cost estimation',
         details: 'Adjusted budget due to currency exchange rates'
       },
       {
         id: 'TL-003',
-        type: 'managerApproval',
-        date: '2023-06-03T14:00:00',
+        type: 'Manager Approved',
+        date: '2025-02-03T14:00:00',
         actor: 'Michael Davis',
         description: 'Request approved by manager',
         details: 'Approved with budget adjustments'
       },
       {
         id: 'TL-004',
-        type: 'ticketsSelected',
-        date: '2023-06-04T09:00:00',
+        type: 'Tickets Selected',
+        date: '2025-02-04T09:00:00',
         actor: 'Emily Johnson',
         description: 'Tickets selected',
         details: 'Selected flights for London trip'
@@ -187,7 +186,7 @@ export const mockTravelRequests: TravelRequest[] = [
     ]
   },
   {
-    id: 'TR-2023-003',
+    id: 'TR-2025-003',
     travelerName: 'Robert Chen',
     travelType: 'Domestic',
     departureDate: '2025-02-25',
@@ -199,41 +198,43 @@ export const mockTravelRequests: TravelRequest[] = [
     estimatedCost: 1200,
     transportationType: 'Train',
     accommodationType: 'Hotel',
-    requestDate: '2023-05-28',
+    requestDate: '2025-01-15',
     departmentCode: 'SLS-02',
     managerName: 'Sarah Parker',
     reportingManager: 'Sarah Parker',
     priority: 'Medium',
     projectCode: 'PRJ003',
+    travelAgency: "TA-1",
+    airline: "AirIndia",
     timeline: [
       {
         id: 'TL-001',
-        type: 'submission',
-        date: '2023-05-28T10:00:00',
+        type: 'pending',
+        date: '2025-01-15T10:00:00',
         actor: 'Robert Chen',
         description: 'Travel request submitted',
         details: 'Initial submission for Regional Sales Meeting'
       },
       {
         id: 'TL-002',
-        type: 'managerApproval',
-        date: '2023-05-29T15:30:00',
+        type: 'Manager Approved',
+        date: '2025-01-16T15:30:00',
         actor: 'Sarah Parker',
         description: 'Request approved by manager',
         details: 'Approved with standard policy compliance'
       },
       {
         id: 'TL-003',
-        type: 'ticketsSelected',
-        date: '2023-05-30T09:00:00',
+        type: 'Tickets Selected',
+        date: '2025-01-17T09:00:00',
         actor: 'Robert Chen',
         description: 'Tickets selected',
         details: 'Selected train tickets for Chicago'
       },
       {
         id: 'TL-004',
-        type: 'ticketsDispatched',
-        date: '2023-05-31T11:00:00',
+        type: 'Tickets Dispatched',
+        date: '2025-01-18T11:00:00',
         actor: 'Travel Desk',
         description: 'Tickets dispatched',
         details: 'Train tickets dispatched to traveler'
@@ -241,11 +242,11 @@ export const mockTravelRequests: TravelRequest[] = [
     ]
   },
   {
-    id: 'TR-2023-004',
+    id: 'TR-2025-004',
     travelerName: 'Lisa Wong',
     travelType: 'International',
-    departureDate: '2025-04-05',
-    returnDate: '2025-04-12',
+    departureDate: '2025-03-05',
+    returnDate: '2025-03-12',
     source: 'San Francisco, CA',
     destination: 'Tokyo, Japan',
     purpose: 'Product Launch',
@@ -253,7 +254,7 @@ export const mockTravelRequests: TravelRequest[] = [
     estimatedCost: 6500,
     transportationType: 'Flight',
     accommodationType: 'Hotel',
-    requestDate: '2023-06-10',
+    requestDate: '2025-02-10',
     departmentCode: 'PRD-05',
     managerName: 'David Wilson',
     reportingManager: 'David Wilson',
@@ -262,32 +263,32 @@ export const mockTravelRequests: TravelRequest[] = [
     timeline: [
       {
         id: 'TL-001',
-        type: 'submission',
-        date: '2023-06-10T08:00:00',
+        type: 'pending',
+        date: '2025-02-10T08:00:00',
         actor: 'Lisa Wong',
         description: 'Travel request submitted',
         details: 'Initial submission for Product Launch in Tokyo'
       },
       {
         id: 'TL-002',
-        type: 'modification',
-        date: '2023-06-11T13:00:00',
+        type: 'Modified',
+        date: '2025-02-11T13:00:00',
         actor: 'Lisa Wong',
         description: 'Updated travel dates',
         details: 'Extended return date by 2 days'
       },
       {
         id: 'TL-003',
-        type: 'managerApproval',
-        date: '2023-06-12T10:00:00',
+        type: 'Manager Approved',
+        date: '2025-02-12T10:00:00',
         actor: 'David Wilson',
         description: 'Request approved by manager',
         details: 'Approved with extended travel dates'
       },
       {
         id: 'TL-004',
-        type: 'duHeadApproval',
-        date: '2023-06-13T09:00:00',
+        type: 'DU Head Approved',
+        date: '2025-02-13T09:00:00',
         actor: 'David Wilson',
         description: 'Request approved by DU Head',
         details: 'Final approval for international travel'
@@ -295,7 +296,7 @@ export const mockTravelRequests: TravelRequest[] = [
     ]
   },
   {
-    id: 'TR-2023-005',
+    id: 'TR-2025-005',
     travelerName: 'Michael Taylor',
     travelType: 'Domestic',
     departureDate: '2025-03-20',
@@ -307,7 +308,7 @@ export const mockTravelRequests: TravelRequest[] = [
     estimatedCost: 1800,
     transportationType: 'Flight',
     accommodationType: 'Airbnb',
-    requestDate: '2023-06-15',
+    requestDate: '2025-02-15',
     departmentCode: 'IT-02',
     managerName: 'Jennifer Lee',
     reportingManager: 'Jennifer Lee',
@@ -316,16 +317,16 @@ export const mockTravelRequests: TravelRequest[] = [
     timeline: [
       {
         id: 'TL-001',
-        type: 'submission',
-        date: '2023-06-15T09:00:00',
+        type: 'pending',
+        date: '2025-02-15T09:00:00',
         actor: 'Michael Taylor',
         description: 'Travel request submitted',
         details: 'Initial submission for Tech Conference'
       },
       {
         id: 'TL-002',
-        type: 'rejection',
-        date: '2023-06-16T14:00:00',
+        type: 'Rejected',
+        date: '2025-02-16T14:00:00',
         actor: 'Jennifer Lee',
         description: 'Request rejected by manager',
         details: 'Rejected due to budget constraints'
@@ -333,11 +334,11 @@ export const mockTravelRequests: TravelRequest[] = [
     ]
   },
   {
-    id: 'TR-2023-006',
+    id: 'TR-2025-006',
     travelerName: 'Samantha Davis',
-    travelType: 'Domestic',
+    travelType: 'International',
     departureDate: '2025-02-20',
-    returnDate: '2025-02-22',
+    returnDate: '2025-02-27',
     source: 'Houston, TX',
     destination: 'Miami, FL',
     purpose: 'Client Meeting',
@@ -345,65 +346,67 @@ export const mockTravelRequests: TravelRequest[] = [
     estimatedCost: 1500,
     transportationType: 'Flight',
     accommodationType: 'Hotel',
-    requestDate: '2023-05-25',
+    requestDate: '2025-01-05',
     departmentCode: 'SLS-01',
     managerName: 'Michael Davis',
     reportingManager: 'Michael Davis',
     priority: 'Medium',
     projectCode: 'PRJ006',
+    travelAgency: "TA-2",
+    airline: "IndiGo",
     timeline: [
       {
         id: 'TL-001',
-        type: 'submission',
-        date: '2023-05-25T10:00:00',
+        type: 'pending',
+        date: '2025-01-05T10:00:00',
         actor: 'Samantha Davis',
         description: 'Travel request submitted',
         details: 'Initial submission for Client Meeting'
       },
       {
         id: 'TL-002',
-        type: 'managerApproval',
-        date: '2023-05-26T15:00:00',
+        type: 'Manager Approved',
+        date: '2025-01-06T15:00:00',
         actor: 'Michael Davis',
         description: 'Request approved by manager',
         details: 'Approved for client meeting'
       },
       {
         id: 'TL-003',
-        type: 'ticketsSelected',
-        date: '2023-05-27T09:00:00',
+        type: 'Tickets Selected',
+        date: '2025-01-07T09:00:00',
         actor: 'Samantha Davis',
         description: 'Tickets selected',
         details: 'Selected flights to Miami'
       },
       {
         id: 'TL-004',
-        type: 'ticketsDispatched',
-        date: '2023-05-28T11:00:00',
+        type: 'Tickets Dispatched',
+        date: '2025-01-08T11:00:00',
         actor: 'Travel Desk',
         description: 'Tickets dispatched',
         details: 'Flight tickets dispatched to traveler'
       },
       {
         id: 'TL-005',
-        type: 'inTransit',
-        date: '2023-06-30T08:00:00',
+        type: 'In-transit',
+        date: '2025-02-20T08:00:00',
         actor: 'System',
         description: 'Traveler in transit',
         details: 'Departed for Miami'
       },
       {
         id: 'TL-006',
-        type: 'returned',
-        date: '2023-07-02T18:00:00',
+        type: 'Returned',
+        date: '2025-02-27T18:00:00',
         actor: 'System',
         description: 'Traveler returned',
         details: 'Returned from Miami'
       },
       {
         id: 'TL-007',
-        type: 'closed',
-        date: '2023-07-03T09:00:00',
+        type: 'Closed',
+        date: '2025-02-28T09:00:00',
         actor: 'Michael Davis',
         description: 'Request closed',
         details: 'Travel request closed after completion'
@@ -411,11 +414,11 @@ export const mockTravelRequests: TravelRequest[] = [
     ]
   },
   {
-    id: 'TR-2023-007',
+    id: 'TR-2025-007',
     travelerName: 'David Wilson',
     travelType: 'International',
-    departureDate: '2025-05-10',
-    returnDate: '2025-05-15',
+    departureDate: '2025-03-10',
+    returnDate: '2025-03-15',
     source: 'Chicago, IL',
     destination: 'Paris, France',
     purpose: 'Industry Exhibition',
@@ -423,7 +426,7 @@ export const mockTravelRequests: TravelRequest[] = [
     estimatedCost: 4200,
     transportationType: 'Flight',
     accommodationType: 'Hotel',
-    requestDate: '2023-06-20',
+    requestDate: '2025-02-20',
     departmentCode: 'MKT-03',
     managerName: 'Sarah Parker',
     reportingManager: 'Sarah Parker',
@@ -432,8 +435,8 @@ export const mockTravelRequests: TravelRequest[] = [
     timeline: [
       {
         id: 'TL-001',
-        type: 'submission',
-        date: '2023-06-20T09:00:00',
+        type: 'pending',
+        date: '2025-02-20T09:00:00',
         actor: 'David Wilson',
         description: 'Travel request submitted',
         details: 'Initial submission for Industry Exhibition'
@@ -441,7 +444,7 @@ export const mockTravelRequests: TravelRequest[] = [
     ]
   },
   {
-    id: 'TR-2023-008',
+    id: 'TR-2025-008',
     travelerName: 'James Brown',
     travelType: 'Domestic',
     departureDate: '2025-03-05',
@@ -453,49 +456,51 @@ export const mockTravelRequests: TravelRequest[] = [
     estimatedCost: 1350,
     transportationType: 'Train',
     accommodationType: 'Hotel',
-    requestDate: '2023-06-05',
+    requestDate: '2025-02-05',
     departmentCode: 'HR-01',
     managerName: 'Jennifer Lee',
     reportingManager: 'Jennifer Lee',
     priority: 'Low',
     projectCode: 'PRJ008',
+    travelAgency: "TA-3",
+    airline: "AirAsia",
     timeline: [
       {
         id: 'TL-001',
-        type: 'submission',
-        date: '2023-06-05T10:00:00',
+        type: 'pending',
+        date: '2025-02-05T10:00:00',
         actor: 'James Brown',
         description: 'Travel request submitted',
         details: 'Initial submission for Training Workshop'
       },
       {
         id: 'TL-002',
-        type: 'managerApproval',
-        date: '2023-06-06T14:00:00',
+        type: 'Manager Approved',
+        date: '2025-02-06T14:00:00',
         actor: 'Jennifer Lee',
         description: 'Request approved by manager',
         details: 'Approved for training workshop'
       },
       {
         id: 'TL-003',
-        type: 'ticketsSelected',
-        date: '2023-06-07T09:00:00',
+        type: 'Tickets Selected',
+        date: '2025-02-07T09:00:00',
         actor: 'James Brown',
         description: 'Tickets selected',
         details: 'Selected train tickets to Boston'
       },
       {
         id: 'TL-004',
-        type: 'ticketsDispatched',
-        date: '2023-06-08T11:00:00',
+        type: 'Tickets Dispatched',
+        date: '2025-02-08T11:00:00',
         actor: 'Travel Desk',
         description: 'Tickets dispatched',
         details: 'Train tickets dispatched to traveler'
       },
       {
         id: 'TL-005',
-        type: 'inTransit',
-        date: '2023-07-05T08:00:00',
+        type: 'In-transit',
+        date: '2025-03-05T08:00:00',
         actor: 'System',
         description: 'Traveler in transit',
         details: 'Departed for Boston'
@@ -503,11 +508,11 @@ export const mockTravelRequests: TravelRequest[] = [
     ]
   },
   {
-    id: 'TR-2023-009',
+    id: 'TR-2025-009',
     travelerName: 'Alex Martinez',
     travelType: 'International',
-    departureDate: '2025-04-15',
-    returnDate: '2025-04-20',
+    departureDate: '2025-03-15',
+    returnDate: '2025-03-20',
     source: 'Miami, FL',
     destination: 'Berlin, Germany',
     purpose: 'Technology Summit',
@@ -515,7 +520,7 @@ export const mockTravelRequests: TravelRequest[] = [
     estimatedCost: 3800,
     transportationType: 'Flight',
     accommodationType: 'Hotel',
-    requestDate: '2023-06-25',
+    requestDate: '2025-02-25',
     departmentCode: 'IT-01',
     managerName: 'David Wilson',
     reportingManager: 'David Wilson',
@@ -524,24 +529,24 @@ export const mockTravelRequests: TravelRequest[] = [
     timeline: [
       {
         id: 'TL-001',
-        type: 'submission',
-        date: '2023-06-25T09:00:00',
+        type: 'pending',
+        date: '2025-02-25T09:00:00',
         actor: 'Alex Martinez',
         description: 'Travel request submitted',
         details: 'Initial submission for Technology Summit'
       },
       {
         id: 'TL-002',
-        type: 'managerApproval',
-        date: '2023-06-26T14:00:00',
+        type: 'Manager Approved',
+        date: '2025-02-26T14:00:00',
         actor: 'David Wilson',
         description: 'Request approved by manager',
         details: 'Approved for Technology Summit'
       },
       {
         id: 'TL-003',
-        type: 'ticketsSelected',
-        date: '2023-06-27T09:00:00',
+        type: 'Tickets Selected',
+        date: '2025-02-27T09:00:00',
         actor: 'Alex Martinez',
         description: 'Tickets selected',
         details: 'Selected flights to Berlin'
@@ -549,7 +554,7 @@ export const mockTravelRequests: TravelRequest[] = [
     ]
   },
   {
-    id: 'TR-2023-010',
+    id: 'TR-2025-010',
     travelerName: 'Jennifer Lee',
     travelType: 'Domestic',
     departureDate: '2025-03-12',
@@ -561,57 +566,59 @@ export const mockTravelRequests: TravelRequest[] = [
     estimatedCost: 1600,
     transportationType: 'Flight',
     accommodationType: 'Airbnb',
-    requestDate: '2023-06-12',
+    requestDate: '2025-02-12',
     departmentCode: 'HR-02',
     managerName: 'Michael Davis',
     reportingManager: 'Michael Davis',
     priority: 'Medium',
     projectCode: 'PRJ010',
+    travelAgency: "TA-4",
+    airline: "AirIndia",
     timeline: [
       {
         id: 'TL-001',
-        type: 'submission',
-        date: '2023-06-12T09:00:00',
+        type: 'pending',
+        date: '2025-02-12T09:00:00',
         actor: 'Jennifer Lee',
         description: 'Travel request submitted',
         details: 'Initial submission for Team Building Retreat'
       },
       {
         id: 'TL-002',
-        type: 'managerApproval',
-        date: '2023-06-13T14:00:00',
+        type: 'Manager Approved',
+        date: '2025-02-13T14:00:00',
         actor: 'Michael Davis',
         description: 'Request approved by manager',
         details: 'Approved for team building retreat'
       },
       {
         id: 'TL-003',
-        type: 'ticketsSelected',
-        date: '2023-06-14T09:00:00',
+        type: 'Tickets Selected',
+        date: '2025-02-14T09:00:00',
         actor: 'Jennifer Lee',
         description: 'Tickets selected',
         details: 'Selected flights to Denver'
       },
       {
         id: 'TL-004',
-        type: 'ticketsDispatched',
-        date: '2023-06-15T11:00:00',
+        type: 'Tickets Dispatched',
+        date: '2025-02-15T11:00:00',
         actor: 'Travel Desk',
         description: 'Tickets dispatched',
         details: 'Flight tickets dispatched to traveler'
       },
       {
         id: 'TL-005',
-        type: 'inTransit',
-        date: '2023-07-12T08:00:00',
+        type: 'In-transit',
+        date: '2025-03-12T08:00:00',
         actor: 'System',
         description: 'Traveler in transit',
         details: 'Departed for Denver'
       },
       {
         id: 'TL-006',
-        type: 'returned',
-        date: '2023-07-14T18:00:00',
+        type: 'Returned',
+        date: '2025-03-14T18:00:00',
         actor: 'System',
         description: 'Traveler returned',
         details: 'Returned from Denver'
@@ -619,11 +626,11 @@ export const mockTravelRequests: TravelRequest[] = [
     ]
   },
   {
-    id: 'TR-2023-011',
+    id: 'TR-2025-011',
     travelerName: 'Sophie Miller',
     travelType: 'International',
-    departureDate: '2025-05-05',
-    returnDate: '2025-05-12',
+    departureDate: '2025-03-05',
+    returnDate: '2025-03-12',
     source: 'Los Angeles, CA',
     destination: 'Sydney, Australia',
     purpose: 'Global Partners Meeting',
@@ -631,7 +638,7 @@ export const mockTravelRequests: TravelRequest[] = [
     estimatedCost: 7200,
     transportationType: 'Flight',
     accommodationType: 'Hotel',
-    requestDate: '2023-06-28',
+    requestDate: '2025-02-28',
     departmentCode: 'BIZ-01',
     managerName: 'Sarah Parker',
     reportingManager: 'Sarah Parker',
@@ -640,8 +647,8 @@ export const mockTravelRequests: TravelRequest[] = [
     timeline: [
       {
         id: 'TL-001',
-        type: 'submission',
-        date: '2023-06-28T09:00:00',
+        type: 'pending',
+        date: '2025-02-28T09:00:00',
         actor: 'Sophie Miller',
         description: 'Travel request submitted',
         details: 'Initial submission for Global Partners Meeting'
@@ -649,7 +656,7 @@ export const mockTravelRequests: TravelRequest[] = [
     ]
   },
   {
-    id: 'TR-2023-012',
+    id: 'TR-2025-012',
     travelerName: 'William Jackson',
     travelType: 'Domestic',
     departureDate: '2025-03-25',
@@ -661,41 +668,43 @@ export const mockTravelRequests: TravelRequest[] = [
     estimatedCost: 1900,
     transportationType: 'Flight',
     accommodationType: 'Hotel',
-    requestDate: '2023-06-15',
+    requestDate: '2025-02-15',
     departmentCode: 'ENG-02',
     managerName: 'David Wilson',
     reportingManager: 'David Wilson',
     priority: 'Medium',
     projectCode: 'PRJ012',
+    travelAgency: "TA-1",
+    airline: "Delta Airlines",
     timeline: [
       {
         id: 'TL-001',
-        type: 'submission',
-        date: '2023-06-15T09:00:00',
+        type: 'pending',
+        date: '2025-02-15T09:00:00',
         actor: 'William Jackson',
         description: 'Travel request submitted',
         details: 'Initial submission for Industry Conference'
       },
       {
         id: 'TL-002',
-        type: 'managerApproval',
-        date: '2023-06-16T14:00:00',
+        type: 'Manager Approved',
+        date: '2025-02-16T14:00:00',
         actor: 'David Wilson',
         description: 'Request approved by manager',
         details: 'Approved for industry conference'
       },
       {
         id: 'TL-003',
-        type: 'ticketsSelected',
-        date: '2023-06-17T09:00:00',
+        type: 'Tickets Selected',
+        date: '2025-02-17T09:00:00',
         actor: 'William Jackson',
         description: 'Tickets selected',
         details: 'Selected flights to Seattle'
       },
       {
         id: 'TL-004',
-        type: 'ticketsDispatched',
-        date: '2023-06-18T11:00:00',
+        type: 'Tickets Dispatched',
+        date: '2025-02-18T11:00:00',
         actor: 'Travel Desk',
         description: 'Tickets dispatched',
         details: 'Flight tickets dispatched to traveler'
@@ -703,7 +712,6 @@ export const mockTravelRequests: TravelRequest[] = [
     ]
   }
 ];
-
 
 export interface DashboardStat {
   label: string;
@@ -749,30 +757,30 @@ export interface UpcomingTrip {
 
 export const upcomingTrips: UpcomingTrip[] = [
   {
-    id: 'TR-2023-002',
+    id: 'TR-2025-002',
     destination: 'London, UK',
-    dates: 'Mar 10 - Mar 17',
+    dates: 'Mar 10 - Mar 17, 2025',
     traveler: 'Emily Johnson',
     status: 'Tickets Selected'
   },
   {
-    id: 'TR-2023-008',
+    id: 'TR-2025-008',
     destination: 'Boston, MA',
-    dates: 'Mar 05 - Mar 07',
+    dates: 'Mar 05 - Mar 07, 2025',
     traveler: 'James Brown',
     status: 'In-transit'
   },
   {
-    id: 'TR-2023-010',
+    id: 'TR-2025-010',
     destination: 'Denver, CO',
-    dates: 'Mar 12 - Mar 14',
+    dates: 'Mar 12 - Mar 14, 2025',
     traveler: 'Jennifer Lee',
     status: 'Returned'
   },
   {
-    id: 'TR-2023-012',
+    id: 'TR-2025-012',
     destination: 'Seattle, WA',
-    dates: 'Mar 25 - Mar 28',
+    dates: 'Mar 25 - Mar 28, 2025',
     traveler: 'William Jackson',
     status: 'Tickets Dispatched'
   }
@@ -785,12 +793,9 @@ export interface TravelExpense {
 }
 
 export const travelExpensesByMonth: TravelExpense[] = [
-  { month: 'Jan', domestic: 15200, international: 23400 },
-  { month: 'Feb', domestic: 12800, international: 18700 },
-  { month: 'Mar', domestic: 21300, international: 32500 },
-  { month: 'Apr', domestic: 18500, international: 27600 },
-  { month: 'May', domestic: 24700, international: 41200 },
-  { month: 'Jun', domestic: 28300, international: 38900 }
+  { month: 'Jan 2025', domestic: 15200, international: 23400 },
+  { month: 'Feb 2025', domestic: 12800, international: 18700 },
+  { month: 'Mar 2025', domestic: 21300, international: 32500 }
 ];
 
 export interface TopDestination {
