@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Plus, Upload, Edit, Trash, Save, X } from 'lucide-react';
 import { TicketOption } from '../../../data/mockData';
 
@@ -17,6 +17,7 @@ interface Props {
   onUploadOptions: () => void;
 }
 
+
 const AdminTicketOptionsView: React.FC<Props> = ({
   ticketOptions,
   newOption,
@@ -31,8 +32,23 @@ const AdminTicketOptionsView: React.FC<Props> = ({
   onChangeEditText,
   onUploadOptions,
 }) => {
+  const [agencyName, setAgencyName] = useState('');
   return (
     <div className="space-y-6">
+      {/* Travel Agency Name Input */}
+      <div>
+        <h5 className="text-md font-medium mb-2">Travel Agency:</h5>
+        <input
+          type="text"
+          placeholder="Enter travel agency name"
+          className="w-full p-2 mb-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+          value={agencyName}
+          onChange={(e) => setAgencyName(e.target.value)}
+        />
+      </div>
+      <hr />
+      <h5 className="text-md font-medium">Ticket Option:</h5>
+
       <div>
         <textarea
           className="w-full p-3 border rounded-md"
