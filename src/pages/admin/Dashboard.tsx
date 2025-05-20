@@ -42,9 +42,9 @@ const Dashboard: React.FC = () => {
   const [tableHeight, setTableHeight] = useState<number>(0);
   const [columnWidths, setColumnWidths] = useState<ColumnWidth>({
     tick: 80,
-    actions: 200,
-    status: 120,
-    type: 120,
+    actions: 150,
+    status: 150,
+    type: 150,
     traveler: 150,
     travelDates: 200,
     manager: 150
@@ -304,29 +304,29 @@ const Dashboard: React.FC = () => {
                     </td>
                     <td style={getColumnStyle('actions')} className="border-b border-gray-200 relative">
                       <div className="px-4 py-4 whitespace-nowrap">
-                        <div className="flex space-x-1">
+                        <div className="flex space-x-2">
                           <button
-                            className="inline-flex items-center px-2 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-md text-xs font-medium shadow-sm transition-colors duration-200"
+                            className="inline-flex items-center justify-center w-8 h-8 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-md shadow-sm transition-colors duration-200"
                             onClick={(e) => handleViewClick(request, e)}
+                            title="View"
                           >
-                            <Eye className="h-3 w-3 mr-1" />
-                            View
+                            <Eye className="h-4 w-4" />
                           </button>
                           {request.status === 'Pending' && (
                             <>
                               <button
-                                className="inline-flex items-center px-2 py-1 bg-green-50 hover:bg-green-100 text-green-700 border border-green-200 rounded-md text-xs font-medium shadow-sm transition-colors duration-200"
+                                className="inline-flex items-center justify-center w-8 h-8 bg-green-50 hover:bg-green-100 text-green-700 border border-green-200 rounded-md shadow-sm transition-colors duration-200"
                                 onClick={(e) => handleActionClick(e, 'approve', request)}
+                                title="Approve"
                               >
-                                <Check className="h-3 w-3 mr-1" />
-                                Approve
+                                <Check className="h-4 w-4" />
                               </button>
                               <button
-                                className="inline-flex items-center px-2 py-1 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-md text-xs font-medium shadow-sm transition-colors duration-200"
+                                className="inline-flex items-center justify-center w-8 h-8 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-md shadow-sm transition-colors duration-200"
                                 onClick={(e) => handleActionClick(e, 'reject', request)}
+                                title="Reject"
                               >
-                                <XIcon className="h-3 w-3 mr-1" />
-                                Reject
+                                <XIcon className="h-4 w-4" />
                               </button>
                             </>
                           )}

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 
@@ -12,7 +11,41 @@ interface AirlineDistributionChartProps {
 }
 
 const AirlineDistributionChart: React.FC<AirlineDistributionChartProps> = ({ chartData }) => {
-  const COLORS = ['#D8BFD8', '#FFC0CB', '#00CED1', '#FFA500'];
+  // Generate dynamic colors based on number of travel agencies
+  const generateColors = (count: number) => {
+    // Base set of vibrant colors
+    const baseColors = [
+      '#D8BFD8', // Light purple (AirIndia)
+      '#FFC0CB', // Pink (IndiGo)
+      '#00CED1', // Turquoise (AirAsia)
+      '#FFA500', // Orange (Delta Airlines)
+      '#98FB98', // Pale green
+      '#87CEEB', // Sky blue
+      '#FFD700', // Gold
+      '#FF6347', // Tomato
+      '#BA55D3', // Medium orchid
+      '#20B2AA', // Light sea green
+      '#4682B4', // Steel blue
+      '#FF4500'  // Orange red
+    ];
+    
+    // If we have more agencies than base colors, we'll generate additional colors
+    if (count <= baseColors.length) {
+      return baseColors.slice(0, count);
+    } else {
+      const extraColors = [];
+      for (let i = baseColors.length; i < count; i++) {
+        // Generate random colors if we need more than our base set
+        const hue = Math.floor(Math.random() * 360);
+        const saturation = 70 + Math.floor(Math.random() * 30); // 70-100%
+        const lightness = 45 + Math.floor(Math.random() * 25); // 45-70%
+        extraColors.push(`hsl(${hue}, ${saturation}%, ${lightness}%)`);
+      }
+      return [...baseColors, ...extraColors];
+    }
+  };
+  
+  const COLORS = generateColors(chartData.length);
   const totalTrips = chartData.reduce((sum, item) => sum + item.value, 0);
 
   // Custom renderer for the pie chart labels with explicit typing
@@ -40,14 +73,14 @@ const AirlineDistributionChart: React.FC<AirlineDistributionChartProps> = ({ cha
   return (
     <div className="bg-white rounded-lg p-6 shadow-sm">
       <div className="mb-4">
-        <h3 className="text-lg font-semibold text-gray-800">Airline Distribution</h3>
+        <h3 className="text-lg font-semibold text-gray-800">Flight Provider Insights</h3>
       </div>
 
       <div className="flex h-80">
         {/* Pie chart area - 75% width */}
         <div className="w-3/4 flex items-center justify-center">
           <ResponsiveContainer width="100%" height="100%">
-            <PieChart margin={{ right: 0 }}>
+            <PieChart>
               <Pie
                 data={chartData}
                 cx="50%"

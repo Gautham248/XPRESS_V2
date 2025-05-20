@@ -1,67 +1,92 @@
+import { useState } from 'react';
+
 interface BarChartItem {
   name: string;
   value: number;
 }
 
 interface TravelAgencyBarChartProps {
-  chartData: BarChartItem[];
+  chartData?: BarChartItem[];
 }
 
 const TravelAgencyBarChart: React.FC<TravelAgencyBarChartProps> = ({ chartData }) => {
-  // Dynamic Y-axis calculation
-  const maxValue = Math.max(...chartData.map(entry => entry.value), 1); // Ensure at least 1
-  const yAxisStep = Math.ceil(maxValue / 5); // Divide into 5 steps, round up
-  const yAxisMax = yAxisStep * 5; // Ensure we have 5 intervals
-  const yAxisLabels = Array.from({ length: 6 }, (_, i) => yAxisMax - i * yAxisStep); // Generate labels from max to 0
+  // Handle the case where chartData is undefined
+  if (!chartData || chartData.length === 0) {
+    return (
+      <div className="bg-white rounded-lg p-6 shadow-md w-full max-w-3xl mx-auto">
+        <div className="text-center text-gray-500">No data available</div>
+      </div>
+    );
+  }
 
+  // Dynamic Y-axis calculation based on data
+  const maxDataValue = Math.max(...chartData.map(item => item.value));
+  // Round up to next nice number - add 1 to ensure bars don't touch the top
+  const yAxisMax = Math.ceil(maxDataValue) + 1; 
+  
   // Calculate bar height scaling factor
-  const chartHeight = 300; // Adjusted height to account for labels above bars and legend below
+  const chartHeight = 220; // Chart area height
   const barHeightScale = chartHeight / yAxisMax; // Pixels per unit
 
   return (
-    <div className="bg-white rounded-lg p-6 shadow-sm">
-      <div className="mb-4">
-        <h3 className="text-lg font-semibold text-gray-800">Travel Agency Usage</h3>
+    <div className="bg-white rounded-lg p-6 shadow-md w-full max-w-3xl mx-auto">
+      <div className="mb-6">
+        <h2 className="text-xl font-bold text-gray-800 text-center">Agency Booking Metrics</h2>
       </div>
 
-      <div className="w-full h-80 relative">
-        {/* Y-axis labels and grid lines */}
-        <div className="absolute left-0 top-0 bottom-0 flex flex-col justify-between text-right pr-2 text-gray-500 text-xs">
-          {yAxisLabels.map((label, index) => (
-            <div key={index} className={index === 0 ? 'pt-0' : index === yAxisLabels.length - 1 ? 'pb-0' : ''}>
-              {label}
+      <div className="relative h-64">
+        {/* Y-axis line */}
+        <div className="absolute left-14 top-0 bottom-8 w-px bg-gray-300"></div>
+        
+        {/* Y-axis label */}
+        <div className="absolute -left-12 top-1/2 -rotate-90 transform text-sm font-medium text-gray-700">
+          Booking Count
+        </div>
+        
+        {/* Y-axis values and grid lines */}
+        <div className="absolute left-0 top-0 bottom-8 flex flex-col justify-between">
+          {Array.from({ length: yAxisMax + 1 }).map((_, i) => (
+            <div key={i} className="flex items-center">
+              <span className="text-xs font-medium text-gray-600 w-10 text-right pr-2">
+                {yAxisMax - i}
+              </span>
+              <div className="absolute left-14 right-0 h-px bg-gray-200"></div>
             </div>
           ))}
         </div>
         
-        {/* Grid lines */}
-        <div className="absolute left-10 right-0 top-0 bottom-4">
-          {yAxisLabels.map((_, i) => (
-            <div key={i} className="border-t border-gray-200" style={{ height: `${100 / (yAxisLabels.length - 1)}%` }}></div>
-          ))}
-        </div>
+        {/* X-axis line */}
+        <div className="absolute left-14 right-0 bottom-8 h-px bg-gray-300"></div>
+            {/* X-axis label */}
+   <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-sm font-medium text-gray-700">
+  Travel Agency
+</div>
+
         
         {/* Chart area with bars */}
-        <div className="absolute left-12 right-4 top-0 bottom-4 flex items-end justify-around">
+        <div className="absolute left-16 right-4 top-0 bottom-1 flex items-end justify-around">
           {chartData.map((entry, index) => (
-            <div key={index} className="flex flex-col items-center">
-              {/* Count label above the bar */}
-              <span className="text-sm font-medium text-gray-800 mb-1">{entry.value}</span>
+            <div key={index} className="flex flex-col items-center group">
+              {/* Value label above bar */}
+              <div className="text-sm font-semibold text-gray-700 mb-1">
+                {entry.value}
+              </div>
+              
               {/* Bar */}
               <div 
-                className={`w-12 ${index === 0 ? 'bg-purple-300' : index === 1 ? 'bg-pink-300' : index === 2 ? 'bg-cyan-300' : 'bg-orange-300'}`} 
+                className={`w-16 ${
+                  index === 0 ? 'bg-purple-400' : 
+                  index === 1 ? 'bg-pink-400' : 
+                  index === 2 ? 'bg-cyan-400' : 
+                  'bg-orange-400'
+                }`} 
                 style={{ height: `${entry.value * barHeightScale}px` }}
               ></div>
-            </div>
-          ))}
-        </div>
-        
-        {/* Legend below X-axis */}
-        <div className="absolute bottom-0 left-12 right-4 flex justify-around pt-20">
-          {chartData.map((entry, index) => (
-            <div key={index} className="flex items-center">
-              <div className={`w-3 h-3 mr-1 ${index === 0 ? 'bg-purple-300' : index === 1 ? 'bg-pink-300' : index === 2 ? 'bg-cyan-300' : 'bg-orange-300'}`}></div>
-              <span className="text-xs">{entry.name}</span>
+              
+              {/* X-axis label (agency name) directly below the x-axis */}
+              <div className="mt-2 text-sm font-medium text-gray-700">
+                {entry.name}
+              </div>
             </div>
           ))}
         </div>
