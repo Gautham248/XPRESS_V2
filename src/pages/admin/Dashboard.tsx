@@ -303,7 +303,7 @@ const Dashboard: React.FC = () => {
                       )}
                     </td>
                     <td style={getColumnStyle('actions')} className="border-b border-gray-200 relative">
-                      <div className="px-4 py-4 whitespace-nowrap">
+                      <div className="px-4 py-4 whitespace-nowrap overflow-hidden">
                         <div className="flex space-x-2">
                           <button
                             className="inline-flex items-center justify-center w-8 h-8 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-md shadow-sm transition-colors duration-200"
@@ -341,11 +341,12 @@ const Dashboard: React.FC = () => {
                       )}
                     </td>
                     <td style={getColumnStyle('status')} className="border-b border-gray-200 relative">
-                      <div className="px-4 py-4 whitespace-nowrap">
+                      <div className="px-4 py-4 whitespace-nowrap overflow-hidden">
                         <span
-                          className={`px-2 py-1 inline-flex text-xs leading-5 font-medium rounded-full ${getStatusColor(
+                          className={`px-2 py-1 inline-flex text-xs leading-5 font-medium rounded-full truncate ${getStatusColor(
                             request.status
                           )}`}
+                          title={request.status}
                         >
                           {request.status}
                         </span>
@@ -358,11 +359,12 @@ const Dashboard: React.FC = () => {
                       )}
                     </td>
                     <td style={getColumnStyle('type')} className="border-b border-gray-200 relative">
-                      <div className="px-4 py-4 whitespace-nowrap">
+                      <div className="px-4 py-4 whitespace-nowrap overflow-hidden">
                         <span
-                          className={`px-2 py-1 inline-flex text-xs leading-5 font-medium rounded-full ${getTypeColor(
+                          className={`px-2 py-1 inline-flex text-xs leading-5 font-medium rounded-full truncate ${getTypeColor(
                             request.travelType
                           )}`}
+                          title={request.travelType}
                         >
                           {request.travelType}
                         </span>
@@ -375,8 +377,10 @@ const Dashboard: React.FC = () => {
                       )}
                     </td>
                     <td style={getColumnStyle('traveler')} className="border-b border-gray-200 relative">
-                      <div className="px-4 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">{request.travelerName}</div>
+                      <div className="px-4 py-4 whitespace-nowrap overflow-hidden">
+                        <div className="text-sm font-medium text-gray-900 truncate" title={request.travelerName}>
+                          {request.travelerName}
+                        </div>
                       </div>
                       {index === tableData.length - 1 && (
                         <div 
@@ -386,8 +390,11 @@ const Dashboard: React.FC = () => {
                       )}
                     </td>
                     <td style={getColumnStyle('travelDates')} className="border-b border-gray-200 relative">
-                      <div className="px-4 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">
+                      <div className="px-4 py-4 whitespace-nowrap overflow-hidden">
+                        <div className="text-sm text-gray-900 truncate" 
+                          title={request.departureDate && request.returnDate
+                            ? `${formatDate(request.departureDate)} - ${formatDate(request.returnDate)}`
+                            : 'N/A'}>
                           {request.departureDate && request.returnDate
                             ? `${formatDate(request.departureDate)} - ${formatDate(request.returnDate)}`
                             : 'N/A'}
@@ -401,8 +408,10 @@ const Dashboard: React.FC = () => {
                       )}
                     </td>
                     <td style={getColumnStyle('manager')} className="border-b border-gray-200 relative">
-                      <div className="px-4 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{request.reportingManager || 'N/A'}</div>
+                      <div className="px-4 py-4 whitespace-nowrap overflow-hidden">
+                        <div className="text-sm text-gray-900 truncate" title={request.reportingManager || 'N/A'}>
+                          {request.reportingManager || 'N/A'}
+                        </div>
                       </div>
                       {index === tableData.length - 1 && (
                         <div 

@@ -98,14 +98,7 @@ const Reports: React.FC = () => {
       });
 
     // If no agency data is available, use sample data
-    if (Object.keys(agencyCounts).length === 0) {
-      return [
-        { name: 'TA-1', value: 2 },
-        { name: 'TA-2', value: 1 },
-        { name: 'TA-3', value: 1 },
-        { name: 'TA-4', value: 1 }
-      ];
-    }
+  
     
     return Object.entries(agencyCounts).map(([name, value]) => ({
       name,

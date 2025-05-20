@@ -1,20 +1,32 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
+import { ExternalLink } from 'lucide-react';
+import ReusableTable from './ReusableTable';
+import Modal from './Modal';
 
 interface PieChartItem {
   name: string;
   value: number;
 }
 
-interface AirlineDistributionChartProps {
-  chartData: PieChartItem[];
+interface TableDataItem {
+  airline: string;
+  trips: number;
+  percentage: string;
 }
 
-const AirlineDistributionChart: React.FC<AirlineDistributionChartProps> = ({ chartData }) => {
+interface AirlineDistributionChartProps {
+  chartData: PieChartItem[];
+  startDate?: string;
+  endDate?: string;
+}
+
+const AirlineDistributionChart: React.FC<AirlineDistributionChartProps> = ({ chartData, startDate, endDate }) => {
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  
   // Generate dynamic colors based on number of travel agencies
-  const generateColors = (count: number) => {
-    // Base set of vibrant colors
-    const baseColors = [
+  const generateColors = (count: number): string[] => {
+    const baseColors: string[] = [
       '#D8BFD8', // Light purple (AirIndia)
       '#FFC0CB', // Pink (IndiGo)
       '#00CED1', // Turquoise (AirAsia)
@@ -29,39 +41,42 @@ const AirlineDistributionChart: React.FC<AirlineDistributionChartProps> = ({ cha
       '#FF4500'  // Orange red
     ];
     
-    // If we have more agencies than base colors, we'll generate additional colors
     if (count <= baseColors.length) {
       return baseColors.slice(0, count);
     } else {
-      const extraColors = [];
+      const extraColors: string[] = [];
       for (let i = baseColors.length; i < count; i++) {
-        // Generate random colors if we need more than our base set
-        const hue = Math.floor(Math.random() * 360);
-        const saturation = 70 + Math.floor(Math.random() * 30); // 70-100%
-        const lightness = 45 + Math.floor(Math.random() * 25); // 45-70%
+        const hue: number = Math.floor(Math.random() * 360);
+        const saturation: number = 70 + Math.floor(Math.random() * 30);
+        const lightness: number = 45 + Math.floor(Math.random() * 25);
         extraColors.push(`hsl(${hue}, ${saturation}%, ${lightness}%)`);
       }
       return [...baseColors, ...extraColors];
     }
   };
   
-  const COLORS = generateColors(chartData.length);
-  const totalTrips = chartData.reduce((sum, item) => sum + item.value, 0);
+  const COLORS: string[] = generateColors(chartData.length);
+  const totalTrips: number = chartData.reduce((sum, item) => sum + item.value, 0);
 
-  // Custom renderer for the pie chart labels with explicit typing
-  const renderCustomizedLabel = (props: any) => {
+  const renderCustomizedLabel = (props: {
+    cx?: number;
+    cy?: number;
+    midAngle?: number;
+    innerRadius?: number;
+    outerRadius?: number;
+    value: number;
+  }) => {
     const { cx, cy, midAngle, innerRadius, outerRadius, value } = props;
     
-    // Handle potential undefined values
     if (cx === undefined || cy === undefined || midAngle === undefined || 
         innerRadius === undefined || outerRadius === undefined) {
       return null;
     }
     
-    const RADIAN = Math.PI / 180;
-    const radius = Number(innerRadius) + (Number(outerRadius) - Number(innerRadius)) * 0.5;
-    const x = Number(cx) + radius * Math.cos(-midAngle * RADIAN);
-    const y = Number(cy) + radius * Math.sin(-midAngle * RADIAN);
+    const RADIAN: number = Math.PI / 180;
+    const radius: number = Number(innerRadius) + (Number(outerRadius) - Number(innerRadius)) * 0.5;
+    const x: number = Number(cx) + radius * Math.cos(-midAngle * RADIAN);
+    const y: number = Number(cy) + radius * Math.sin(-midAngle * RADIAN);
 
     return (
       <text x={x} y={y} fill="black" textAnchor="middle" dominantBaseline="central" fontSize={14} fontWeight="bold">
@@ -70,14 +85,28 @@ const AirlineDistributionChart: React.FC<AirlineDistributionChartProps> = ({ cha
     );
   };
 
+  const tableHeaders: string[] = ["Airline", "Trips", "Percentage"];
+  const tableData: TableDataItem[] = chartData.map(item => ({
+    airline: item.name,
+    trips: item.value,
+    percentage: `${((item.value / totalTrips) * 100).toFixed(1)}%`
+  }));
+
   return (
     <div className="bg-white rounded-lg p-6 shadow-sm">
-      <div className="mb-4">
-        <h3 className="text-lg font-semibold text-gray-800">Flight Provider Insights</h3>
+      <div className="mb-4 flex justify-between items-center">
+        <div className="flex items-center">
+          <h3 className="text-lg font-semibold text-gray-800">Flight Provider Insights</h3>
+          <button 
+            onClick={() => setIsModalOpen(true)}
+            className="ml-2 text-blue-600 hover:text-blue-800"
+          >
+            <ExternalLink size={16} />
+          </button>
+        </div>
       </div>
 
       <div className="flex h-80">
-        {/* Pie chart area - 75% width */}
         <div className="w-3/4 flex items-center justify-center">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
@@ -104,7 +133,6 @@ const AirlineDistributionChart: React.FC<AirlineDistributionChartProps> = ({ cha
           </ResponsiveContainer>
         </div>
         
-        {/* Legend area - 25% width */}
         <div className="w-1/4 flex items-center">
           <div className="w-full">
             {chartData.map((entry, index) => (
@@ -119,6 +147,16 @@ const AirlineDistributionChart: React.FC<AirlineDistributionChartProps> = ({ cha
           </div>
         </div>
       </div>
+
+      <Modal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        title="Flight Provider Details"
+        startDate={startDate}
+        endDate={endDate}
+      >
+        <ReusableTable headers={tableHeaders} data={tableData} />
+      </Modal>
     </div>
   );
 };
