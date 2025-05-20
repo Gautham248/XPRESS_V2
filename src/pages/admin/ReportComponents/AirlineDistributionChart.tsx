@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 
@@ -12,7 +11,56 @@ interface AirlineDistributionChartProps {
 }
 
 const AirlineDistributionChart: React.FC<AirlineDistributionChartProps> = ({ chartData }) => {
-  const COLORS = ['#D8BFD8', '#FFC0CB', '#00CED1', '#FFA500'];
+  // Check if there's no data or empty array
+  if (!chartData || chartData.length === 0) {
+    return (
+      <div className="bg-white rounded-lg p-6 shadow-sm h-80 flex flex-col items-center justify-center">
+        <div className="text-gray-400">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+          </svg>
+        </div>
+        <h3 className="text-lg font-medium text-gray-800 mb-2">No airline data available</h3>
+        <p className="text-sm text-gray-500 text-center">No flight provider data is currently available to display.</p>
+      </div>
+    );
+  }
+
+  // Generate dynamic colors based on number of travel agencies
+  const generateColors = (count: number) => {
+    // Base set of vibrant colors
+    const baseColors = [
+      '#D8BFD8', // Light purple (AirIndia)
+      '#FFC0CB', // Pink (IndiGo)
+      '#00CED1', // Turquoise (AirAsia)
+      '#FFA500', // Orange (Delta Airlines)
+      '#98FB98', // Pale green
+      '#87CEEB', // Sky blue
+      '#FFD700', // Gold
+      '#FF6347', // Tomato
+      '#BA55D3', // Medium orchid
+      '#20B2AA', // Light sea green
+      '#4682B4', // Steel blue
+      '#FF4500'  // Orange red
+    ];
+    
+    // If we have more agencies than base colors, we'll generate additional colors
+    if (count <= baseColors.length) {
+      return baseColors.slice(0, count);
+    } else {
+      const extraColors = [];
+      for (let i = baseColors.length; i < count; i++) {
+        // Generate random colors if we need more than our base set
+        const hue = Math.floor(Math.random() * 360);
+        const saturation = 70 + Math.floor(Math.random() * 30); // 70-100%
+        const lightness = 45 + Math.floor(Math.random() * 25); // 45-70%
+        extraColors.push(`hsl(${hue}, ${saturation}%, ${lightness}%)`);
+      }
+      return [...baseColors, ...extraColors];
+    }
+  };
+  
+  const COLORS = generateColors(chartData.length);
   const totalTrips = chartData.reduce((sum, item) => sum + item.value, 0);
 
   // Custom renderer for the pie chart labels with explicit typing
@@ -40,14 +88,14 @@ const AirlineDistributionChart: React.FC<AirlineDistributionChartProps> = ({ cha
   return (
     <div className="bg-white rounded-lg p-6 shadow-sm">
       <div className="mb-4">
-        <h3 className="text-lg font-semibold text-gray-800">Airline Distribution</h3>
+        <h3 className="text-lg font-semibold text-gray-800">Flight Provider Insights</h3>
       </div>
 
       <div className="flex h-80">
         {/* Pie chart area - 75% width */}
         <div className="w-3/4 flex items-center justify-center">
           <ResponsiveContainer width="100%" height="100%">
-            <PieChart margin={{ right: 0 }}>
+            <PieChart>
               <Pie
                 data={chartData}
                 cx="50%"
