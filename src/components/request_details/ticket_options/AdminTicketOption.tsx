@@ -37,7 +37,7 @@ const AdminTicketOptionsView: React.FC<Props> = ({
     <div className="space-y-6">
       {/* Travel Agency Name Input */}
       <div>
-        <h5 className="text-md font-medium mb-2">Travel Agency:</h5>
+        <h5 className="text-sm text-muted-foreground mb-4">Travel Agency:</h5>
         <input
           type="text"
           placeholder="Enter travel agency name"
@@ -46,8 +46,7 @@ const AdminTicketOptionsView: React.FC<Props> = ({
           onChange={(e) => setAgencyName(e.target.value)}
         />
       </div>
-      <hr />
-      <h5 className="text-md font-medium">Ticket Option:</h5>
+      <h5 className="text-sm text-muted-foreground">Ticket Option:</h5>
 
       <div>
         <textarea
@@ -59,7 +58,7 @@ const AdminTicketOptionsView: React.FC<Props> = ({
         <div className='flex justify-between'>
           {ticketOptions.length > 0 ? (
             <button
-              className=" mt-2 flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+              className=" mt-2 flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
               onClick={onUploadOptions}
             >
               <Upload size={16} />
@@ -115,13 +114,13 @@ const AdminTicketOptionsView: React.FC<Props> = ({
               <span>{option.description}</span>
               <div className="flex gap-2">
                 <button
-                  className="flex items-center gap-1 px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600"
+                  className="flex items-center gap-1 px-2 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600 ml-3"
                   onClick={() => onEditOption(option)}
                 >
                   <Edit size={16} />
                 </button>
                 <button
-                  className="flex items-center gap-1 px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600"
+                  className="flex items-center gap-1 px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600"
                   onClick={() => onDeleteOption(option.id)}
                 >
                   <Trash size={16} />
