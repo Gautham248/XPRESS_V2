@@ -24,7 +24,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, startDa
 
   // Construct date range text based on the report's filtered date range
   const dateRangeText: string = startDate || endDate 
-    ? `Report Date Range: ${startDate ? formatDate(startDate) : 'Start'} to ${endDate ? formatDate(endDate) : 'End'}`
+    ? `Report Date Range: ${startDate ? formatDate(startDate) : 'Start'} to ${endDate ? formatDate(endDate) : 'Today'}`
     : 'Report Date Range: All Time';
 
   const handleExport = () => {
