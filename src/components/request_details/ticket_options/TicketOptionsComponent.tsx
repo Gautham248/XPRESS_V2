@@ -115,12 +115,12 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ travelRequest }) => {
 
   return (
     <>
-      <div className="h-[480px] overflow-y-auto border rounded-lg bg-white shadow mb-6">
-        <div className="sticky top-0 z-10 bg-white p-4">
-          <h3 className="text-lg font-semibold">Tickets</h3>
+      <div className="relative card border rounded-lg bg-white">
+        <div className="sticky top-0 z-10 bg-white">
+          <h3 className="text-lg font-semibold pb-4">Tickets</h3>
         </div>
 
-        <div className="p-4 overflow-y-auto h-[calc(100%-64px)] space-y-6">
+        <div className="h-[325px] overflow-y-auto p-1">
           {userRole === 'admin' && (
             <AdminTicketOptionsView
               ticketOptions={ticketOptions}

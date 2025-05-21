@@ -177,14 +177,14 @@ const ApprovalTimeline: React.FC<ApprovalTimelineProps> = ({ travelRequest }) =>
 
 
   return (
-    <div className="card mb-6 p-6 bg-white rounded-lg shadow">
+    <div className="card mb-6 p-6 bg-white rounded-lg">
       <h3 className="text-lg font-semibold mb-6">Travel Request Timeline</h3>
 
       <div className="space-y-6">
-        {previewTimeline.map((step, index) => (
+        {fullTimeline.map((step, index) => (
           <div key={step.id} className="flex items-start relative">
             {/* Connector Line */}
-            {index < previewTimeline.length - 1 && (
+            {index < fullTimeline.length - 1 && (
               <div
                 className={`absolute left-[1rem] top-[2rem] w-0.5 h-[calc(100%-1rem)] ${step.rejected
                   ? 'bg-red-200'
@@ -256,7 +256,7 @@ const ApprovalTimeline: React.FC<ApprovalTimelineProps> = ({ travelRequest }) =>
       </div>
 
       {/* View More Button - Always shown */}
-      <div className="mt-4">
+      {/* <div className="mt-4">
         <button
           className="text-sm text-blue-600 hover:text-blue-800 font-medium"
           onClick={() => setIsModalOpen(true)}
@@ -266,12 +266,12 @@ const ApprovalTimeline: React.FC<ApprovalTimelineProps> = ({ travelRequest }) =>
       </div>
 
       {/* Modal for Full Timeline */}
-      {isModalOpen && (
+      {/* {isModalOpen && (
         <TimelineModal
           timeline={fullTimeline}
           onClose={() => setIsModalOpen(false)}
         />
-      )}
+      )} */}
     </div>
   );
 };

@@ -17,7 +17,6 @@ interface Props {
   onUploadOptions: () => void;
 }
 
-
 const AdminTicketOptionsView: React.FC<Props> = ({
   ticketOptions,
   newOption,
@@ -33,104 +32,112 @@ const AdminTicketOptionsView: React.FC<Props> = ({
   onUploadOptions,
 }) => {
   const [agencyName, setAgencyName] = useState('');
+
   return (
-    <div className="space-y-6">
-      {/* Travel Agency Name Input */}
-      <div>
-        <h5 className="text-sm text-muted-foreground mb-4">Travel Agency:</h5>
+    <div className="space-y-4">
+      {/* Travel Agency Input */}
+      <div className="space-y-2">
+        <h5 className="text-med font-medium text-gray-500">Travel Agency</h5>
         <input
           type="text"
           placeholder="Enter travel agency name"
-          className="w-full p-2 mb-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none"
           value={agencyName}
           onChange={(e) => setAgencyName(e.target.value)}
         />
       </div>
-      <h5 className="text-sm text-muted-foreground">Ticket Option:</h5>
 
-      <div>
+      {/* New Ticket Option */}
+      <div className="space-y-2">
+        <div className='flex justify-between'>
+          <h5 className="text-med font-medium text-gray-500">Add New Ticket Option</h5>
+          <div className="flex justify-between items-center">
+            <button
+              className="flex items-center gap-1 px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
+              onClick={onAddOption}
+            >
+              <Plus size={12} />
+
+              <p className='text-sm'>Add Option</p>
+            </button>
+          </div>
+        </div>
         <textarea
-          className="w-full p-3 border rounded-md"
-          placeholder="Enter ticket option"
+          className="w-full p-3 border rounded-md resize-none focus:ring-2 focus:ring-blue-500 focus:outline-none"
+          rows={3}
+          placeholder="Enter ticket option description"
           value={newOption}
           onChange={(e) => onChangeNewOption(e.target.value)}
         />
-        <div className='flex justify-between'>
-          {ticketOptions.length > 0 ? (
-            <button
-              className=" mt-2 flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-              onClick={onUploadOptions}
-            >
-              <Upload size={16} />
-              Upload Options
-            </button>
-          ) : (<button
-            className=" mt-2 flex items-center gap-2 px-4 py-2 bg-gray-300 text-white rounded"
-            onClick={onUploadOptions}
-            disabled={true}
-          >
-            <Upload size={16} />
-            Upload Options
-          </button>)}
 
-          <button
-            className="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 flex items-center gap-2"
-            onClick={onAddOption}
-          >
-            <Plus size={16} /> Add Option
-          </button>
-        </div>
       </div>
 
+      {/* Ticket Options List */}
+      <div className="space-y-4">
+        <h5 className="text-med font-medium text-gray-500">Existing Ticket Options</h5>
+        {ticketOptions.length === 0 ? (
+          <p className="text-gray-500 italic">No ticket options added yet.</p>
+        ) : (
+          ticketOptions.map((option) => (
+            <div key={option.id} className="p-4 border rounded-md bg-white shadow-sm">
+              {editingOption === option.id ? (
+                <div className="space-y-2">
+                  <textarea
+                    className="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500"
+                    value={editText}
+                    onChange={(e) => onChangeEditText(e.target.value)}
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      className="flex items-center gap-2 px-4 py-2 border text-white rounded hover:bg-blue-700"
+                      onClick={() => onSaveEdit(option.id)}
+                    >
+                      <Save size={16} /> Save
+                    </button>
+                    <button
+                      className="flex items-center gap-2 px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+                      onClick={onCancelEdit}
+                    >
+                      <X size={16} /> Cancel
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-800 whitespace-pre-wrap">{option.description}</span>
+                  <div className="flex gap-2">
+                    <button
+                      className="flex items-center gap-1 px-1 py-1 text-yellow-400 rounded hover:"
+                      onClick={() => onEditOption(option)}
+                    >
+                      <Edit size={18} />
+                    </button>
+                    <button
+                      className="flex items-center gap-1 px-1 py-1 text-red-400 rounded hover:"
+                      onClick={() => onDeleteOption(option.id)}
+                    >
+                      <Trash size={16} />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))
+        )}
+      </div>
+      <div className="sticky -bottom-1 pt-4 bg-white flex justify-end">
+        <button
+          className={`flex items-center gap-2 px-6 py-2 justify-center text-white rounded ${ticketOptions.length > 0
+            ? 'bg-green-600 hover:bg-green-700'
+            : 'bg-gray-300 cursor-not-allowed'
+            }`}
+          onClick={onUploadOptions}
+          disabled={ticketOptions.length === 0}
+        >
+          Submit
+        </button>
+      </div>
 
-      {ticketOptions.length === 0 ? (
-        <p className="text-gray-500 italic">No ticket options added yet.</p>
-      ) : (ticketOptions.map(option => (
-        <div key={option.id} className="p-4 border rounded-md bg-white shadow">
-          {editingOption === option.id ? (
-            <div>
-              <textarea
-                className="w-full p-2 border rounded-md"
-                value={editText}
-                onChange={(e) => onChangeEditText(e.target.value)}
-              />
-              <div className="mt-2 flex gap-2">
-                <button
-                  className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 flex items-center gap-2"
-                  onClick={() => onSaveEdit(option.id)}
-                >
-                  <Save size={16} /> Save
-                </button>
-                <button
-                  className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 flex items-center gap-2"
-                  onClick={onCancelEdit}
-                >
-                  <X size={16} /> Cancel
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div className="flex justify-between items-center">
-              <span>{option.description}</span>
-              <div className="flex gap-2">
-                <button
-                  className="flex items-center gap-1 px-2 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600 ml-3"
-                  onClick={() => onEditOption(option)}
-                >
-                  <Edit size={16} />
-                </button>
-                <button
-                  className="flex items-center gap-1 px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600"
-                  onClick={() => onDeleteOption(option.id)}
-                >
-                  <Trash size={16} />
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      ))
-      )}
     </div>
   );
 };
