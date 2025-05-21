@@ -98,7 +98,7 @@ const Reports: React.FC = () => {
         }
       });
 
-    // If no agency data is available, use sample data
+    
   
     
     return Object.entries(agencyCounts).map(([name, value]) => ({
@@ -238,10 +238,11 @@ const Reports: React.FC = () => {
       {/* New Section: Bar Chart and Pie Chart */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Bar Chart: Travel Agency Usage */}
-        <TravelAgencyBarChart chartData={agencyData} />
+        <TravelAgencyBarChart chartData={agencyData} startDate={startDate} endDate={endDate}/>
 
         {/* Pie Chart: Airline Distribution */}
-        <AirlineDistributionChart chartData={airlineData} />
+    
+       <AirlineDistributionChart chartData={airlineData} startDate={startDate} endDate={endDate} />
       </div>
     </div>
   );

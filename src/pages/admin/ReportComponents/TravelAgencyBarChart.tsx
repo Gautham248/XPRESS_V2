@@ -1,4 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { ExternalLink } from 'lucide-react';
+import EmptyStateView from './EmptyStateView';
+import Modal from './Modal';
+import ReusableTable from './ReusableTable';
 
 interface BarChartItem {
   name: string;
@@ -7,26 +11,50 @@ interface BarChartItem {
 
 interface TravelAgencyBarChartProps {
   chartData?: BarChartItem[];
+  startDate?: string;
+  endDate?: string;
 }
 
 const TravelAgencyBarChart: React.FC<TravelAgencyBarChartProps> = ({ 
-  chartData
+   chartData, startDate, endDate 
 }) => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Check if there's no data or empty array
   if (!chartData || chartData.length === 0) {
+    // Document icon for empty state
+    const documentIcon = (
+      <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+      </svg>
+    );
+
     return (
-      <div className="bg-white rounded-lg p-6 shadow-sm h-80 flex flex-col items-center justify-center">
-        <div className="text-gray-400">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-          </svg>
+      <div className="bg-white rounded-lg p-6 shadow-sm">
+        <div className="mb-4 flex justify-start items-center">
+          <h3 className="text-lg font-semibold text-gray-800">Agency Booking Metrics</h3>
         </div>
-        <h3 className="text-lg font-medium text-gray-800 mb-2">No agency data available</h3>
-        <p className="text-sm text-gray-500 text-center">No travel agency data is currently available to display.</p>
+        <EmptyStateView 
+          icon={documentIcon}
+          title="No agency data available"
+          message="No travel agency data is currently available to display."
+        />
       </div>
     );
   }
+
+  // Convert chart data to table format for the ReusableTable component
+  const tableHeaders = ['Agency', 'Bookings', 'Percentage'];
+  
+  // Calculate total bookings for percentage calculation
+  const totalBookings = chartData.reduce((sum, item) => sum + item.value, 0);
+  
+  // Format data for the table
+  const tableData = chartData.map(item => ({
+    agency: item.name,
+    bookings: item.value,
+    percentage: `${((item.value / totalBookings) * 100).toFixed(1)}%`
+  }));
 
   // Dynamic Y-axis calculation based on data
   const maxDataValue = Math.max(...chartData.map(item => item.value));
@@ -39,8 +67,16 @@ const TravelAgencyBarChart: React.FC<TravelAgencyBarChartProps> = ({
 
   return (
     <div className="bg-white rounded-lg p-6 shadow-sm">
-      <div className="mb-4 text-center">
-        <h3 className="text-lg font-semibold text-gray-800">Agency Booking Metrics</h3>
+      <div className="mb-4 flex justify-between items-center">
+        <div className="flex items-center pb-6">
+          <h3 className="text-lg font-bold text-gray-800 ">Agency Booking Metrics</h3>
+          <button 
+            onClick={() => setIsModalOpen(true)}
+            className="ml-2 text-blue-600 hover:text-blue-800 mb-1"
+          >
+            <ExternalLink size={16} />
+          </button>
+        </div>
       </div>
 
       <div className="relative h-64 flex justify-center">
@@ -49,7 +85,7 @@ const TravelAgencyBarChart: React.FC<TravelAgencyBarChartProps> = ({
           <div className="absolute left-14 top-0 bottom-8 w-px bg-gray-300"></div>
           
           {/* Y-axis label */}
-          <div className="absolute -left-12 top-1/2 -rotate-90 transform text-sm font-medium text-gray-700">
+          <div className="absolute -left-12 top-1/2 -rotate-90 transform text-sm font-medium text-gray-800">
             Booking Count
           </div>
           
@@ -69,7 +105,7 @@ const TravelAgencyBarChart: React.FC<TravelAgencyBarChartProps> = ({
           <div className="absolute left-14 right-0 bottom-8 h-px bg-gray-300"></div>
           
           {/* X-axis label */}
-          <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-sm font-medium text-gray-700">
+          <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 text-sm font-medium text-gray-700">
             Travel Agency
           </div>
 
@@ -104,6 +140,22 @@ const TravelAgencyBarChart: React.FC<TravelAgencyBarChartProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Modal component with ReusableTable */}
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title="Travel Agency Details"
+        startDate={startDate}
+        endDate={endDate}
+      >
+        <div className="px-6">
+          <ReusableTable 
+            headers={tableHeaders}
+            data={tableData}
+          />
+        </div>
+      </Modal>
     </div>
   );
 };
