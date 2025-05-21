@@ -37,7 +37,7 @@ const StatCard: React.FC<StatCardProps> = ({
             <p className="text-sm text-muted-foreground">{subtitle}</p>
           </div>
           <div className={`h-16 w-16 flex items-center justify-center rounded-full ${iconBgClass}`}>
-            {/* Fixed the icon rendering in the circle */}
+          
             {React.cloneElement(icon as React.ReactElement, { 
               className: `h-10 w-10 ${iconClass}` 
             })}
