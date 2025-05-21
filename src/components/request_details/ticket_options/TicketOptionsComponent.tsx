@@ -29,7 +29,6 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ travelRequest }) => {
   const [newOption, setNewOption] = useState<string>('');
   const [editingOption, setEditingOption] = useState<string | null>(null);
   const [editText, setEditText] = useState<string>('');
-  const [agencyName, setAgencyName] = useState('');
 
   const {
     isOpen,
@@ -122,19 +121,6 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ travelRequest }) => {
         </div>
 
         <div className="p-4 overflow-y-auto h-[calc(100%-64px)] space-y-6">
-          {/* Travel Agency Name Input */}
-          <div>
-            <h5 className="text-md font-medium mb-2">Travel Agency:</h5>
-            <input
-              type="text"
-              placeholder="Enter travel agency name"
-              className="w-full p-2 mb-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={agencyName}
-              onChange={(e) => setAgencyName(e.target.value)}
-            />
-          </div>
-          <hr />
-          <h5 className="text-md font-medium">Ticket Option:</h5>
           {userRole === 'admin' && (
             <AdminTicketOptionsView
               ticketOptions={ticketOptions}

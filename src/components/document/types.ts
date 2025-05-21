@@ -35,7 +35,7 @@ const identificationFormConfig: FormField[] = [
     key: 'type',
     label: 'ID Type',
     type: 'select',
-    options: ['National ID', "Driver's License", 'Social Security'],
+    options: ['Aadhar', "Driver's License", 'Voter ID'],
     required: true,
   },
   { key: 'idNumber', label: 'ID Number', type: 'text', required: true },
