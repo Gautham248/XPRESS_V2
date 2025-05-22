@@ -6,7 +6,6 @@ import {
   FileText
 } from 'lucide-react';
 import { mockTravelRequests, TravelRequest } from '../../data/mockData';
-import TravelRequestInfo from './TravelRequestInfo';
 import ApprovalTimeline from './ApprovalTimeline';
 import TravelInfo from './TravelInfo';
 import TicketComponent from './ticket_options/TicketOptionsComponent';
@@ -35,33 +34,33 @@ const TravelRequestDetails: React.FC = () => {
     );
   }
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'Approved':
-        return 'bg-success/20 text-success';
-      case 'Pending':
-        return 'bg-warning/20 text-warning';
-      case 'Rejected':
-        return 'bg-error/20 text-error';
-      case 'Completed':
-        return 'bg-muted text-muted-foreground';
-      default:
-        return 'bg-muted text-muted-foreground';
-    }
-  };
+  // const getStatusColor = (status: string) => {
+  //   switch (status) {
+  //     case 'Approved':
+  //       return 'bg-success/20 text-success';
+  //     case 'Pending':
+  //       return 'bg-warning/20 text-warning';
+  //     case 'Rejected':
+  //       return 'bg-error/20 text-error';
+  //     case 'Completed':
+  //       return 'bg-muted text-muted-foreground';
+  //     default:
+  //       return 'bg-muted text-muted-foreground';
+  //   }
+  // };
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'High':
-        return 'bg-error/20 text-error';
-      case 'Medium':
-        return 'bg-warning/20 text-warning';
-      case 'Low':
-        return 'bg-success/20 text-success';
-      default:
-        return 'bg-muted text-muted-foreground';
-    }
-  };
+  // const getPriorityColor = (priority: string) => {
+  //   switch (priority) {
+  //     case 'High':
+  //       return 'bg-error/20 text-error';
+  //     case 'Medium':
+  //       return 'bg-warning/20 text-warning';
+  //     case 'Low':
+  //       return 'bg-success/20 text-success';
+  //     default:
+  //       return 'bg-muted text-muted-foreground';
+  //   }
+  // };
 
   return (
     <div className="space-y-6 animate-fadeIn">

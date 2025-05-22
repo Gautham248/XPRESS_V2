@@ -1,6 +1,6 @@
 import React from 'react';
 import {
-  MapPin,
+  // MapPin,
   Calendar,
   TrainFront,
   Plane,
@@ -8,7 +8,7 @@ import {
   CarTaxiFront,
   Backpack,
   Check,
-  Car,
+  // Car,
   Hotel,
   Utensils,
   Clock,

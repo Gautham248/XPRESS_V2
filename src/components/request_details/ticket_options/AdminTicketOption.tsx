@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Upload, Edit, Trash, Save, X } from 'lucide-react';
+import { Plus, Edit, Trash, Save, X } from 'lucide-react';
 import { TicketOption } from '../../../data/mockData';
 
 interface Props {
