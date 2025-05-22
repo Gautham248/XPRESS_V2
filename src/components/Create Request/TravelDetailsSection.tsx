@@ -15,7 +15,8 @@ const TravelDetailsSection: React.FC = () => {
     departureDate, 
     returnDate, 
     transportMode,
-    projectCode
+    projectCode,
+    reason
   } = state;
 
   // Country validation for domestic travel
@@ -115,22 +116,8 @@ const TravelDetailsSection: React.FC = () => {
           </div>
         )}
 
-        {/* Project Code Field */}
-        <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Project Code
-          </label>
-          <input
-            type="text"
-            className="block w-full rounded-md border border-gray-200 bg-gray-50 px-4 py-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-            value={projectCode}
-            onChange={(e) => dispatch({ type: 'SET_PROJECT_CODE', payload: e.target.value })}
-            placeholder="Enter project code"
-            required
-          />
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        {/* Source and Destination */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Source Location
@@ -141,7 +128,7 @@ const TravelDetailsSection: React.FC = () => {
               maxCustomLength={100}
             />
             {source && (
-              <div className="mt-2 p-2 bg-blue-50 rounded-md text-sm border border-blue-100">
+              <div className="mt-2 p-3 bg-blue-50 rounded-lg text-sm border border-blue-100">
                 <p><strong>Selected:</strong> {source.label || [source.city, source.state, source.country].filter(Boolean).join(", ")}</p>
               </div>
             )}
@@ -157,14 +144,30 @@ const TravelDetailsSection: React.FC = () => {
               maxCustomLength={100}
             />
             {destination && (
-              <div className="mt-2 p-2 bg-blue-50 rounded-md text-sm border border-blue-100">
+              <div className="mt-2 p-3 bg-blue-50 rounded-lg text-sm border border-blue-100">
                 <p><strong>Selected:</strong> {destination.label || [destination.city, destination.state, destination.country].filter(Boolean).join(", ")}</p>
               </div>
             )}
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        {/* Project Code */}
+        <div className="max-w-md">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Project Code
+          </label>
+          <input
+            type="text"
+            className="block w-full rounded-md border border-gray-200 bg-gray-50 px-4 py-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+            value={projectCode}
+            onChange={(e) => dispatch({ type: 'SET_PROJECT_CODE', payload: e.target.value })}
+            placeholder="Enter project code"
+            required
+          />
+        </div>
+
+        {/* Dates */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Departure Date
@@ -200,6 +203,7 @@ const TravelDetailsSection: React.FC = () => {
           )}
         </div>
 
+        {/* Mode of Transport */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-3">
             Mode of Transport
@@ -211,8 +215,8 @@ const TravelDetailsSection: React.FC = () => {
                 type="button"
                 className={`flex items-center justify-center p-3 rounded-md border transition ${
                   transportMode === value
-                    ? 'border-primary bg-primary/10 text-primary'
-                    : 'border-muted bg-muted hover:bg-muted/70'
+                    ? 'border-blue-500 bg-blue-50 text-blue-700'
+                    : 'border-gray-200 bg-white hover:bg-gray-50 text-gray-700'
                 }`}
                 onClick={() => dispatch({ type: 'SET_TRANSPORT_MODE', payload: value })}
               >
@@ -221,6 +225,21 @@ const TravelDetailsSection: React.FC = () => {
               </button>
             ))}
           </div>
+        </div>
+
+        {/* Purpose of Travel */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Purpose of Travel
+          </label>
+          <textarea
+            className="block w-full rounded-md border border-gray-200 bg-gray-50 px-4 py-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition resize-none"
+            rows={4}
+            value={reason}
+            onChange={(e) => dispatch({ type: 'SET_REASON', payload: e.target.value })}
+            placeholder="Please provide details about the purpose of your travel..."
+            required
+          />
         </div>
       </div>
     </div>

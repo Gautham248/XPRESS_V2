@@ -15,7 +15,7 @@ const CreateRequestForm: React.FC = () => {
       <BasicInfoSection />
       <TravelDetailsSection />
       <AdditionalServicesSection />
-      <PurposeSection />
+      {/* <PurposeSection /> */}
 
       <div className="flex justify-end space-x-4">
         <button

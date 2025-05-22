@@ -7,11 +7,6 @@ const BasicInfoSection: React.FC = () => {
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 mb-6">
-      <div className="flex items-center mb-6">
-        <div className="h-8 w-1 bg-blue-600 rounded mr-3"></div>
-        <h3 className="text-lg font-semibold text-gray-800">Basic Information</h3>
-      </div>
-      
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Travel Type Selection */}
         <div>
