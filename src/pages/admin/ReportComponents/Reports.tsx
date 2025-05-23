@@ -16,10 +16,10 @@ interface TravelRequest {
   airline?: string;
   travelAgency?: string;
 }
-
 interface ChartDataItem {
   name: string;
   value: number;
+  cost?: number;
 }
 
 
@@ -83,42 +83,48 @@ const Reports: React.FC = () => {
     .length;
 
   // Dynamic airline data from filtered requests
-  const getAirlineDistribution = (): ChartDataItem[] => {
-    const airlineCounts: Record<string, number> = {};
-    
-    filteredRequests
-      .filter((req: TravelRequest) => req.airline && tripStatuses.includes(req.status))
-      .forEach((req: TravelRequest) => {
-        if (req.airline) {
-          airlineCounts[req.airline] = (airlineCounts[req.airline] || 0) + 1;
-        }
-      });
-    
-    return Object.entries(airlineCounts).map(([name, value]) => ({
-      name,
-      value
-    }));
-  };
-
+ const getAirlineDistribution = (): ChartDataItem[] => {
+  const airlineCounts: Record<string, number> = {};
+  const airlineCosts: Record<string, number> = {};
+  
+  filteredRequests
+    .filter((req: TravelRequest) => req.airline && tripStatuses.includes(req.status))
+    .forEach((req: TravelRequest) => {
+      if (req.airline) {
+        airlineCounts[req.airline] = (airlineCounts[req.airline] || 0) + 1;
+        airlineCosts[req.airline] = (airlineCosts[req.airline] || 0) + req.estimatedCost;
+      }
+    });
+  
+  return Object.entries(airlineCounts).map(([name, value]) => ({
+    name,
+    value,
+    cost: airlineCosts[name] || 0
+  }));
+};
   const airlineData = getAirlineDistribution();
   
   // Get agency distribution data
-  const getAgencyDistribution = (): ChartDataItem[] => {
-    const agencyCounts: Record<string, number> = {};
-    
-    filteredRequests
-      .filter((req: TravelRequest) => req.travelAgency && tripStatuses.includes(req.status))
-      .forEach((req: TravelRequest) => {
-        if (req.travelAgency) {
-          agencyCounts[req.travelAgency] = (agencyCounts[req.travelAgency] || 0) + 1;
-        }
-      });
+const getAgencyDistribution = (): ChartDataItem[] => {
+  const agencyCounts: Record<string, number> = {};
+  const agencyCosts: Record<string, number> = {};
   
-    return Object.entries(agencyCounts).map(([name, value]) => ({
-      name,
-      value
-    }));
-  };
+  filteredRequests
+    .filter((req: TravelRequest) => req.travelAgency && tripStatuses.includes(req.status))
+    .forEach((req: TravelRequest) => {
+      if (req.travelAgency) {
+        agencyCounts[req.travelAgency] = (agencyCounts[req.travelAgency] || 0) + 1;
+        agencyCosts[req.travelAgency] = (agencyCosts[req.travelAgency] || 0) + req.estimatedCost;
+      }
+    });
+
+  return Object.entries(agencyCounts).map(([name, value]) => ({
+    name,
+    value,
+    cost: agencyCosts[name] || 0
+  }));
+};
+
 
   const agencyData = getAgencyDistribution();
 

@@ -7,6 +7,7 @@ import ReusableTable from './ReusableTable';
 interface BarChartItem {
   name: string;
   value: number;
+  cost?: number; // Add cost property
 }
 
 interface TravelAgencyBarChartProps {
@@ -44,16 +45,18 @@ const TravelAgencyBarChart: React.FC<TravelAgencyBarChartProps> = ({
   }
 
   // Convert chart data to table format for the ReusableTable component
-  const tableHeaders = ['Agency', 'Bookings', 'Percentage'];
+  // Updated table headers to include Cost instead of Percentage
+  const tableHeaders = ['Agency', 'Bookings', 'Cost'];
   
-  // Calculate total bookings for percentage calculation
+  // Calculate total bookings and total cost
   const totalBookings = chartData.reduce((sum, item) => sum + item.value, 0);
+  const totalCost = chartData.reduce((sum, item) => sum + (item.cost || 0), 0);
   
-  // Format data for the table
+  // Format data for the table with cost instead of percentage
   const tableData = chartData.map(item => ({
     agency: item.name,
     bookings: item.value,
-    percentage: `${((item.value / totalBookings) * 100).toFixed(1)}%`
+    cost: `$${(item.cost || 0).toLocaleString()}`
   }));
 
   // Dynamic Y-axis calculation based on data
@@ -111,32 +114,49 @@ const TravelAgencyBarChart: React.FC<TravelAgencyBarChartProps> = ({
 
           {/* Chart area with bars */}
           <div className="absolute left-16 right-4 top-0 bottom-1 flex items-end justify-around">
-            {chartData.map((entry, index) => (
-              <div key={index} className="flex flex-col items-center group">
-                {/* Value label above bar */}
-                <div className="text-sm font-semibold text-gray-700 mb-1">
-                  {entry.value}
+            {chartData.map((entry, index) => {
+              // Generate colors dynamically based on index
+              const colors = [
+                'bg-purple-400', 'bg-pink-400', 'bg-cyan-400', 'bg-orange-400',
+                'bg-blue-400', 'bg-green-400', 'bg-yellow-400', 'bg-red-400',
+                'bg-indigo-400', 'bg-teal-400', 'bg-lime-400', 'bg-rose-400'
+              ];
+              const barColor = colors[index % colors.length];
+              
+              return (
+                <div key={index} className="flex flex-col items-center group relative" style={{ minWidth: `${Math.max(80, 400 / chartData.length)}px` }}>
+                  {/* Booking count above bar */}
+                  <div className="text-sm font-semibold text-gray-700 mb-1">
+                    {entry.value}
+                  </div>
+                  
+                  {/* Bar with cost displayed vertically inside the bar */}
+                  <div className="relative flex justify-center">
+                    {/* Bar */}
+                    <div 
+                      className={`${barColor} relative flex items-center justify-center`}
+                      style={{ 
+                        width: `${Math.max(64, 300 / chartData.length)}px`,
+                        height: `${entry.value * barHeightScale}px`,
+                        minHeight: '40px'
+                      }}
+                    >
+                      {/* Cost label positioned vertically inside the bar */}
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="-rotate-90 text-xs font-medium text-white whitespace-nowrap">
+                          ${(entry.cost || 0).toLocaleString()}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* X-axis label (agency name) directly below the x-axis */}
+                  <div className="mt-2 text-sm font-medium text-gray-700">
+                    {entry.name}
+                  </div>
                 </div>
-                
-                {/* Bar */}
-                <div 
-                  className={`w-16 ${
-                    index === 0 ? 'bg-purple-400' : 
-                    index === 1 ? 'bg-pink-400' : 
-                    index === 2 ? 'bg-cyan-400' : 
-                    'bg-orange-400'
-                  }`} 
-                  style={{ 
-                    height: `${entry.value * barHeightScale}px`
-                  }}
-                ></div>
-                
-                {/* X-axis label (agency name) directly below the x-axis */}
-                <div className="mt-2 text-sm font-medium text-gray-700">
-                  {entry.name}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>
