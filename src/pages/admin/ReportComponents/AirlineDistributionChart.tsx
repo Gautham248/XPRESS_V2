@@ -8,12 +8,13 @@ import EmptyStateView from './EmptyStateView';
 interface PieChartItem {
   name: string;
   value: number;
+  cost?: number; // Add cost property
 }
 
 interface TableDataItem {
   airline: string;
   trips: number;
-  percentage: string;
+  cost: string;
 }
 
 interface AirlineDistributionChartProps {
@@ -61,6 +62,7 @@ const AirlineDistributionChart: React.FC<AirlineDistributionChartProps> = ({ cha
   
   const COLORS: string[] = generateColors(chartData.length);
   const totalTrips: number = chartData.reduce((sum, item) => sum + item.value, 0);
+  const totalCost: number = chartData.reduce((sum, item) => sum + (item.cost || 0), 0);
 
   const renderCustomizedLabel = (props: {
     cx?: number;
@@ -89,11 +91,12 @@ const AirlineDistributionChart: React.FC<AirlineDistributionChartProps> = ({ cha
     );
   };
 
-  const tableHeaders: string[] = ["Airline", "Trips", "Percentage"];
+  // Updated table headers to include Cost instead of Percentage
+  const tableHeaders: string[] = ["Airline", "Trips", "Cost"];
   const tableData: TableDataItem[] = chartData.map(item => ({
     airline: item.name,
     trips: item.value,
-    percentage: `${((item.value / totalTrips) * 100).toFixed(1)}%`
+    cost: `$${(item.cost || 0).toLocaleString()}`
   }));
 
   // Flight icon for empty state
@@ -160,7 +163,7 @@ const AirlineDistributionChart: React.FC<AirlineDistributionChartProps> = ({ cha
                   <div className="w-3 h-3 mr-2" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
                   <div className="flex flex-col">
                     <span className="text-sm font-medium">{entry.name}</span>
-                    <span className="text-xs text-gray-500">{entry.value} trips</span>
+                    <span className="text-xs text-gray-500">${(entry.cost || 0).toLocaleString()}</span>
                   </div>
                 </div>
               ))}
