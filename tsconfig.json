@@ -3,5 +3,10 @@
   "references": [
     { "path": "./tsconfig.app.json" },
     { "path": "./tsconfig.node.json" }
-  ]
+  ],
+  "compilerOptions": {
+    "composite": true, // Enable project references for incremental builds
+    "tsBuildInfoFile": "./dist/tsconfig.tsbuildinfo", // Cache build info
+    "noEmit": true // Root config doesn't emit output
+  }
 }

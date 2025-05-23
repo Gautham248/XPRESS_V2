@@ -6,9 +6,12 @@ export default {
   },
   setupFilesAfterEnv: ['<rootDir>/src/setupTests.ts'],
   transform: {
-    '^.+\\.(ts|tsx)$': ['ts-jest', {
-      tsconfig: 'tsconfig.json'
-    }],
+    '^.+\\.(ts|tsx)$': [
+      'ts-jest',
+      {
+        tsconfig: 'tsconfig.app.json', // Use tsconfig.app.json for JSX settings
+      },
+    ],
   },
   testMatch: ['**/__tests__/**/*.[jt]s?(x)', '**/?(*.)+(spec|test).[jt]s?(x)'],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
@@ -16,7 +19,7 @@ export default {
     'src/**/*.{js,jsx,ts,tsx}',
     '!src/**/*.d.ts',
     '!src/main.tsx',
-    '!src/vite-env.d.ts'
+    '!src/vite-env.d.ts',
   ],
-  coverageDirectory: 'coverage'
-}
+  coverageDirectory: 'coverage',
+};
