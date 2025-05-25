@@ -1,8 +1,18 @@
 import { NavigateFunction } from 'react-router-dom';
 
+interface TravelRequest {
+  requestId: number;
+  employeeName: string;
+  sourcePlace: string;
+  sourceCountry: string;
+  destinationPlace: string;
+  destinationCountry: string;
+  currentStatusName: string;
+}
+
 interface TravelEvent {
   type: 'Departure' | 'Return';
-  request: any;
+  request: TravelRequest;
 }
 
 interface EventSidebarProps {
@@ -28,6 +38,22 @@ const EventSidebar: React.FC<EventSidebarProps> = ({
 
   const formatMonth = (date: Date): string => {
     return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  };
+
+  // Function to determine the status color
+  const getStatusColor = (status: string): string => {
+    switch (status) {
+      case 'Tickets Dispatched':
+        return 'text-blue-600';
+      case 'In-transit':
+        return 'text-orange-600';
+      case 'Returned':
+        return 'text-green-600';
+      case 'Closed':
+        return 'text-gray-600';
+      default:
+        return 'text-gray-600';
+    }
   };
 
   return (
@@ -57,20 +83,36 @@ const EventSidebar: React.FC<EventSidebarProps> = ({
           {getEventsForDate(selectedDate).length > 0 ? (
             getEventsForDate(selectedDate)
               .filter((event: TravelEvent) => !selectedEventType || event.type === selectedEventType)
-              .map((event: TravelEvent, idx: number) => (
-                <div
-                  key={`${event.type}-${event.request.id}-${idx}`}
-                  className={`bg-gray-50 p-3 rounded-md border-l-4 cursor-pointer
-                    ${event.type === 'Departure' ? 'border-blue-500' : 'border-green-500'}
-                    hover:bg-gray-100 transition-colors duration-200`}
-                  onClick={() => navigate(`/admin/travel-requests/${event.request.id}`)}
-                >
-                  <p className="text-gray-800 font-medium">{event.request.travelerName}</p>
-                  <p className="text-gray-600 text-sm">{event.type}</p>
-                  <p className="text-gray-600 text-sm">Project: {event.request.projectCode}</p>
-                  <p className="text-gray-600 text-sm">ID: {event.request.id}</p>
-                </div>
-              ))
+              .map((event: TravelEvent, idx: number) => {
+                const isDeparture = event.type === 'Departure';
+                const fromPlace = isDeparture ? event.request.sourcePlace : event.request.destinationPlace;
+                const fromCountry = isDeparture ? event.request.sourceCountry : event.request.destinationCountry;
+                const toPlace = isDeparture ? event.request.destinationPlace : event.request.sourcePlace;
+                const toCountry = isDeparture ? event.request.destinationCountry : event.request.sourceCountry;
+
+                return (
+                  <div
+                    key={`${event.type}-${event.request.requestId}-${idx}`}
+                    className={`bg-gray-50 p-3 rounded-md border-l-4 cursor-pointer
+                      ${event.type === 'Departure' ? 'border-blue-500' : 'border-green-500'}
+                      hover:bg-gray-100 transition-colors duration-200`}
+                    onClick={() => navigate(`/admin/travel-requests/${event.request.requestId}`)}
+                  >
+                    <p className="text-gray-800 font-medium">{event.request.employeeName}</p>
+                    <p className="text-gray-600 text-sm">{event.type}</p>
+                    <p className="text-gray-600 text-sm">ID: {event.request.requestId}</p>
+                    <p className="text-gray-600 text-sm">
+                      From: {fromPlace}, {fromCountry}
+                    </p>
+                    <p className="text-gray-600 text-sm">
+                      To: {toPlace}, {toCountry}
+                    </p>
+                    <p className={`text-sm font-medium ${getStatusColor(event.request.currentStatusName)}`}>
+                      Status: {event.request.currentStatusName}
+                    </p>
+                  </div>
+                );
+              })
           ) : (
             <p className="text-gray-600">No travel requests for this date.</p>
           )}
