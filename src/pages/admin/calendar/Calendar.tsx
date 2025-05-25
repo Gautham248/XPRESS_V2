@@ -50,7 +50,7 @@ const Calendar: React.FC = () => {
       try {
         setLoading(true);
         setError(null);
-        const response = await axios.get('http://localhost:5171/api/TravelRequest/Calendar');
+        const response = await axios.get('http://localhost:5171/api/TravelRequest/Calendar'); // Updated with actual port
         setTravelRequests(response.data);
       } catch (err) {
         console.error('Error fetching travel requests:', err);
@@ -68,8 +68,7 @@ const Calendar: React.FC = () => {
     const adjustedDate = new Date(date.getTime() + istOffset);
     const events: TravelEvent[] = [];
 
-    // Define the statuses to include
-    const validStatuses = ['Tickets Dispatched', 'In-transit', 'Returned', 'Closed'];
+    const validStatuses = ['Pending','Tickets Dispatched', 'In-transit', 'Returned', 'Closed'];
 
     travelRequests.forEach((request: TravelRequest) => {
       const depDate = new Date(request.departureDate);
@@ -87,7 +86,6 @@ const Calendar: React.FC = () => {
         adjustedRetDate.getMonth() === adjustedDate.getMonth() &&
         adjustedRetDate.getDate() === adjustedDate.getDate();
 
-      // Only include events with specified statuses
       if (isDeparture && validStatuses.includes(request.currentStatusName)) {
         events.push({ type: 'Departure', request });
       }
