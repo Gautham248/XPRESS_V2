@@ -5,7 +5,7 @@ import {
   X,
   FileText
 } from 'lucide-react';
-import { mockTravelRequests, TravelRequest } from '../../data/mockData';
+import { getStatusColor, mockTravelRequests, TravelRequest } from '../../data/mockData';
 import ApprovalTimeline from './ApprovalTimeline';
 import TravelInfo from './TravelInfo';
 import TicketComponent from './ticket_options/TicketOptionsComponent';
@@ -34,20 +34,6 @@ const TravelRequestDetails: React.FC = () => {
     );
   }
 
-  // const getStatusColor = (status: string) => {
-  //   switch (status) {
-  //     case 'Approved':
-  //       return 'bg-success/20 text-success';
-  //     case 'Pending':
-  //       return 'bg-warning/20 text-warning';
-  //     case 'Rejected':
-  //       return 'bg-error/20 text-error';
-  //     case 'Completed':
-  //       return 'bg-muted text-muted-foreground';
-  //     default:
-  //       return 'bg-muted text-muted-foreground';
-  //   }
-  // };
 
   // const getPriorityColor = (priority: string) => {
   //   switch (priority) {
@@ -62,14 +48,20 @@ const TravelRequestDetails: React.FC = () => {
   //   }
   // };
 
+
+  const statusColor = getStatusColor(travelRequest.status);
+
   return (
     <div className="space-y-6 animate-fadeIn">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div className="flex items-center">
           <div>
-            <h2 className="text-2xl font-semibold">
-              {travelRequest.id} - {travelRequest.purpose}
+            <h2 className="text-2xl font-semibold flex items-center gap-3 flex-wrap">
+              {travelRequest.id}
+              <span className={`px-4 py-2 rounded-full text-sm font-medium ${statusColor}`}>
+                {travelRequest.status}
+              </span>
             </h2>
             <p className="text-muted-foreground">
               {travelRequest.destination} • {travelRequest.departureDate} to {travelRequest.returnDate}

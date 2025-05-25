@@ -135,6 +135,7 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ travelRequest }) => {
               onCancelEdit={() => setEditingOption(null)}
               onChangeEditText={setEditText}
               onUploadOptions={handleUploadOptions}
+              status={travelRequest.status}
             />
           )}
 
@@ -145,6 +146,7 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ travelRequest }) => {
               onEditOption={handleEditOption}
               onDeleteOption={handleDeleteOption}
               onUploadOptions={handleUploadOptions}
+              requestStatus={travelRequest.status}
             />
           )}
 
@@ -152,6 +154,7 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ travelRequest }) => {
             <EmployeeTicketOptionsView
               ticketOptions={ticketOptions}
               onDownloadTickets={handleDownloadTickets}
+              requestStatus={travelRequest.status}
             />
           )}
         </div>

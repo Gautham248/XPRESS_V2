@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Plus, Edit, Trash, Save, X } from 'lucide-react';
+import React, { useRef, useState } from 'react';
+import { Plus, Upload, Edit, Trash, Save, X, FileText, Eye, Trash2 } from 'lucide-react';
 import { TicketOption } from '../../../data/mockData';
 
 interface Props {
@@ -15,6 +15,7 @@ interface Props {
   onCancelEdit: () => void;
   onChangeEditText: (value: string) => void;
   onUploadOptions: () => void;
+  status: string;
 }
 
 const AdminTicketOptionsView: React.FC<Props> = ({
@@ -30,114 +31,142 @@ const AdminTicketOptionsView: React.FC<Props> = ({
   onCancelEdit,
   onChangeEditText,
   onUploadOptions,
+  status
 }) => {
-  const [agencyName, setAgencyName] = useState('');
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
 
-  return (
-    <div className="space-y-4">
-      {/* Travel Agency Input */}
-      <div className="space-y-2">
-        <h5 className="text-med font-medium text-gray-500">Travel Agency</h5>
-        <input
-          type="text"
-          placeholder="Enter travel agency name"
-          className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none"
-          value={agencyName}
-          onChange={(e) => setAgencyName(e.target.value)}
-        />
-      </div>
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setUploadedFile(file);
+    }
+  };
 
-      {/* New Ticket Option */}
-      <div className="space-y-2">
-        <div className='flex justify-between'>
-          <h5 className="text-med font-medium text-gray-500">Add New Ticket Option</h5>
-          <div className="flex justify-between items-center">
-            <button
-              className="flex items-center gap-1 px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
-              onClick={onAddOption}
-            >
-              <Plus size={12} />
+  const handleRemoveFile = () => {
+    setUploadedFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
 
-              <p className='text-sm'>Add Option</p>
+  // UI: Ticket Option Row
+  const renderTicketOptions = () => (
+    <ul className="space-y-2">
+      {ticketOptions.map((option) => (
+        <li
+          key={option.id}
+          className={`flex items-center justify-between border p-2 rounded ${
+            status === 'Ticket Selected' && option.selected ? 'bg-green-100 border-green-500 font-semibold' : ''
+          }`}
+        >
+          {editingOption === option.id ? (
+            <>
+              <input
+                type="text"
+                className="flex-1 border rounded p-1 mr-2"
+                value={editText}
+                onChange={(e) => onChangeEditText(e.target.value)}
+              />
+              <div className="flex gap-2">
+                <button onClick={() => onSaveEdit(option.id)} title="Save">
+                  <Save className="text-green-600" />
+                </button>
+                <button onClick={onCancelEdit} title="Cancel">
+                  <X className="text-gray-600" />
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <span>{option.description}</span>
+              {status === 'Manager Approved' && (
+                <div className="flex gap-2">
+                  <button onClick={() => onEditOption(option)} title="Edit">
+                    <Edit className="text-blue-500" />
+                  </button>
+                  <button onClick={() => onDeleteOption(option.id)} title="Delete">
+                    <Trash className="text-red-500" />
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+        </li>
+      ))}
+    </ul>
+  );
+
+  // UI: Upload Ticket File
+  const renderTicketUploadSection = () => (
+    <div className="border rounded p-4 mt-4">
+      <label className="block font-medium mb-2">Upload Final Ticket Document:</label>
+      <input
+        type="file"
+        accept=".pdf,.doc,.docx"
+        onChange={handleFileUpload}
+        ref={fileInputRef}
+        className="mb-2"
+      />
+      {uploadedFile && (
+        <div className="flex items-center justify-between border p-2 rounded bg-gray-100 mt-2">
+          <span className="truncate">{uploadedFile.name}</span>
+          <div className="flex gap-2">
+            <a href={URL.createObjectURL(uploadedFile)} target="_blank" rel="noopener noreferrer" title="Preview">
+              <Eye className="text-blue-600" />
+            </a>
+            <button onClick={handleRemoveFile} title="Remove">
+              <Trash2 className="text-red-600" />
             </button>
           </div>
         </div>
-        <textarea
-          className="w-full p-3 border rounded-md resize-none focus:ring-2 focus:ring-blue-500 focus:outline-none"
-          rows={3}
-          placeholder="Enter ticket option description"
-          value={newOption}
-          onChange={(e) => onChangeNewOption(e.target.value)}
-        />
+      )}
+    </div>
+  );
 
-      </div>
+  // RENDER
+  return (
+    <div className="space-y-4">
+      {status === 'Pending' && (
+        <p className="text-gray-600 italic">Waiting for manager approval...</p>
+      )}
 
-      {/* Ticket Options List */}
-      <div className="space-y-4">
-        <h5 className="text-med font-medium text-gray-500">Existing Ticket Options</h5>
-        {ticketOptions.length === 0 ? (
-          <p className="text-gray-500 italic">No ticket options added yet.</p>
-        ) : (
-          ticketOptions.map((option) => (
-            <div key={option.id} className="p-4 border rounded-md bg-white shadow-sm">
-              {editingOption === option.id ? (
-                <div className="space-y-2">
-                  <textarea
-                    className="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500"
-                    value={editText}
-                    onChange={(e) => onChangeEditText(e.target.value)}
-                  />
-                  <div className="flex gap-2">
-                    <button
-                      className="flex items-center gap-2 px-4 py-2 border text-white rounded hover:bg-blue-700"
-                      onClick={() => onSaveEdit(option.id)}
-                    >
-                      <Save size={16} /> Save
-                    </button>
-                    <button
-                      className="flex items-center gap-2 px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
-                      onClick={onCancelEdit}
-                    >
-                      <X size={16} /> Cancel
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-800 whitespace-pre-wrap">{option.description}</span>
-                  <div className="flex gap-2">
-                    <button
-                      className="flex items-center gap-1 px-1 py-1 text-yellow-400 rounded hover:"
-                      onClick={() => onEditOption(option)}
-                    >
-                      <Edit size={18} />
-                    </button>
-                    <button
-                      className="flex items-center gap-1 px-1 py-1 text-red-400 rounded hover:"
-                      onClick={() => onDeleteOption(option.id)}
-                    >
-                      <Trash size={16} />
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          ))
-        )}
-      </div>
-      <div className="sticky -bottom-1 pt-4 bg-white flex justify-end">
-        <button
-          className={`flex items-center gap-2 px-6 py-2 justify-center text-white rounded ${ticketOptions.length > 0
-            ? 'bg-green-600 hover:bg-green-700'
-            : 'bg-gray-300 cursor-not-allowed'
-            }`}
-          onClick={onUploadOptions}
-          disabled={ticketOptions.length === 0}
-        >
-          Submit
-        </button>
-      </div>
+      {status === 'Manager Approved' && (
+        <>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              placeholder="Add new option"
+              value={newOption}
+              onChange={(e) => onChangeNewOption(e.target.value)}
+              className="border rounded p-2 flex-1"
+            />
+            <button
+              onClick={onAddOption}
+              className="flex items-center bg-green-600 text-white px-3 py-2 rounded hover:bg-green-700"
+            >
+              <Plus className="mr-1" size={18} />
+              Add
+            </button>
+          </div>
 
+          {renderTicketOptions()}
+
+          <div className="flex justify-end">
+            <button
+              onClick={onUploadOptions}
+              className="flex items-center bg-blue-600 text-white px-3 py-2 rounded hover:bg-blue-700"
+            >
+              <Upload className="mr-1" size={18} />
+              Upload Options
+            </button>
+          </div>
+        </>
+      )}
+
+      {status === 'Ticket Selected' && renderTicketOptions()}
+
+      {status === 'DU Head Approved' && renderTicketUploadSection()}
     </div>
   );
 };

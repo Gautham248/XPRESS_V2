@@ -6,12 +6,14 @@ interface Props {
   ticketOptions: TicketOption[];
   // details: string[];
   onDownloadTickets: () => void;
+  requestStatus: string;
 }
 
 const EmployeeTicketOptionsView: React.FC<Props> = ({
   ticketOptions,
   // details,
   onDownloadTickets,
+  requestStatus,
 }) => {
   const selectedOption = ticketOptions.find(opt => opt.selected);
 

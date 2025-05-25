@@ -8,6 +8,7 @@ interface Props {
   onEditOption: (option: TicketOption) => void;
   onDeleteOption: (id: string) => void;
   onUploadOptions: () => void;
+  requestStatus: string;
 }
 
 const ManagerTicketOptionsView: React.FC<Props> = ({
@@ -15,11 +16,12 @@ const ManagerTicketOptionsView: React.FC<Props> = ({
   onSelectOption,
   onEditOption,
   onDeleteOption,
-  onUploadOptions
+  onUploadOptions,
+  requestStatus,
 }) => {
   return (
     <div className="space-y-6">
-      <h4 className="text-lg font-semibold">Select Tickets</h4>
+      <h4 className="text-md font-medium text-gray-600">Select Tickets</h4>
       {ticketOptions.length === 0 ? (
         <p>No ticket options available.</p>
       ) : (
@@ -38,7 +40,9 @@ const ManagerTicketOptionsView: React.FC<Props> = ({
               />
               <span className="flex-1">{option.description}</span>
             </label>
-            <div className="flex gap-2">
+
+            {/* Edit and Delete Buttons */}
+            {/* <div className="flex gap-2">
               <button
                 className="flex items-center gap-1 px-2 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600"
                 onClick={() => onEditOption(option)}
@@ -51,16 +55,17 @@ const ManagerTicketOptionsView: React.FC<Props> = ({
               >
                 <Trash size={16} />
               </button>
-            </div>
+            </div> */}
           </div>
         ))
       )}
       {ticketOptions.some(option => option.selected) && (
         <button
-          className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+          className="flex items-center gap-2 px-3 py-2 bg-green-500 text-white rounded hover:bg-green-600"
           onClick={onUploadOptions}
         >
-          <Upload size={16} /> Upload Selected Option
+          <Upload size={16} />
+          <p className='text-sm'>Submit Option</p>
         </button>
       )}
     </div>
