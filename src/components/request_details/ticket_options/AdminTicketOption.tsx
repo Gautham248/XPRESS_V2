@@ -33,7 +33,6 @@ const AdminTicketOptionsView: React.FC<Props> = ({
   onChangeEditText,
   onUploadOptions,
 }) => {
-  const [agencyName, setAgencyName] = useState('');
   const [uploadedDocument, setUploadedDocument] = useState<File | null>(null);
   const [showPreview, setShowPreview] = useState(false);
 
@@ -67,19 +66,6 @@ const AdminTicketOptionsView: React.FC<Props> = ({
   if (status === 'DU Head Approved') {
     return (
       <div className="space-y-6">
-        {/* Travel Agency Name Input */}
-        {/* <div>
-          <h5 className="text-md font-medium mb-2">Travel Agency:</h5>
-          <input
-            type="text"
-            placeholder="Enter travel agency name"
-            className="w-full p-2 mb-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-            value={agencyName}
-            onChange={(e) => setAgencyName(e.target.value)}
-          />
-        </div>
-        <hr /> */}
-
         {/* Upload Tickets Section */}
         <div>
           <h5 className="text-md font-medium mb-2">Upload Ticket Document:</h5>
