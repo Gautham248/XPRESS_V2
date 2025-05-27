@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Check, Clock, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { TravelRequest } from '../../data/mockData';
-import TimelineModal, { TimelineStep } from './TimelineModal';
+import { TimelineStep } from './TimelineModal';
 
 interface ApprovalTimelineProps {
   travelRequest: TravelRequest;
@@ -20,7 +20,6 @@ export const REQUEST_STATUSES = [
 ] as const;
 
 const ApprovalTimeline: React.FC<ApprovalTimelineProps> = ({ travelRequest }) => {
-  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const isRejected = travelRequest.status === 'Rejected' ||
     (travelRequest.timeline && travelRequest.timeline.some(event => event.type === 'Rejected'));

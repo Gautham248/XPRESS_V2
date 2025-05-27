@@ -44,7 +44,6 @@ const TravelInfo: React.FC<TravelInfoProps> = ({ travelRequest }) => {
       setError(null);
       
       const travelInfoURL = `http://localhost:5171/api/TravelRequest/travelinfo/${travelRequest.id}`;
-      console.log('Fetching from URL:', travelInfoURL);
       
       const response = await axios.get<TravelInfoData[] | TravelInfoData>(travelInfoURL, {
         headers: {
@@ -54,8 +53,6 @@ const TravelInfo: React.FC<TravelInfoProps> = ({ travelRequest }) => {
         timeout: 10000,
         withCredentials: false
       });
-      
-      console.log('API Response:', response.data);
       
       // Handle both array and object responses
       let responseData: TravelInfoData;
@@ -149,16 +146,16 @@ const TravelInfo: React.FC<TravelInfoProps> = ({ travelRequest }) => {
   // Use API data if available, otherwise fallback to original travelRequest data
   const displayData = travelInfoData || {
     requestId: 0,
-    departureDate: travelRequest.departureDate,
-    returnDate: travelRequest.returnDate || '',
-    transportation: travelRequest.transportationType,
-    travelTypeName: travelRequest.travelType || '',
-    requestCreateDate: travelRequest.requestDate || '',
-    purposeOfTravel: travelRequest.purpose,
-    isAccommodationRequired: travelRequest.accommodationType !== 'None',
-    foodPreference: 'vegetarian',
-    pickupLocation: '',
-    dropoffLocation: ''
+    departureDate: 'None',
+    returnDate: 'None',
+    transportation: '-',
+    travelTypeName: '-',
+    requestCreateDate: 'None',
+    purposeOfTravel: '-',
+    isAccommodationRequired: '-',
+    foodPreference: '-',
+    pickupLocation: '-',
+    dropoffLocation: '-'
   };
 
   return (
@@ -186,9 +183,9 @@ const TravelInfo: React.FC<TravelInfoProps> = ({ travelRequest }) => {
                 <Plane className="h-4 w-4 mr-2" />
               ) : displayData.transportation === "Train" ? (
                 <TrainFront className="h-4 w-4 mr-2" />
-              ) : displayData.transportation === "Other" ? (
+              ) : displayData.transportation === "Bus" ? (
                 <BusFront className="h-4 w-4 mr-2" />
-              ) : displayData.transportation === "Car Rental" ? (
+              ) : displayData.transportation === "Cab" ? (
                 <CarTaxiFront className="h-4 w-4 mr-2" />
               ) : <Check className="h-4 w-4 mr-2" />
               }
@@ -209,7 +206,7 @@ const TravelInfo: React.FC<TravelInfoProps> = ({ travelRequest }) => {
                 <Hotel className="h-4 w-4 mr-2" />
                 Accommodation
               </p>
-              <p>Required</p>
+              <p>{displayData.isAccommodationRequired}</p>
             </div>
           )}
         </div>

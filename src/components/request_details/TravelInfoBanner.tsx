@@ -30,7 +30,7 @@ const TravelInfoBanner: React.FC<TravelInfoBannerProps> = ({ travelRequest }) =>
             setError(null);
             
             const travelInfoBannerURL = `http://localhost:5171/api/TravelRequest/infobanner/${travelRequest.id}`;
-            console.log('Fetching from URL:', travelInfoBannerURL);
+            // console.log('Fetching from URL:', travelInfoBannerURL);
             
             const response = await axios.get<TravelInfoBannerData[] | TravelInfoBannerData>(travelInfoBannerURL, {
                 headers: {
@@ -41,7 +41,7 @@ const TravelInfoBanner: React.FC<TravelInfoBannerProps> = ({ travelRequest }) =>
                 withCredentials: false
             });
             
-            console.log('API Response:', response.data);
+            // console.log('API Response:', response.data);
             
             // Handle both array and object responses
             let responseData: TravelInfoBannerData;
@@ -84,18 +84,6 @@ const TravelInfoBanner: React.FC<TravelInfoBannerProps> = ({ travelRequest }) =>
                 setError('Failed to load travel information');
             }
             
-            // Fallback to original travelRequest data
-            // setBannerData({
-            //     requestId: 0,
-            //     employeeName: travelRequest.travelerName,
-            //     departmentName: travelRequest.departmentCode,
-            //     projectCode: travelRequest.projectCode,
-            //     travelModeName: travelRequest.transportationType,
-            //     sourcePlace: travelRequest.source,
-            //     sourceCountry: "",
-            //     destinationPlace: travelRequest.destination,
-            //     destinationCountry: ""
-            // });
         } finally {
             setLoading(false);
         }
@@ -115,20 +103,20 @@ const TravelInfoBanner: React.FC<TravelInfoBannerProps> = ({ travelRequest }) =>
 
     const displayData = bannerData || {
         requestId: 0,
-        employeeName: travelRequest.travelerName,
-        departmentName: travelRequest.departmentCode,
-        projectCode: travelRequest.projectCode,
-        travelModeName: travelRequest.transportationType,
-        sourcePlace: travelRequest.source,
-        sourceCountry: "",
-        destinationPlace: travelRequest.destination,
-        destinationCountry: ""
+        employeeName: "Null",
+        departmentName: "-",
+        projectCode: "-",
+        travelModeName: "-",
+        sourcePlace: "Nil",
+        sourceCountry: "Nil",
+        destinationPlace: "Nil",
+        destinationCountry: "Nil"
     };
 
     return (
         <div className="card relative bg-white rounded-lg px-6 py-4 flex justify-between items-center w-full">
             {error && (
-                <div className="absolute top-2 right-2 text-xs text-red-500">
+                <div className="absolute top-2 right-2 text-sm text-red-600 mb-4 p-2 bg-red-50 border border-red-200 rounded">
                     {error}
                 </div>
             )}

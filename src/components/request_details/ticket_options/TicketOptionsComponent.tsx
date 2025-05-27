@@ -152,7 +152,7 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ travelRequest }) => {
 
           {userRole === 'employee' && (
             <EmployeeTicketOptionsView
-              ticketOptions={ticketOptions}
+              requestId={travelRequest.id}
               onDownloadTickets={handleDownloadTickets}
               requestStatus={travelRequest.status}
             />
