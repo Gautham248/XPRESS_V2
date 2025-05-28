@@ -1,19 +1,35 @@
-
 import React, { useState } from 'react';
-import { Download, Calendar, Briefcase, DollarSign, Plane } from 'lucide-react';
+import { Download, Briefcase, DollarSign, Plane } from 'lucide-react';
 import StatCard from './StatCard';
 import AirlineDistributionChart from './AirlineDistributionChart';
 import TravelAgencyBarChart from './TravelAgencyBarChart';
 import { mockTravelRequests } from '../../../data/mockData';
+import DateRangePicker from './DateRangePicker';
 
-// Define type for travel requests
+// Define TypeScript interfaces
+interface TravelRequest {
+  id: string;
+  requestDate: string;
+  status: string;
+  travelType: 'Domestic' | 'International';
+  estimatedCost: number;
+  airline?: string;
+  travelAgency?: string;
+}
+interface ChartDataItem {
+  name: string;
+  value: number;
+  cost?: number;
+}
+
+
 
 const Reports: React.FC = () => {
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
 
   // Filter requests based on date range if provided
-  const filteredRequests = mockTravelRequests.filter((request) => {
+  const filteredRequests = mockTravelRequests.filter((request: TravelRequest) => {
     const requestDate = new Date(request.requestDate);
     const start = startDate ? new Date(startDate) : new Date('1900-01-01');
     const end = endDate ? new Date(endDate) : new Date('9999-12-31');
@@ -24,88 +40,91 @@ const Reports: React.FC = () => {
   const totalRequests = filteredRequests.length;
 
   const approvedStatuses = ['Tickets Dispatched', 'In-transit', 'Returned', 'Closed'];
-  const approvedRequests = filteredRequests.filter((r) =>
+  const approvedRequests = filteredRequests.filter((r: TravelRequest) =>
     approvedStatuses.includes(r.status)
   ).length;
 
   const rejectedRequests = filteredRequests.filter(
-    (r) => r.status === 'Rejected'
+    (r: TravelRequest) => r.status === 'Rejected'
   ).length;
 
   const pendingRequests = totalRequests - approvedRequests - rejectedRequests;
 
   // Second Box: Total Cost for Approved Requests (Domestic and International)
-  const approvedRequestsData = filteredRequests.filter((r) =>
+  const approvedRequestsData = filteredRequests.filter((r: TravelRequest) =>
     approvedStatuses.includes(r.status)
   );
 
   const totalCost = approvedRequestsData.reduce(
-    (sum, request) => sum + request.estimatedCost,
+    (sum: number, request: TravelRequest) => sum + request.estimatedCost,
     0
   );
 
   const domesticCost = approvedRequestsData
-    .filter((r) => r.travelType === 'Domestic')
-    .reduce((sum, request) => sum + request.estimatedCost, 0);
+    .filter((r: TravelRequest) => r.travelType === 'Domestic')
+    .reduce((sum: number, request: TravelRequest) => sum + request.estimatedCost, 0);
 
   const internationalCost = approvedRequestsData
-    .filter((r) => r.travelType === 'International')
-    .reduce((sum, request) => sum + request.estimatedCost, 0);
+    .filter((r: TravelRequest) => r.travelType === 'International')
+    .reduce((sum: number, request: TravelRequest) => sum + request.estimatedCost, 0);
 
   // Third Box: Total Number of Trips (Domestic and International)
   const tripStatuses = ['Tickets Dispatched', 'In-transit', 'Returned', 'Closed'];
-  const totalTrips = filteredRequests.filter((r) =>
+  const totalTrips = filteredRequests.filter((r: TravelRequest) =>
     tripStatuses.includes(r.status)
   ).length;
 
   const domesticTrips = filteredRequests
-    .filter((r) => tripStatuses.includes(r.status) && r.travelType === 'Domestic')
+    .filter((r: TravelRequest) => tripStatuses.includes(r.status) && r.travelType === 'Domestic')
     .length;
 
   const internationalTrips = filteredRequests
-    .filter((r) => tripStatuses.includes(r.status) && r.travelType === 'International')
+    .filter((r: TravelRequest) => tripStatuses.includes(r.status) && r.travelType === 'International')
     .length;
 
   // Dynamic airline data from filtered requests
-  const getAirlineDistribution = () => {
-    const airlineCounts: Record<string, number> = {};
-    
-    filteredRequests
-      .filter(req => req.airline && tripStatuses.includes(req.status))
-      .forEach(req => {
-        if (req.airline) {
-          airlineCounts[req.airline] = (airlineCounts[req.airline] || 0) + 1;
-        }
-      });
-    
-    return Object.entries(airlineCounts).map(([name, value]) => ({
-      name,
-      value
-    }));
-  };
-
+ const getAirlineDistribution = (): ChartDataItem[] => {
+  const airlineCounts: Record<string, number> = {};
+  const airlineCosts: Record<string, number> = {};
+  
+  filteredRequests
+    .filter((req: TravelRequest) => req.airline && tripStatuses.includes(req.status))
+    .forEach((req: TravelRequest) => {
+      if (req.airline) {
+        airlineCounts[req.airline] = (airlineCounts[req.airline] || 0) + 1;
+        airlineCosts[req.airline] = (airlineCosts[req.airline] || 0) + req.estimatedCost;
+      }
+    });
+  
+  return Object.entries(airlineCounts).map(([name, value]) => ({
+    name,
+    value,
+    cost: airlineCosts[name] || 0
+  }));
+};
   const airlineData = getAirlineDistribution();
   
   // Get agency distribution data
-  const getAgencyDistribution = () => {
-    const agencyCounts: Record<string, number> = {};
-    
-    filteredRequests
-      .filter(req => req.travelAgency && tripStatuses.includes(req.status))
-      .forEach(req => {
-        if (req.travelAgency) {
-          agencyCounts[req.travelAgency] = (agencyCounts[req.travelAgency] || 0) + 1;
-        }
-      });
-
-    
+const getAgencyDistribution = (): ChartDataItem[] => {
+  const agencyCounts: Record<string, number> = {};
+  const agencyCosts: Record<string, number> = {};
   
-    
-    return Object.entries(agencyCounts).map(([name, value]) => ({
-      name,
-      value
-    }));
-  };
+  filteredRequests
+    .filter((req: TravelRequest) => req.travelAgency && tripStatuses.includes(req.status))
+    .forEach((req: TravelRequest) => {
+      if (req.travelAgency) {
+        agencyCounts[req.travelAgency] = (agencyCounts[req.travelAgency] || 0) + 1;
+        agencyCosts[req.travelAgency] = (agencyCosts[req.travelAgency] || 0) + req.estimatedCost;
+      }
+    });
+
+  return Object.entries(agencyCounts).map(([name, value]) => ({
+    name,
+    value,
+    cost: agencyCosts[name] || 0
+  }));
+};
+
 
   const agencyData = getAgencyDistribution();
 
@@ -115,31 +134,14 @@ const Reports: React.FC = () => {
         <h2 className="text-2xl font-semibold">Travel Reports & Analytics</h2>
 
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
-            <div className="relative">
-              <Calendar className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
-              <input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className="pl-10 pr-3 py-2 bg-muted rounded-md text-sm min-w-36"
-                placeholder="Start Date"
-              />
-            </div>
-            <span className="text-sm text-muted-foreground">to</span>
-            <div className="relative">
-              <Calendar className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
-              <input
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className="pl-10 pr-3 py-2 bg-muted rounded-md text-sm min-w-36"
-                placeholder="End Date"
-              />
-            </div>
-          </div>
+          <DateRangePicker
+            startDate={startDate}
+            endDate={endDate}
+            onStartDateChange={setStartDate}
+            onEndDateChange={setEndDate}
+          />
 
-          <button className="btn-primary flex items-center">
+          <button className="btn-primary flex items-center px-4 py-2 bg-blue-600 text-white rounded-md">
             <Download className="h-4 w-4 mr-2" />
             Export Reports
           </button>
@@ -235,14 +237,13 @@ const Reports: React.FC = () => {
         </StatCard>
       </div>
 
-      {/* New Section: Bar Chart and Pie Chart */}
+      {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Bar Chart: Travel Agency Usage */}
-        <TravelAgencyBarChart chartData={agencyData} startDate={startDate} endDate={endDate}/>
+        <TravelAgencyBarChart chartData={agencyData} startDate={startDate} endDate={endDate} />
 
         {/* Pie Chart: Airline Distribution */}
-    
-       <AirlineDistributionChart chartData={airlineData} startDate={startDate} endDate={endDate} />
+        <AirlineDistributionChart chartData={airlineData} startDate={startDate} endDate={endDate} />
       </div>
     </div>
   );
