@@ -66,14 +66,18 @@ const RoleLayout: React.FC<RoleLayoutProps> = ({ role }) => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col relative">
+    <div className="flex flex-col overflow-hidden" style={{ zoom: '0.8', height: '125vh' }}>
+      {/* Fixed Header */}
       <Header 
         pageTitle={`${role.charAt(0).toUpperCase() + role.slice(1)} Dashboard`}
         toggleSidebar={toggleSidebar} 
         sidebarOpen={isOpen}
       />
-      <div className="flex-1 flex relative">
-        <aside className={`bg-card flex flex-col border-r shadow-sm transition-all duration-300 fixed top-16 ${isOpen ? 'w-64' : 'w-20'} bottom-14`}>
+      
+      {/* Main container with sidebar and content */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* Fixed Sidebar */}
+        <aside className={`bg-card flex flex-col border-r shadow-sm transition-all duration-300 ${isOpen ? 'w-64' : 'w-20'} flex-shrink-0`}>
           <div className="flex items-center justify-between h-16 px-4 border-b">
             <div className={`flex items-center ${isOpen ? '' : 'justify-center w-full'}`}>
               <User className="h-6 w-6 text-primary" />
@@ -119,12 +123,16 @@ const RoleLayout: React.FC<RoleLayoutProps> = ({ role }) => {
           </div>
         </aside>
 
-        {/* Main Content */}
-        <main className={`flex-1 p-8 pb-16 bg-gray-100 ${isOpen ? 'ml-64' : 'ml-20'}`}>
-          <Outlet />
+        {/* Scrollable Main Content */}
+        <main className="flex-1 overflow-y-auto bg-gray-100">
+          <div className="p-8">
+            <Outlet />
+          </div>
         </main>
       </div>
-      <Footer className="fixed bottom-0 w-full z-10" />
+      
+      {/* Fixed Footer */}
+      <Footer />
     </div>
   );
 };
