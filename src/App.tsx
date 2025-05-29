@@ -14,6 +14,7 @@ import Settings from './pages/admin/Settings';
 import NotFound from './components/not_found/NotFound';
 import CreateRequest from './components/Create Request/CreateRequest';
 import Documents from './components/document/Documents';
+import Dashboard from './pages/admin/ReportComponents/Dashboard';
 
 function App() {
   return (
@@ -33,7 +34,7 @@ function App() {
           <Route path="travel-requests" element={<TravelRequests />} />
           <Route path="travel-requests/:id" element={<TravelRequestDetails />} />
           <Route path="calendar" element={<Calendar />} />
-          <Route path="reports" element={<Reports />} />
+          <Route path="reports" element={<Dashboard/>} />
           <Route path="settings" element={<Settings />} />
           <Route path="documents" element={<Documents />} />
           {/* <Route path="create-request" element={<CreateRequest />} /> */}

@@ -66,14 +66,14 @@ const RoleLayout: React.FC<RoleLayoutProps> = ({ role }) => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col relative">
       <Header 
         pageTitle={`${role.charAt(0).toUpperCase() + role.slice(1)} Dashboard`}
         toggleSidebar={toggleSidebar} 
         sidebarOpen={isOpen}
       />
-      <div className="flex-1 flex">
-        <aside className={`bg-card flex flex-col border-r shadow-sm transition-all duration-300 ${isOpen ? 'w-64' : 'w-20'}`}>
+      <div className="flex-1 flex relative">
+        <aside className={`bg-card flex flex-col border-r shadow-sm transition-all duration-300 fixed top-16 ${isOpen ? 'w-64' : 'w-20'} bottom-14`}>
           <div className="flex items-center justify-between h-16 px-4 border-b">
             <div className={`flex items-center ${isOpen ? '' : 'justify-center w-full'}`}>
               <User className="h-6 w-6 text-primary" />
@@ -120,11 +120,11 @@ const RoleLayout: React.FC<RoleLayoutProps> = ({ role }) => {
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 p-8 bg-gray-100">
+        <main className={`flex-1 p-8 pb-16 bg-gray-100 ${isOpen ? 'ml-64' : 'ml-20'}`}>
           <Outlet />
         </main>
       </div>
-      <Footer />
+      <Footer className="fixed bottom-0 w-full z-10" />
     </div>
   );
 };
