@@ -20,7 +20,7 @@ const StatCard: React.FC<StatCardProps> = ({
   children
 }) => {
   return (
-    <div className="card p-6 relative overflow-hidden">
+    <div className="card p-6 relative overflow-hidden ">
       <div className="absolute right-0 top-0 opacity-10">
         {/* Fixed the icon rendering in the background */}
         {React.cloneElement(icon as React.ReactElement, { 
@@ -33,8 +33,8 @@ const StatCard: React.FC<StatCardProps> = ({
         </h3>
         <div className="flex items-end justify-between">
           <div>
-            <p className="text-3xl font-semibold">{value}</p>
-            <p className="text-sm text-muted-foreground">{subtitle}</p>
+            <p className="text-3xl font-semibold ">{value}</p>
+            <p className="text-sm text-muted-foreground mb-1">{subtitle}</p>
           </div>
           {/* <div className={`h-16 w-16 flex items-center justify-center rounded-full ${iconBgClass}`}>
           

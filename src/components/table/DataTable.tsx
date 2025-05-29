@@ -312,7 +312,8 @@ const DataTable = <T extends Record<string, any>>({
           </div>
         </div>
 
-        <div className="overflow-x-auto max-w-[1150px] border border-gray-200 rounded-md">
+     
+        <div className="overflow-x-auto w-full border border-gray-200 rounded-md">
           <table className="w-full">
             <thead>
               <tr className="border-b">
