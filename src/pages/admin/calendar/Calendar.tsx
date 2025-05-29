@@ -1,11 +1,23 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { TravelRequest, mockTravelRequests } from '../../../data/mockData';
+import axios from 'axios';
 import DatePicker from './DatePicker';
 import WeekView from './WeekView';
 import MonthView from './MonthView';
 import EventSidebar from './EventSidebar';
 import ViewToggle from './ViewToggle';
+
+export interface TravelRequest {
+  requestId: number;
+  departureDate: string;
+  returnDate: string;
+  employeeName: string;
+  sourcePlace: string;
+  sourceCountry: string;
+  destinationPlace: string;
+  destinationCountry: string;
+  currentStatusName: string;
+}
 
 export interface TravelEvent {
   type: 'Departure' | 'Return';
@@ -29,16 +41,36 @@ const Calendar: React.FC = () => {
   const [view, setView] = useState<'Month' | 'Week'>('Week');
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedEventType, setSelectedEventType] = useState<'Departure' | 'Return' | null>(null);
+  const [travelRequests, setTravelRequests] = useState<TravelRequest[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const excludedStatuses: string[] = ['Tickets Dispatched', 'Rejected', 'In Transit', 'Closed', 'Returned'];
-  const filteredRequests: TravelRequest[] = mockTravelRequests;
+  useEffect(() => {
+    const fetchTravelRequests = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await axios.get('http://localhost:5171/api/TravelRequest/Calendar'); // Updated with actual port
+        setTravelRequests(response.data);
+      } catch (err) {
+        console.error('Error fetching travel requests:', err);
+        setError('Failed to load travel requests. Please try again later.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTravelRequests();
+  }, []);
 
   const getEventsForDate = (date: Date): TravelEvent[] => {
     const istOffset = 5.5 * 60 * 60 * 1000;
     const adjustedDate = new Date(date.getTime() + istOffset);
     const events: TravelEvent[] = [];
 
-    filteredRequests.forEach((request: TravelRequest) => {
+    const validStatuses = ['Pending','Tickets Dispatched', 'In-transit', 'Returned', 'Closed'];
+
+    travelRequests.forEach((request: TravelRequest) => {
       const depDate = new Date(request.departureDate);
       const retDate = new Date(request.returnDate);
       const adjustedDepDate = new Date(depDate.getTime() + istOffset);
@@ -54,10 +86,10 @@ const Calendar: React.FC = () => {
         adjustedRetDate.getMonth() === adjustedDate.getMonth() &&
         adjustedRetDate.getDate() === adjustedDate.getDate();
 
-      if (isDeparture && request.status === 'Tickets Dispatched') {
+      if (isDeparture && validStatuses.includes(request.currentStatusName)) {
         events.push({ type: 'Departure', request });
       }
-      if (isReturn && request.status === 'Tickets Dispatched') {
+      if (isReturn && validStatuses.includes(request.currentStatusName)) {
         events.push({ type: 'Return', request });
       }
     });
@@ -71,7 +103,7 @@ const Calendar: React.FC = () => {
     const daysInPrevMonth = new Date(year, month, 0).getDate();
 
     const prevMonthDays: DayInfo[] = Array.from({ length: firstDayOfMonth }, (_, i) => ({
-      day: daysInPrevMonth - firstDayOfMonth + i + 1, // Fixed: Changed 'days' to 'day'
+      day: daysInPrevMonth - firstDayOfMonth + i + 1,
       currentMonth: false,
       month: month - 1 < 0 ? 11 : month - 1,
       year: month - 1 < 0 ? year - 1 : year,
@@ -165,63 +197,69 @@ const Calendar: React.FC = () => {
         <h1 className="text-2xl font-semibold text-gray-800">Travel Calendar</h1>
       </div>
 
-      <div className="flex gap-4">
-        <div className="flex-[0.65] bg-white rounded-lg shadow-sm p-4">
-          <div className="flex items-center mb-4">
-            <DatePicker
-              currentDate={currentDate}
-              view={view}
-              onDateSelect={handleDateSelect}
-              formatWeekRange={formatWeekRange}
-            />
-            <div className="flex items-center">
-              <button
-                className="px-2 py-1 text-gray-600 hover:text-gray-800"
-                onClick={handlePrev}
-              >
-                {'<'}
-              </button>
-              <button
-                className="px-2 py-1 text-gray-600 hover:text-gray-800"
-                onClick={handleNext}
-              >
-                {'>'}
-              </button>
+      {loading ? (
+        <div className="text-center text-gray-600">Loading travel requests...</div>
+      ) : error ? (
+        <div className="text-center text-red-600">{error}</div>
+      ) : (
+        <div className="flex gap-4">
+          <div className="flex-[0.65] bg-white rounded-lg shadow-sm p-4">
+            <div className="flex items-center mb-4">
+              <DatePicker
+                currentDate={currentDate}
+                view={view}
+                onDateSelect={handleDateSelect}
+                formatWeekRange={formatWeekRange}
+              />
+              <div className="flex items-center">
+                <button
+                  className="px-2 py-1 text-gray-600 hover:text-gray-800"
+                  onClick={handlePrev}
+                >
+                  {'<'}
+                </button>
+                <button
+                  className="px-2 py-1 text-gray-600 hover:text-gray-800"
+                  onClick={handleNext}
+                >
+                  {'>'}
+                </button>
+              </div>
+              <div className="ml-auto">
+                <ViewToggle view={view} onViewChange={handleViewChange} />
+              </div>
             </div>
-            <div className="ml-auto">
-              <ViewToggle view={view} onViewChange={handleViewChange} />
-            </div>
+
+            {view === 'Month' ? (
+              <MonthView
+                currentDate={currentDate}
+                getDaysForMonth={getDaysForMonth}
+                getEventsForDate={getEventsForDate}
+                selectedDate={selectedDate}
+                setSelectedDate={setSelectedDate}
+                setSelectedEventType={setSelectedEventType}
+              />
+            ) : (
+              <WeekView
+                currentDate={currentDate}
+                getEventsForDate={getEventsForDate}
+                selectedDate={selectedDate}
+                setSelectedDate={setSelectedDate}
+                setSelectedEventType={setSelectedEventType}
+              />
+            )}
           </div>
 
-          {view === 'Month' ? (
-            <MonthView
-              currentDate={currentDate}
-              getDaysForMonth={getDaysForMonth}
-              getEventsForDate={getEventsForDate}
-              selectedDate={selectedDate}
-              setSelectedDate={setSelectedDate}
-              setSelectedEventType={setSelectedEventType}
-            />
-          ) : (
-            <WeekView
-              currentDate={currentDate}
-              getEventsForDate={getEventsForDate}
-              selectedDate={selectedDate}
-              setSelectedDate={setSelectedDate}
-              setSelectedEventType={setSelectedEventType}
-            />
-          )}
+          <EventSidebar
+            selectedDate={selectedDate}
+            selectedEventType={selectedEventType}
+            getEventsForDate={getEventsForDate}
+            navigate={navigate}
+            view={view}
+            currentDate={currentDate}
+          />
         </div>
-
-        <EventSidebar
-          selectedDate={selectedDate}
-          selectedEventType={selectedEventType}
-          getEventsForDate={getEventsForDate}
-          navigate={navigate}
-          view={view}
-          currentDate={currentDate}
-        />
-      </div>
+      )}
     </div>
   );
 };
