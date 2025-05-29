@@ -1,0 +1,153 @@
+erDiagram
+    %% Master Data Tables
+    USERS {
+        int employee_id PK
+        varchar first_name
+        varchar last_name
+        varchar role
+        varchar department
+        boolean is_active
+        datetime created_at
+        int reporting_manager_id FK
+        int du_head_id FK
+    }
+
+    TRAVEL_TYPES {
+        int travel_type_id PK
+        varchar travel_type_name
+        varchar description
+        boolean is_active
+        datetime created_at
+    }
+
+    TRAVEL_MODES {
+        int travel_mode_id PK
+        varchar travel_mode_name
+        varchar description
+        boolean is_active
+        datetime created_at
+    }
+
+    TRIP_TYPES {
+        int trip_type_id PK
+        varchar trip_type_name
+        varchar description
+        boolean is_active
+        datetime created_at
+    }
+
+    REQUEST_STATUSES {
+        int status_id PK
+        varchar status_name
+        varchar status_description
+        int sequence_order
+        boolean is_active
+        datetime created_at
+    }
+
+    %% Core Tables
+    TRAVEL_REQUESTS {
+        int request_id PK
+        int employee_id FK
+        int travel_type_id FK
+        int trip_type_id FK
+        varchar project_code
+        varchar source_place
+        varchar source_country
+        varchar destination_place
+        varchar destination_country
+        date departure_date
+        date return_date
+        int travel_mode_id FK
+        boolean is_accommodation_required
+        boolean is_pickup_required
+        boolean is_dropoff_required
+        varchar pickup_location
+        varchar dropoff_location
+        text comments
+        varchar purpose_of_travel
+        varchar food_preference
+        boolean attended_cct
+        int current_status_id FK
+        int selected_ticket_option_id FK
+        varchar travel_agency_name
+        decimal total_expense
+        text uploaded_ticket_pdf_path
+        datetime created_at
+        datetime updated_at
+    }
+
+    TICKET_OPTIONS {
+        int option_id PK
+        int request_id FK
+        varchar option_description
+        varchar airline_name
+        varchar flight_number
+        datetime departure_time
+        datetime arrival_time
+        decimal price
+        varchar booking_class
+        text additional_details
+        boolean is_available
+        datetime created_at
+        int created_by FK
+    }
+
+    REQUEST_APPROVALS {
+        int approval_id PK
+        int request_id FK
+        int approver_id FK
+        varchar approval_level
+        varchar action_taken
+        text comments
+        int previous_status_id FK
+        int new_status_id FK
+        datetime action_date
+        datetime created_at
+    }
+
+    AUDIT_LOGS {
+        int log_id PK
+        int request_id FK
+        int user_id FK
+        varchar action_type
+        int old_status_id FK
+        int new_status_id FK
+        text change_description
+        text comments
+        varchar ip_address
+        datetime timestamp
+    }
+
+    PROJECTS {
+        varchar project_code PK
+        varchar project_name
+        varchar project_description
+        varchar project_manager
+        boolean is_active
+        datetime created_at
+    }
+
+    %% Relationships
+    USERS ||--o{ TRAVEL_REQUESTS : "creates"
+    USERS ||--o{ USERS : "reports_to"
+    USERS ||--o{ USERS : "du_head_of"
+    USERS ||--o{ TICKET_OPTIONS : "creates"
+    USERS ||--o{ REQUEST_APPROVALS : "approves"
+    USERS ||--o{ AUDIT_LOGS : "performs_action"
+
+    TRAVEL_TYPES ||--o{ TRAVEL_REQUESTS : "categorizes"
+    TRAVEL_MODES ||--o{ TRAVEL_REQUESTS : "defines_mode"
+    TRIP_TYPES ||--o{ TRAVEL_REQUESTS : "defines_trip_type"
+    REQUEST_STATUSES ||--o{ TRAVEL_REQUESTS : "current_status"
+    REQUEST_STATUSES ||--o{ REQUEST_APPROVALS : "previous_status"
+    REQUEST_STATUSES ||--o{ REQUEST_APPROVALS : "new_status"
+    REQUEST_STATUSES ||--o{ AUDIT_LOGS : "old_status"
+    REQUEST_STATUSES ||--o{ AUDIT_LOGS : "new_status"
+
+    TRAVEL_REQUESTS ||--o{ TICKET_OPTIONS : "has_options"
+    TRAVEL_REQUESTS ||--o{ REQUEST_APPROVALS : "approved_for"
+    TRAVEL_REQUESTS ||--o{ AUDIT_LOGS : "logged_for"
+    TICKET_OPTIONS ||--o| TRAVEL_REQUESTS : "selected_option"
+
+    PROJECTS ||--o{ TRAVEL_REQUESTS : "associated_with"
