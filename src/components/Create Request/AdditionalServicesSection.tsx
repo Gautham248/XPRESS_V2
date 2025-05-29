@@ -13,7 +13,9 @@ const AdditionalServicesSection: React.FC = () => {
     pickupLocation, 
     dropoffLocation, 
     pickupTime, 
-    dropoffTime 
+    dropoffTime,
+    requiresFoodPreference,
+    foodPreference
   } = state;
 
   const handlePickupLocationSelect = (location: any) => {
@@ -160,6 +162,65 @@ const AdditionalServicesSection: React.FC = () => {
                   required
                 />
               </label>
+            </div>
+          </div>
+        )}
+
+        <div className="flex items-center space-x-2">
+          <input
+            type="checkbox"
+            id="foodPreference"
+            className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+            checked={requiresFoodPreference}
+            onChange={(e) => 
+              dispatch({ type: 'SET_REQUIRES_FOOD_PREFERENCE', payload: e.target.checked })
+            }
+          />
+          <label htmlFor="foodPreference" className="text-sm font-medium">
+            Food Preference Required
+          </label>
+        </div>
+
+        {requiresFoodPreference && (
+          <div className="pl-6 space-y-4">
+            <div>
+              <label className="text-sm font-medium mb-3 block">
+                Select Food Preference
+              </label>
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="radio"
+                    id="veg"
+                    name="foodPreference"
+                    value="veg"
+                    className="h-4 w-4 border-gray-300 text-primary focus:ring-primary"
+                    checked={foodPreference === 'veg'}
+                    onChange={(e) => 
+                      dispatch({ type: 'SET_FOOD_PREFERENCE', payload: e.target.value as 'veg' | 'non-veg' })
+                    }
+                  />
+                  <label htmlFor="veg" className="text-sm font-medium">
+                    Vegetarian
+                  </label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="radio"
+                    id="nonVeg"
+                    name="foodPreference"
+                    value="non-veg"
+                    className="h-4 w-4 border-gray-300 text-primary focus:ring-primary"
+                    checked={foodPreference === 'non-veg'}
+                    onChange={(e) => 
+                      dispatch({ type: 'SET_FOOD_PREFERENCE', payload: e.target.value as 'veg' | 'non-veg' })
+                    }
+                  />
+                  <label htmlFor="nonVeg" className="text-sm font-medium">
+                    Non-Vegetarian
+                  </label>
+                </div>
+              </div>
             </div>
           </div>
         )}
