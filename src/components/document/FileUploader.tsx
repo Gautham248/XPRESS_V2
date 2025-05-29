@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Upload, FileText, Trash2, AlertCircle, X } from "lucide-react";
 
-interface FileUploaderProps {
+export interface FileUploaderProps {
   onFileSelect: (file: File | null) => void;
   showValidation?: boolean;
   selectedFile: File | null;

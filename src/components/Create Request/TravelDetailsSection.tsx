@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
-import { Plane, Train, Bus, Car, AlertCircle } from 'lucide-react';
+import { Plane, Train, Bus, Car, AlertCircle, MapPin, Calendar } from 'lucide-react';
 import { useTravelRequest } from './TravelRequestContext';
 import LocationSearch from './LocationSearch';
 
@@ -16,76 +16,137 @@ const TravelDetailsSection: React.FC = () => {
     returnDate, 
     transportMode,
     projectCode,
-    reason
+    reason,
+    comments
   } = state;
 
-  // Country validation for domestic travel
+  // Country validation for both domestic and international travel
   const [validationError, setValidationError] = React.useState<string | null>(null);
 
   useEffect(() => {
-    // Clear validation error when travel type changes
-    if (travelType === 'international') {
-      setValidationError(null);
-    }
-    
-    // Check for country mismatch in domestic travel
-    if (travelType === 'domestic' && source?.country && destination?.country 
-        && source.country !== destination.country) {
-      setValidationError(`Domestic travel must be within the same country. 
-        Source: ${source.country}, Destination: ${destination.country}`);
+    // Check validation when travel type or locations change
+    if (source && destination) {
+      // Check if source and destination are the same
+      const sourceLocation = `${source.city}-${source.state}-${source.country}`.toLowerCase();
+      const destinationLocation = `${destination.city}-${destination.state}-${destination.country}`.toLowerCase();
+      
+      if (sourceLocation === destinationLocation) {
+        setValidationError('Source and destination cannot be the same location');
+        return;
+      }
+
+      // Check country validation
+      if (source.country && destination.country) {
+        const sameCountry = source.country === destination.country;
+        
+        if (travelType === 'domestic' && !sameCountry) {
+          setValidationError(
+            `Domestic travel must be within the same country. Source: ${source.country}, Destination: ${destination.country}`
+          );
+        } else if (travelType === 'international' && sameCountry) {
+          setValidationError(
+            `International travel requires different countries. Both source and destination are in ${source.country}`
+          );
+        } else {
+          setValidationError(null);
+        }
+      } else {
+        setValidationError(null);
+      }
     } else {
       setValidationError(null);
     }
-  }, [travelType, source?.country, destination?.country]);
+  }, [travelType, source, destination]);
+
+  const parseLocationFromLabel = (label: string) => {
+    const parts = label.split(',').map(part => part.trim());
+    
+    let city = "";
+    let state = "";
+    let country = "";
+    
+    if (parts.length === 1) {
+      // Only city provided
+      city = parts[0];
+    } else if (parts.length === 2) {
+      // City and Country
+      city = parts[0];
+      country = parts[1]; // Last element is country
+    } else if (parts.length === 3) {
+      // City, State, Country
+      city = parts[0];
+      state = parts[1];
+      country = parts[2]; // Last element is country
+    } else if (parts.length >= 4) {
+      // City, District/Area, State, Country (like Kochi, Ernakulam, Kerala, India)
+      city = parts[0];
+      state = parts[parts.length - 2]; // Second to last is state
+      country = parts[parts.length - 1]; // Last element is country
+    }
+    
+    return { city, state, country };
+  };
 
   const handleSourceSelect = (location: any) => {
-    const sourceLocation = {
-      country: location.country || '',
-      city: location.city || location.town || location.village || '',
-      state: location.state || '',
-      label: location.label || [
-        location.city || location.town || location.village || '',
-        location.state || '',
-        location.country || ''
-      ].filter(Boolean).join(", "),
-      value: location.value || `${location.city || location.town || location.village || ''}-${location.state || ''}-${location.country || ''}`.toLowerCase().replace(/\s+/g, '-')
-    };
+    let sourceLocation;
+    
+    if (location.custom && location.label) {
+      // For custom entries, parse the label properly
+      const parsed = parseLocationFromLabel(location.label);
+      sourceLocation = {
+        country: parsed.country,
+        city: parsed.city,
+        state: parsed.state,
+        label: location.label,
+        value: location.value || `${parsed.city}-${parsed.state}-${parsed.country}`.toLowerCase().replace(/\s+/g, '-')
+      };
+    } else {
+      // For API results, use the existing logic
+      sourceLocation = {
+        country: location.country || '',
+        city: location.city || location.town || location.village || '',
+        state: location.state || '',
+        label: location.label || [
+          location.city || location.town || location.village || '',
+          location.state || '',
+          location.country || ''
+        ].filter(Boolean).join(", "),
+        value: location.value || `${location.city || location.town || location.village || ''}-${location.state || ''}-${location.country || ''}`.toLowerCase().replace(/\s+/g, '-')
+      };
+    }
     
     dispatch({ type: 'SET_SOURCE', payload: sourceLocation });
-    
-    // Validate countries match for domestic travel when both source and destination are selected
-    if (travelType === 'domestic' && destination?.country && location.country 
-        && location.country !== destination.country) {
-      setValidationError(`Domestic travel must be within the same country. 
-        Source: ${location.country}, Destination: ${destination.country}`);
-    } else {
-      setValidationError(null);
-    }
   };
 
   const handleDestinationSelect = (location: any) => {
-    const destinationLocation = {
-      country: location.country || '',
-      city: location.city || location.town || location.village || '',
-      state: location.state || '',
-      label: location.label || [
-        location.city || location.town || location.village || '',
-        location.state || '',
-        location.country || ''
-      ].filter(Boolean).join(", "),
-      value: location.value || `${location.city || location.town || location.village || ''}-${location.state || ''}-${location.country || ''}`.toLowerCase().replace(/\s+/g, '-')
-    };
+    let destinationLocation;
+    
+    if (location.custom && location.label) {
+      // For custom entries, parse the label properly
+      const parsed = parseLocationFromLabel(location.label);
+      destinationLocation = {
+        country: parsed.country,
+        city: parsed.city,
+        state: parsed.state,
+        label: location.label,
+        value: location.value || `${parsed.city}-${parsed.state}-${parsed.country}`.toLowerCase().replace(/\s+/g, '-')
+      };
+    } else {
+      // For API results, use the existing logic
+      destinationLocation = {
+        country: location.country || '',
+        city: location.city || location.town || location.village || '',
+        state: location.state || '',
+        label: location.label || [
+          location.city || location.town || location.village || '',
+          location.state || '',
+          location.country || ''
+        ].filter(Boolean).join(", "),
+        value: location.value || `${location.city || location.town || location.village || ''}-${location.state || ''}-${location.country || ''}`.toLowerCase().replace(/\s+/g, '-')
+      };
+    }
     
     dispatch({ type: 'SET_DESTINATION', payload: destinationLocation });
-    
-    // Validate countries match for domestic travel when both source and destination are selected
-    if (travelType === 'domestic' && source?.country && location.country 
-        && source.country !== location.country) {
-      setValidationError(`Domestic travel must be within the same country. 
-        Source: ${source.country}, Destination: ${location.country}`);
-    } else {
-      setValidationError(null);
-    }
   };
 
   const transportOptions = travelType === 'international' 
@@ -110,23 +171,28 @@ const TravelDetailsSection: React.FC = () => {
           <div className="bg-red-50 border border-red-200 rounded-md p-4 mb-4 flex items-start space-x-3">
             <AlertCircle className="text-red-500 h-5 w-5 mt-0.5 flex-shrink-0" />
             <div>
-              <h4 className="text-sm font-medium text-red-800">Validation Error</h4>
+              <h4 className="text-sm font-medium text-red-800"></h4>
               <p className="text-sm text-red-700 mt-1">{validationError}</p>
             </div>
           </div>
         )}
 
-        {/* Source and Destination */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Source and Destination */}        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Source Location
             </label>
-            <LocationSearch 
-              onSelect={handleSourceSelect}
-              placeholder="Search for source location..."
-              maxCustomLength={100}
-            />
+            <div className="relative">
+              <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5 z-10 pointer-events-none" />
+              <div className="relative">
+                <LocationSearch 
+                  onSelect={handleSourceSelect}
+                  placeholder="Search for source location..."
+                  maxCustomLength={100}
+                  className="block w-full rounded-md border border-gray-200 bg-gray-50 pl-10 pr-4 py-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                />
+              </div>
+            </div>
             {source && (
               <div className="mt-2 p-3 bg-blue-50 rounded-lg text-sm border border-blue-100">
                 <p><strong>Selected:</strong> {source.label || [source.city, source.state, source.country].filter(Boolean).join(", ")}</p>
@@ -138,11 +204,17 @@ const TravelDetailsSection: React.FC = () => {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Destination
             </label>
-            <LocationSearch 
-              onSelect={handleDestinationSelect}
-              placeholder="Search for destination location..."
-              maxCustomLength={100}
-            />
+            <div className="relative">
+              <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5 z-10 pointer-events-none" />
+              <div className="relative">
+                <LocationSearch 
+                  onSelect={handleDestinationSelect}
+                  placeholder="Search for destination location..."
+                  maxCustomLength={100}
+                  className="block w-full rounded-md border border-gray-200 bg-gray-50 pl-10 pr-4 py-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                />
+              </div>
+            </div>
             {destination && (
               <div className="mt-2 p-3 bg-blue-50 rounded-lg text-sm border border-blue-100">
                 <p><strong>Selected:</strong> {destination.label || [destination.city, destination.state, destination.country].filter(Boolean).join(", ")}</p>
@@ -172,16 +244,19 @@ const TravelDetailsSection: React.FC = () => {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Departure Date
             </label>
-            <DatePicker
-              selected={departureDate}
-              onChange={(date) => 
-                dispatch({ type: 'SET_DEPARTURE_DATE', payload: date })
-              }
-              className="block w-full rounded-md border border-gray-200 bg-gray-50 px-4 py-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-              minDate={new Date()}
-              placeholderText="Select departure date"
-              required
-            />
+            <div className="relative">
+              <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5 z-10" />
+              <DatePicker
+                selected={departureDate}
+                onChange={(date) => 
+                  dispatch({ type: 'SET_DEPARTURE_DATE', payload: date })
+                }
+                className="block w-full rounded-md border border-gray-200 bg-gray-50 pl-10 pr-4 py-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                minDate={new Date()}
+                placeholderText="Select departure date"
+                required
+              />
+            </div>
           </div>
 
           {tripType === 'roundTrip' && (
@@ -189,16 +264,19 @@ const TravelDetailsSection: React.FC = () => {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Return Date
               </label>
-              <DatePicker
-                selected={returnDate}
-                onChange={(date) => 
-                  dispatch({ type: 'SET_RETURN_DATE', payload: date })
-                }
-                className="block w-full rounded-md border border-gray-200 bg-gray-50 px-4 py-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-                minDate={departureDate || new Date()}
-                placeholderText="Select return date"
-                required
-              />
+              <div className="relative">
+                <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5 z-10" />
+                <DatePicker
+                  selected={returnDate}
+                  onChange={(date) => 
+                    dispatch({ type: 'SET_RETURN_DATE', payload: date })
+                  }
+                  className="block w-full rounded-md border border-gray-200 bg-gray-50 pl-10 pr-4 py-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                  minDate={departureDate || new Date()}
+                  placeholderText="Select return date"
+                  required
+                />
+              </div>
             </div>
           )}
         </div>
@@ -227,19 +305,34 @@ const TravelDetailsSection: React.FC = () => {
           </div>
         </div>
 
-        {/* Purpose of Travel */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Purpose of Travel
-          </label>
-          <textarea
-            className="block w-full rounded-md border border-gray-200 bg-gray-50 px-4 py-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition resize-none"
-            rows={4}
-            value={reason}
-            onChange={(e) => dispatch({ type: 'SET_REASON', payload: e.target.value })}
-            placeholder="Please provide details about the purpose of your travel..."
-            required
-          />
+        {/* Purpose of Travel and Comments */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Purpose of Travel
+            </label>
+            <textarea
+              className="block w-full rounded-md border border-gray-200 bg-gray-50 px-4 py-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition resize-none"
+              rows={4}
+              value={reason}
+              onChange={(e) => dispatch({ type: 'SET_REASON', payload: e.target.value })}
+              placeholder="Please provide details about the purpose of your travel..."
+              required
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Additional Comments
+            </label>
+            <textarea
+              className="block w-full rounded-md border border-gray-200 bg-gray-50 px-4 py-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition resize-none"
+              rows={4}
+              value={comments}
+              onChange={(e) => dispatch({ type: 'SET_COMMENTS', payload: e.target.value })}
+              placeholder="Any additional comments or special requirements..."
+            />
+          </div>
         </div>
       </div>
     </div>
