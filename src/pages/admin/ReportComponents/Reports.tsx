@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Download, Briefcase, DollarSign, Plane, FileText, CreditCard, Clock } from 'lucide-react';
+import { Download, Briefcase, DollarSign, Plane, FileText, Clock } from 'lucide-react';
 import StatCard from './StatCard';
 import AirlineDistributionChart from './AirlineDistributionChart';
 import TravelAgencyBarChart from './TravelAgencyBarChart';
@@ -25,6 +25,7 @@ interface ChartDataItem {
   name: string;
   value: number;
   cost?: number;
+  travelType?: 'international' | 'domestic';
 }
 
 const Reports: React.FC = () => {
@@ -50,8 +51,6 @@ const Reports: React.FC = () => {
   const rejectedRequests = filteredRequests.filter(
     (r: TravelRequest) => r.status === 'Rejected'
   ).length;
-
-  const pendingRequests = totalRequests - approvedRequests - rejectedRequests;
 
   // Second Box: Total Cost for Approved Requests (Domestic and International)
   const approvedRequestsData = filteredRequests.filter((r: TravelRequest) =>
@@ -166,43 +165,89 @@ const Reports: React.FC = () => {
   const getAirlineDistribution = (): ChartDataItem[] => {
     const airlineCounts: Record<string, number> = {};
     const airlineCosts: Record<string, number> = {};
-  
+    const airlineTravelTypes: Record<string, { domestic: number; international: number }> = {};
+
     filteredRequests
       .filter((req: TravelRequest) => req.airline && tripStatuses.includes(req.status))
       .forEach((req: TravelRequest) => {
         if (req.airline) {
           airlineCounts[req.airline] = (airlineCounts[req.airline] || 0) + 1;
           airlineCosts[req.airline] = (airlineCosts[req.airline] || 0) + req.estimatedCost;
+          if (!airlineTravelTypes[req.airline]) {
+            airlineTravelTypes[req.airline] = { domestic: 0, international: 0 };
+          }
+          if (req.travelType === 'Domestic') {
+            airlineTravelTypes[req.airline].domestic += 1;
+          } else if (req.travelType === 'International') {
+            airlineTravelTypes[req.airline].international += 1;
+          }
         }
       });
-  
+
     return Object.entries(airlineCounts).map(([name, value]) => ({
       name,
       value,
-      cost: airlineCosts[name] || 0
+      cost: airlineCosts[name] || 0,
+      travelType:
+        airlineTravelTypes[name].domestic >= airlineTravelTypes[name].international
+          ? 'domestic'
+          : 'international',
     }));
   };
   const airlineData = getAirlineDistribution();
   
-  // Get agency distribution data
+  // Updated Get agency distribution data
   const getAgencyDistribution = (): ChartDataItem[] => {
-    const agencyCounts: Record<string, number> = {};
-    const agencyCosts: Record<string, number> = {};
-  
+    const agencyData: Record<string, { domestic: { count: number; cost: number }, international: { count: number; cost: number } }> = {};
+    
+    // Collect data by agency and travel type
     filteredRequests
       .filter((req: TravelRequest) => req.travelAgency && tripStatuses.includes(req.status))
       .forEach((req: TravelRequest) => {
         if (req.travelAgency) {
-          agencyCounts[req.travelAgency] = (agencyCounts[req.travelAgency] || 0) + 1;
-          agencyCosts[req.travelAgency] = (agencyCosts[req.travelAgency] || 0) + req.estimatedCost;
+          if (!agencyData[req.travelAgency]) {
+            agencyData[req.travelAgency] = {
+              domestic: { count: 0, cost: 0 },
+              international: { count: 0, cost: 0 }
+            };
+          }
+          
+          if (req.travelType === 'Domestic') {
+            agencyData[req.travelAgency].domestic.count += 1;
+            agencyData[req.travelAgency].domestic.cost += req.estimatedCost;
+          } else if (req.travelType === 'International') {
+            agencyData[req.travelAgency].international.count += 1;
+            agencyData[req.travelAgency].international.cost += req.estimatedCost;
+          }
         }
       });
-
-    return Object.entries(agencyCounts).map(([name, value]) => ({
-      name,
-      value,
-      cost: agencyCosts[name] || 0
-    }));
+    
+    // Create separate entries for domestic and international bookings
+    const result: ChartDataItem[] = [];
+    
+    Object.entries(agencyData).forEach(([agencyName, data]) => {
+      // Add domestic entry if there are domestic bookings
+      if (data.domestic.count > 0) {
+        result.push({
+          name: `${agencyName} (Domestic)`,
+          value: data.domestic.count,
+          cost: data.domestic.cost,
+          travelType: 'domestic' as const
+        });
+      }
+      
+      // Add international entry if there are international bookings
+      if (data.international.count > 0) {
+        result.push({
+          name: `${agencyName} (International)`,
+          value: data.international.count,
+          cost: data.international.cost,
+          travelType: 'international' as const
+        });
+      }
+    });
+    
+    return result;
   };
 
   const agencyData = getAgencyDistribution();
@@ -377,7 +422,6 @@ const Reports: React.FC = () => {
           iconClass="text-cyan-600"
           iconBgClass="bg-cyan-100"
         >
-        
         </StatCard>
       </div>
 

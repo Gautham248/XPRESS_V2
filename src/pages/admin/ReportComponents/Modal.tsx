@@ -1,5 +1,6 @@
 import React from 'react';
 import { Download, X } from 'lucide-react';
+import { exportData } from './exportData';
 
 interface ModalProps {
   isOpen: boolean;
@@ -8,9 +9,22 @@ interface ModalProps {
   children: React.ReactNode;
   startDate?: string;
   endDate?: string;
+  exportData?: {
+    headers: string[];
+    data: Record<string, any>[];
+    filename?: string;
+  };
 }
 
-const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, startDate, endDate }) => {
+const Modal: React.FC<ModalProps> = ({ 
+  isOpen, 
+  onClose, 
+  title, 
+  children, 
+  startDate, 
+  endDate,
+  exportData: exportConfig
+}) => {
   if (!isOpen) return null;
 
   const formatDate = (date?: string): string => {
@@ -27,10 +41,35 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, startDa
     ? `Report Date Range: ${startDate ? formatDate(startDate) : 'Start'} to ${endDate ? formatDate(endDate) : 'Today'}`
     : 'Report Date Range: All Time';
 
-  const handleExport = () => {
-    // Implement export functionality here
-    // For now, we'll just close the modal
-    onClose();
+  // Extract travel type filter from title for export button label
+  const getExportButtonLabel = (): string => {
+    if (title.includes('International Flights')) {
+      return 'Export International Data';
+    } else if (title.includes('Domestic Flights')) {
+      return 'Export Domestic Data';
+    } else {
+      return 'Export All Data';
+    }
+  };
+
+  const handleExport = async () => {
+    if (!exportConfig) {
+      console.warn('Export configuration not provided');
+      return;
+    }
+
+    try {
+      await exportData({
+        filename: exportConfig.filename || 'travel-data',
+        headers: exportConfig.headers,
+        data: exportConfig.data,
+        title,
+        dateRange: dateRangeText
+      });
+    } catch (error) {
+      console.error('Export error:', error);
+      alert('Export failed. Please try again.');
+    }
   };
 
   return (
@@ -55,10 +94,15 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, startDa
         <div className="p-4 border-t border-gray-200 flex justify-end">
           <button 
             onClick={handleExport}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md flex items-center"
+            disabled={!exportConfig}
+            className={`px-4 py-2 rounded-md flex items-center ${
+              exportConfig 
+                ? 'bg-blue-600 hover:bg-blue-700 text-white' 
+                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+            }`}
           >
             <Download className="h-4 w-4 mr-2" />
-            Export
+            {getExportButtonLabel()}
           </button>
         </div>
       </div>
@@ -67,4 +111,3 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, startDa
 };
 
 export default Modal;
-
