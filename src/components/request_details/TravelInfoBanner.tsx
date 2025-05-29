@@ -157,7 +157,8 @@ const TravelInfoBanner: React.FC<TravelInfoBannerProps> = ({ travelRequest }) =>
                             Manager
                         </div>
                         <div className="text-gray-600">
-                            {travelRequest.managerName}
+                            {/* {travelRequest.managerName} */}
+                            -
                         </div>
                     </div>
                 </div>

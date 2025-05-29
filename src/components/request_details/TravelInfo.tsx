@@ -44,6 +44,7 @@ const TravelInfo: React.FC<TravelInfoProps> = ({ travelRequest }) => {
       setError(null);
       
       const travelInfoURL = `http://localhost:5171/api/TravelRequest/travelinfo/${travelRequest.id}`;
+      console.log('Fetching from URL:', travelInfoURL);
       
       const response = await axios.get<TravelInfoData[] | TravelInfoData>(travelInfoURL, {
         headers: {
@@ -53,6 +54,8 @@ const TravelInfo: React.FC<TravelInfoProps> = ({ travelRequest }) => {
         timeout: 10000,
         withCredentials: false
       });
+      
+      console.log('API Response:', response.data);
       
       // Handle both array and object responses
       let responseData: TravelInfoData;
@@ -183,9 +186,9 @@ const TravelInfo: React.FC<TravelInfoProps> = ({ travelRequest }) => {
                 <Plane className="h-4 w-4 mr-2" />
               ) : displayData.transportation === "Train" ? (
                 <TrainFront className="h-4 w-4 mr-2" />
-              ) : displayData.transportation === "Bus" ? (
+              ) : displayData.transportation === "Other" ? (
                 <BusFront className="h-4 w-4 mr-2" />
-              ) : displayData.transportation === "Cab" ? (
+              ) : displayData.transportation === "Car Rental" ? (
                 <CarTaxiFront className="h-4 w-4 mr-2" />
               ) : <Check className="h-4 w-4 mr-2" />
               }
