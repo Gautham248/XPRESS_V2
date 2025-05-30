@@ -87,7 +87,7 @@ const TravelAgencyBarChart: React.FC<TravelAgencyBarChartProps> = ({
       <div className="bg-white rounded-lg p-6 shadow-sm">
         <div className="mb-4 flex justify-between items-center">
           <div className="flex items-center">
-            <h3 className="text-lg font-semibold text-gray-800">Agency Booking Metrics</h3>
+            <h2 className="text-5xl font-semibold text-gray-800">Agency Booking Metrics</h2>
           </div>
           
           {/* Filter UI even in empty state */}
@@ -197,7 +197,7 @@ const TravelAgencyBarChart: React.FC<TravelAgencyBarChartProps> = ({
         </div>
 
         {/* Modern Filter UI */}
-        <div className="relative">
+        <div className="relative -top-2">
           <button
             onClick={() => setIsFilterOpen(!isFilterOpen)}
             className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 border border-blue-200 rounded-lg text-sm font-medium text-gray-700 transition-all duration-200 shadow-sm hover:shadow-md min-w-[160px]"
