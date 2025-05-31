@@ -133,21 +133,27 @@ const LocationSearch: React.FC<LocationSearchProps> = ({
     // Try to parse the custom entry for city, state, country format
     const parts = query.split(',').map(part => part.trim());
    
-    let cityPart = parts[0] || "";
-    let statePart = parts.length > 1 ? parts[1] : "";
-    let countryPart = parts.length > 2 ? parts[2] : "";
+    let cityPart = "";
+    let statePart = "";
+    let countryPart = "";
    
-    // If only one part, assume it's a city
     if (parts.length === 1) {
+      // Only city provided
       cityPart = parts[0];
-      statePart = "";
-      countryPart = "";
-    }
-   
-    // If two parts, assume city and country
-    if (parts.length === 2) {
+    } else if (parts.length === 2) {
+      // City and Country
       cityPart = parts[0];
-      countryPart = parts[1];
+      countryPart = parts[1]; // Last element is country
+    } else if (parts.length === 3) {
+      // City, State, Country
+      cityPart = parts[0];
+      statePart = parts[1];
+      countryPart = parts[2]; // Last element is country
+    } else if (parts.length >= 4) {
+      // City, District/Area, State, Country (like Kochi, Ernakulam, Kerala, India)
+      cityPart = parts[0];
+      statePart = parts[parts.length - 2]; // Second to last is state
+      countryPart = parts[parts.length - 1]; // Last element is country
     }
    
     const locationData: Address = {
