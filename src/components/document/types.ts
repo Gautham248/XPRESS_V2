@@ -31,13 +31,7 @@ const visaFormConfig: FormField[] = [
 ];
 
 const identificationFormConfig: FormField[] = [
-  {
-    key: 'type',
-    label: 'ID Type',
-    type: 'select',
-    options: ['National ID', "Driver's License", 'Social Security'],
-    required: true,
-  },
+  { key: 'type', label: 'ID Type', type: 'select', options: ['Aadhar', "Driver's License", 'Voter ID'], required: true},
   { key: 'idNumber', label: 'ID Number', type: 'text', required: true },
   { key: 'issuingCountry', label: 'Issuing Country', type: 'text', required: true },
   { key: 'issueDate', label: 'Issue Date', type: 'date', maxDate: new Date(), required: true },
