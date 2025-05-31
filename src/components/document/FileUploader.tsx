@@ -27,7 +27,7 @@ function FileUploader({
       }
 
       const url = URL.createObjectURL(file);
-      setPreviewURL(url);
+      setPreviewURL(`${url}#view=FitH`);
       setError(null);
       onFileSelect(file);
     } else {
@@ -120,7 +120,7 @@ function FileUploader({
             <button
               type="button"
               onClick={(e) => {
-                e.stopPropagation(); // prevent preview from opening
+                e.stopPropagation();
                 handleRemoveFile();
               }}
               className="text-gray-500 hover:text-red-600 transition-colors"
@@ -140,25 +140,27 @@ function FileUploader({
       </div>
       {showPreview && previewURL && (
         <div className="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center p-4">
-          <div className="relative bg-slate-100 rounded-md shadow-md p-3 max-w-3xl w-full max-h-[90vh] overflow-auto border border-gray-300">
-            <button
-              className="absolute top-2 right-2 text-gray-500 hover:text-red-500"
+          <div className="relative bg-gray rounded-md p-3 max-w-3xl w-full max-h-[90vh] overflow-auto ">
+             <button
+              className="absolute top-8 right-1 -translate-y-full p-1 bg-white rounded-full shadow-md text-gray-800 hover:text-red-500 transition-colors mb-2"
               onClick={() => setShowPreview(false)}
+              aria-label="Close preview"
             >
-              <X className="w-5 h-5" />
+              <X className="w-6 h-6" />
             </button>
-            <div className="mt-6">
+            <div className="h-full"> 
               {selectedFile?.type.startsWith('image/') ? (
                 <img
                   src={previewURL}
                   alt="Preview"
-                  className="max-w-full max-h-[70vh] object-contain mx-auto"
+                  className="max-w-full max-h-[90vh] object-contain mx-auto"
                 />
               ) : selectedFile?.type === 'application/pdf' ? (
                 <iframe
                   src={previewURL}
                   title="PDF Preview"
-                  className="w-full h-[70vh] rounded"
+                  className="w-full h-full rounded"
+                  style={{ minHeight: '500px' }} 
                 ></iframe>
               ) : (
                 <p className="text-center text-sm text-gray-700">Preview not available for this file type.</p>
@@ -167,7 +169,6 @@ function FileUploader({
           </div>
         </div>
       )}
-
     </div>
   );
 }

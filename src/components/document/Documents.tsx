@@ -20,12 +20,9 @@ const initialState: DocumentState = {
     issueDate: null,
     expiryDate: null,
   },
-  identification: {
-    type: 'National ID',
-    idNumber: '',
-    issuingCountry: '',
-    issueDate: null,
-    expiryDate: null,
+  aadhar: {
+    aadharNumber: '',
+    fullName: ''
   },
 };
 
@@ -54,7 +51,7 @@ function Documents() {
   const [selectedFiles, setSelectedFiles] = useState<Record<DocumentType, File | null>>({
     passport: null,
     visa: null,
-    identification: null,
+    aadhar: null,
   });
   const [state, dispatch] = useReducer(formReducer, initialState);
   const [showValidation, setShowValidation] = useState(false);
