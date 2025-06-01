@@ -1,6 +1,6 @@
 import React from 'react';
 import { TicketOption } from '../../../data/mockData';
-import { Edit, Trash, Upload, Check, Ticket } from 'lucide-react';
+import { Upload, Ticket } from 'lucide-react';
 
 interface Props {
   ticketOptions: TicketOption[];
@@ -13,8 +13,6 @@ interface Props {
 const ManagerTicketOptionsView: React.FC<Props> = ({
   ticketOptions,
   onSelectOption,
-  onEditOption,
-  onDeleteOption,
   onUploadOptions
 }) => {
   const selectedOptions = ticketOptions.filter(option => option.selected);

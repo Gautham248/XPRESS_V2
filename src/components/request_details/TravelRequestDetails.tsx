@@ -134,7 +134,7 @@ const TravelRequestDetails: React.FC = () => {
         <div className="flex items-center gap-4">
           <button 
             onClick={() => navigate(-1)} 
-            className="p-1 rounded-full hover:bg-gray-100"
+            className="inline-flex items-center gap-1 text-sm font-medium px-3 py-3 rounded-full bg-gray-200 hover:bg-gray-300 text-gray-700"
             aria-label="Go back"
           >
             <ChevronLeft className="h-5 w-5" />
