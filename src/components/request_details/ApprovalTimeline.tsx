@@ -248,7 +248,7 @@ const ApprovalTimeline: React.FC<ApprovalTimelineProps> = ({ travelRequest }) =>
   };
 
   return (
-    <div className="card mb-6 p-6 bg-white rounded-lg shadow">
+    <div className="card mb-6 p-6 bg-white rounded-lg shadow h-full">
       <h3 className="text-lg font-semibold mb-6">Travel Request Timeline</h3>
 
       <div className="space-y-6">

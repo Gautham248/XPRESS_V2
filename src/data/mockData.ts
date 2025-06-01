@@ -51,7 +51,7 @@ export const dummyTicketOptions = [
   {
     id: 'option-3',
     description: 'NM 318, TRV-KUL, 30 MAR 2025 11:45 - 31 MAR 2025 05:05',
-    selected: true
+    selected: false
   }
 ];
 
