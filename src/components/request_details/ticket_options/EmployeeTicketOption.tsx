@@ -50,7 +50,7 @@ const EmployeeTicketOptionsView: React.FC<Props> = ({
                 {option.selected && (
                   <div className="flex items-center gap-2 mb-2">
                     <Ticket className="w-4 h-4 text-green-600" />
-                    <span className="text-sm text-green-600 font-medium">Your Selected Ticket</span>
+                    <span className="text-sm text-green-600 font-medium">Selected Ticket</span>
                   </div>
                 )}
                 {option.description}
