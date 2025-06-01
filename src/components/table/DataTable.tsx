@@ -59,7 +59,7 @@ const DataTable = <T extends Record<string, any>>({
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [sortBy, setSortBy] = useState<string>(headers[0]?.key || '');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-  const [statusFilter, setStatusFilter] = useState<string>('All');
+  const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
   const [typeFilter, setTypeFilter] = useState<string>('All');
   const [visibleColumns, setVisibleColumns] = useState<string[]>(() => {
     const savedColumns = localStorage.getItem(`${title}TableColumns`);
@@ -112,7 +112,7 @@ const DataTable = <T extends Record<string, any>>({
   // Check if any filters are active
   const hasActiveFilters = () => {
     return searchTerm !== '' || 
-           statusFilter !== 'All' || 
+           selectedStatuses.length > 0 || 
            typeFilter !== 'All' || 
            startDate !== null || 
            endDate !== null;
@@ -121,7 +121,7 @@ const DataTable = <T extends Record<string, any>>({
   // Clear all filters function
   const clearAllFilters = () => {
     setSearchTerm('');
-    setStatusFilter('All');
+    setSelectedStatuses([]);
     setTypeFilter('All');
     setStartDate(null);
     setEndDate(null);
@@ -133,7 +133,7 @@ const DataTable = <T extends Record<string, any>>({
     const matchesSearch = searchableFields.length === 0 || searchableFields.some(field => 
       String(item[field]).toLowerCase().includes(searchTerm.toLowerCase())
     );
-    const matchesStatus = statusOptions.length === 0 || statusFilter === 'All' || item.status === statusFilter;
+    const matchesStatus = statusOptions.length === 0 || selectedStatuses.length === 0 || selectedStatuses.includes(item.status);
     const matchesType = typeOptions.length === 0 || typeFilter === 'All' || item.travelType === typeFilter;
     return matchesSearch && matchesStatus && matchesType;
   });
@@ -275,24 +275,34 @@ const DataTable = <T extends Record<string, any>>({
                 >
                   <div className="flex items-center">
                     <Filter className="h-4 w-4 mr-2 text-muted-foreground" />
-                    <span className="text-sm">Status: {statusFilter}</span>
+                    <span className="text-sm">
+                      Status: {selectedStatuses.length > 0 ? selectedStatuses.join(', ') : 'None'}
+                    </span>
                   </div>
                   <ChevronDown className="h-4 w-4 ml-2 text-muted-foreground" />
                 </button>
                 {showStatusDropdown && (
-                  <div className="absolute z-10 right-0 mt-1 w-40 bg-card border rounded-md shadow-elevation-3">
+                  <div className="absolute z-10 right-0 mt-1 w-48 bg-card border rounded-md shadow-elevation-3">
                     <div className="py-1">
-                      {['All', ...statusOptions].map(status => (
-                        <button
+                      {statusOptions.map(status => (
+                        <label
                           key={status}
-                          className="w-full text-left px-4 py-2 text-sm hover:bg-muted/50"
-                          onClick={() => {
-                            setStatusFilter(status);
-                            setShowStatusDropdown(false);
-                          }}
+                          className="flex items-center w-full text-left px-4 py-2 text-sm hover:bg-muted/50"
                         >
+                          <input
+                            type="checkbox"
+                            checked={selectedStatuses.includes(status)}
+                            onChange={() => {
+                              if (selectedStatuses.includes(status)) {
+                                setSelectedStatuses(selectedStatuses.filter(s => s !== status));
+                              } else {
+                                setSelectedStatuses([...selectedStatuses, status]);
+                              }
+                            }}
+                            className="mr-2"
+                          />
                           {status}
-                        </button>
+                        </label>
                       ))}
                     </div>
                   </div>
