@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   Search, 
   PlusCircle,
@@ -54,6 +54,7 @@ const DataTable = <T extends Record<string, any>>({
   onRowClick,
 }: DataTableProps<T>) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -75,6 +76,34 @@ const DataTable = <T extends Record<string, any>>({
   const statusDropdownRef = useRef<HTMLDivElement>(null);
   const typeDropdownRef = useRef<HTMLDivElement>(null);
   const columnsDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Handle URL parameters for filtering
+  useEffect(() => {
+    const urlParams = new URLSearchParams(location.search);
+    const statusParam = urlParams.get('status');
+    const dateParam = urlParams.get('date');
+
+    // Handle status filtering
+    if (statusParam && statusOptions.length > 0) {
+      const statusArray = statusParam.split(',').map(s => s.trim());
+      const validStatuses = statusArray.filter(status => statusOptions.includes(status));
+      if (validStatuses.length > 0) {
+        setSelectedStatuses(validStatuses);
+      }
+    } else {
+      setSelectedStatuses([]);
+    }
+
+    // Handle date filtering only if not coming from Ticket Actions
+    if (dateParam && dateFilterKey && !statusParam?.includes('Manager Approved')) {
+      const filterDate = new Date(dateParam);
+      setStartDate(filterDate);
+      setEndDate(filterDate);
+    } else {
+      setStartDate(null);
+      setEndDate(null);
+    }
+  }, [location.search, dateFilterKey, statusOptions]);
 
   // Persist visibleColumns to localStorage
   useEffect(() => {
@@ -126,6 +155,11 @@ const DataTable = <T extends Record<string, any>>({
     setStartDate(null);
     setEndDate(null);
     setCurrentPage(1);
+    
+    // Clear URL parameters
+    if (location.search) {
+      navigate(location.pathname, { replace: true });
+    }
   };
 
   // Filter data
@@ -143,12 +177,32 @@ const DataTable = <T extends Record<string, any>>({
     if (!dateFilterKey || (!startDate && !endDate)) return true;
     const dateValue = new Date(item[dateFilterKey]);
     
+    // Ensure valid date
+    if (isNaN(dateValue.getTime())) return false;
+
     if (startDate && endDate) {
-      return dateValue >= startDate && dateValue <= endDate;
+      // Normalize dates to start and end of day for accurate comparison
+      const start = new Date(startDate);
+      start.setHours(0, 0, 0, 0);
+      const end = new Date(endDate);
+      end.setHours(23, 59, 59, 999);
+      
+      // Handle same day filtering
+      if (start.getTime() === end.getTime()) {
+        const itemDate = new Date(dateValue);
+        itemDate.setHours(0, 0, 0, 0);
+        return itemDate.getTime() === start.getTime();
+      }
+      
+      return dateValue >= start && dateValue <= end;
     } else if (startDate) {
-      return dateValue >= startDate;
+      const start = new Date(startDate);
+      start.setHours(0, 0, 0, 0);
+      return dateValue >= start;
     } else if (endDate) {
-      return dateValue <= endDate;
+      const end = new Date(endDate);
+      end.setHours(23, 59, 59, 999);
+      return dateValue <= end;
     }
     return true;
   });
@@ -200,7 +254,6 @@ const DataTable = <T extends Record<string, any>>({
 
   // Export to Excel function
   const exportToExcel = () => {
-    // Prepare data for export - only include visible columns
     const exportData = sortedData.map(item => {
       const exportItem: any = {};
       headers.forEach(header => {
@@ -215,24 +268,15 @@ const DataTable = <T extends Record<string, any>>({
       return exportItem;
     });
 
-    // Create workbook and worksheet
     const workbook = XLSX.utils.book_new();
     const worksheet = XLSX.utils.json_to_sheet(exportData);
-
-    // Auto-size columns
     const colWidths = Object.keys(exportData[0] || {}).map(key => ({
       wch: Math.max(key.length, ...exportData.map(row => String(row[key] || '').length))
     }));
     worksheet['!cols'] = colWidths;
-
-    // Add worksheet to workbook
     XLSX.utils.book_append_sheet(workbook, worksheet, title);
-
-    // Generate filename with current date
     const currentDate = new Date().toISOString().split('T')[0];
     const filename = `${title.replace(/\s+/g, '_')}_${currentDate}.xlsx`;
-
-    // Save file
     XLSX.writeFile(workbook, filename);
   };
 
@@ -441,7 +485,6 @@ const DataTable = <T extends Record<string, any>>({
             )}
           </div>
 
-          {/* Clear All Filters Button */}
           {hasActiveFilters() && (
             <button
               onClick={clearAllFilters}
