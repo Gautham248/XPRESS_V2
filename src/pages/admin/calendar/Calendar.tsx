@@ -50,7 +50,7 @@ const Calendar: React.FC = () => {
       try {
         setLoading(true);
         setError(null);
-        const response = await axios.get('http://localhost:5171/api/TravelRequest/Calendar'); // Updated with actual port
+        const response = await axios.get('http://localhost:5171/api/TravelRequest/Calendar');
         setTravelRequests(response.data);
       } catch (err) {
         console.error('Error fetching travel requests:', err);
@@ -62,6 +62,23 @@ const Calendar: React.FC = () => {
 
     fetchTravelRequests();
   }, []);
+
+  // New useEffect to set today's date as selected when component mounts
+  useEffect(() => {
+    const today = new Date();
+    const istOffset = 5.5 * 60 * 60 * 1000;
+    const todayIST = new Date(today.getTime() + istOffset);
+    
+    // Set today as selected date to show events in sidebar
+    setSelectedDate(todayIST);
+    
+    // Check if today has any events and set a default event type
+    const todayEvents = getEventsForDate(todayIST);
+    if (todayEvents.length > 0) {
+      // Set the first event type found as selected
+      setSelectedEventType(todayEvents[0].type);
+    }
+  }, [travelRequests]); // Depend on travelRequests so it runs after data is loaded
 
   const getEventsForDate = (date: Date): TravelEvent[] => {
     const istOffset = 5.5 * 60 * 60 * 1000;

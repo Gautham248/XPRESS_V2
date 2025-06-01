@@ -1,6 +1,6 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Briefcase, Ticket, AlertCircle, ArrowUpDown, XCircle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom'; // Add this import
 import Reports from './Reports';
 
 // Reusable MetricCard Component
@@ -11,7 +11,7 @@ interface MetricCardProps {
   iconColor: string;
   bgColor: string;
   hoverColor: string;
-  onClick?: () => void;
+  onClick?: () => void; // Add optional onClick prop
 }
 
 const MetricCard: React.FC<MetricCardProps> = ({ 
@@ -21,12 +21,12 @@ const MetricCard: React.FC<MetricCardProps> = ({
   iconColor, 
   bgColor, 
   hoverColor,
-  onClick 
+  onClick // Add onClick to props
 }) => {
   return (
     <div 
       className={`${bgColor} border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-all duration-300 group cursor-pointer relative overflow-hidden`}
-      onClick={onClick}
+      onClick={onClick} // Add onClick handler
     >
       {/* Creative background elements */}
       <div className="absolute inset-0 overflow-hidden">
@@ -45,8 +45,7 @@ const MetricCard: React.FC<MetricCardProps> = ({
         <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent"></div>
       </div>
       
-      {/* Removed z-10 from here to fix modal overlay issue */}
-      <div className="relative">
+      <div className="relative z-10">
         {/* Title */}
         <h3 className="text-sm font-medium text-gray-700 mb-2 font-semibold">
           {title}
@@ -64,21 +63,11 @@ const MetricCard: React.FC<MetricCardProps> = ({
 };
 
 const Dashboard: React.FC = () => {
-  const navigate = useNavigate();
+  const navigate = useNavigate(); // Add useNavigate hook
 
-  const handleNewRequestsClick = () => {
-    // Navigate to travel requests with today's date filter
-    const today = new Date();
-    const todayStr = today.toISOString().split('T')[0]; // Format: YYYY-MM-DD
-    
-    // Store the date filter in localStorage or sessionStorage to be picked up by the DataTable
-    sessionStorage.setItem('travelRequestsDateFilter', JSON.stringify({
-      startDate: todayStr,
-      endDate: todayStr
-    }));
-    
-    // Navigate to the travel requests page
-    navigate('/admin/travel-requests');
+  // Handler for Return and Departure card click
+  const handleReturnDepartureClick = () => {
+    navigate('/admin/calendar');
   };
 
   const metricsData = [
@@ -88,8 +77,7 @@ const Dashboard: React.FC = () => {
       value: 6,
       iconColor: "text-blue-600",
       bgColor: "bg-gradient-to-br from-blue-50 to-blue-100",
-      hoverColor: "from-blue-100 to-blue-150",
-      onClick: handleNewRequestsClick
+      hoverColor: "from-blue-100 to-blue-150"
     },
     {
       icon: <Ticket className="h-6 w-6" />,
@@ -102,7 +90,7 @@ const Dashboard: React.FC = () => {
     {
       icon: <AlertCircle className="h-6 w-6" />,
       title: "SLA Breach",
-      value: 11,
+      value: 0,
       iconColor: "text-orange-600",
       bgColor: "bg-gradient-to-br from-orange-50 to-orange-100",
       hoverColor: "from-orange-100 to-orange-150"
@@ -110,7 +98,7 @@ const Dashboard: React.FC = () => {
     {
       icon: <XCircle className="h-6 w-6" />,
       title: "Rejected",
-      value: 11,
+      value: 0,
       iconColor: "text-red-600",
       bgColor: "bg-gradient-to-br from-red-50 to-red-100",
       hoverColor: "from-red-100 to-red-150"
@@ -118,10 +106,11 @@ const Dashboard: React.FC = () => {
     {
       icon: <ArrowUpDown className="h-6 w-6" />,
       title: "Return and Departure",
-      value: 11,
+      value: 0,
       iconColor: "text-purple-600",
       bgColor: "bg-gradient-to-br from-purple-50 to-purple-100",
-      hoverColor: "from-purple-100 to-purple-150"
+      hoverColor: "from-purple-100 to-purple-150",
+      onClick: handleReturnDepartureClick // Add onClick for this specific card
     }
   ];
 
@@ -136,7 +125,7 @@ const Dashboard: React.FC = () => {
       <div className="space-y-6">
         <div className="flex items-center space-x-3">
           <div className="w-1 h-8 bg-gradient-to-b from-blue-500 to-purple-600 rounded-full"></div>
-          <h2 className="text-2xl font-bold text-gray-800">Todays Statistics</h2>
+          <h2 className="text-2xl font-bold text-gray-800">Upcoming Events</h2>
         </div>
         
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
@@ -149,7 +138,7 @@ const Dashboard: React.FC = () => {
               iconColor={metric.iconColor}
               bgColor={metric.bgColor}
               hoverColor={metric.hoverColor}
-              onClick={metric.onClick}
+              onClick={metric.onClick} // Pass onClick if it exists
             />
           ))}
         </div>
