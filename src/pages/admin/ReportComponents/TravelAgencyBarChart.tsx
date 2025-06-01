@@ -87,7 +87,7 @@ const TravelAgencyBarChart: React.FC<TravelAgencyBarChartProps> = ({
       <div className="bg-white rounded-lg p-6 shadow-sm">
         <div className="mb-4 flex justify-between items-center">
           <div className="flex items-center">
-            <h2 className="text-5xl font-semibold text-gray-800">Agency Booking Metrics</h2>
+            <h2 className="text-xl font-semibold text-gray-800">Agency Booking Metrics</h2>
           </div>
           
           {/* Filter UI even in empty state */}
@@ -187,7 +187,7 @@ const TravelAgencyBarChart: React.FC<TravelAgencyBarChartProps> = ({
     <div className="bg-white rounded-lg pt-6 ">
       <div className="mb-4 flex justify-between items-center">
         <div className="flex items-center pb-6">
-          <h3 className="text-lg font-bold text-gray-800">Agency Booking Metrics</h3>
+          <h3 className="text-5lg font-bold text-gray-800">Agency Booking Metrics</h3>
           <button 
             onClick={() => setIsModalOpen(true)}
             className="ml-2 text-blue-600 hover:text-blue-800 mb-1 transition-colors duration-200"

@@ -38,7 +38,7 @@ const ManagerTicketOptionsView: React.FC<Props> = ({
               />
               <span className="flex-1">{option.description}</span>
             </label>
-            <div className="flex gap-2">
+            {/* <div className="flex gap-2">
               <button
                 className="flex items-center gap-1 px-2 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600"
                 onClick={() => onEditOption(option)}
@@ -51,7 +51,7 @@ const ManagerTicketOptionsView: React.FC<Props> = ({
               >
                 <Trash size={16} />
               </button>
-            </div>
+            </div> */}
           </div>
         ))
       )}

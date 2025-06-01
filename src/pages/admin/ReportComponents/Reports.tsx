@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
-import { Download, Briefcase, DollarSign, Plane, FileText, Clock } from 'lucide-react';
+import { Download, Briefcase, DollarSign, Plane, FileText, Clock, ExternalLink } from 'lucide-react';
 import StatCard from './StatCard';
 import AirlineDistributionChart from './AirlineDistributionChart';
 import TravelAgencyBarChart from './TravelAgencyBarChart';
 import { mockTravelRequests } from '../../../data/mockData';
 import DateRangePicker from './DateRangePicker';
-import { Globe } from "lucide-react"
+import { Globe } from "lucide-react";
+import { Coins } from "lucide-react";
+import Modal from './Modal';
+import { exportData } from './exportData';
 
 // Define TypeScript interfaces
 interface TravelRequest {
@@ -28,9 +31,16 @@ interface ChartDataItem {
   travelType?: 'international' | 'domestic';
 }
 
+interface ModalData {
+  title: string;
+  data: TravelRequest[];
+  headers: string[];
+}
+
 const Reports: React.FC = () => {
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
+  const [modalData, setModalData] = useState<ModalData | null>(null);
 
   // Filter requests based on date range if provided
   const filteredRequests = mockTravelRequests.filter((request: TravelRequest) => {
@@ -252,6 +262,55 @@ const Reports: React.FC = () => {
 
   const agencyData = getAgencyDistribution();
 
+  // Modal open/close handlers
+  const openModal = (title: string, data: TravelRequest[], headers: string[]) => {
+    console.log('Opening modal with title:', title); // Debug log
+    setModalData({ title, data, headers });
+  };
+
+  const closeModal = () => {
+    console.log('Closing modal'); // Debug log
+    setModalData(null);
+  };
+
+  // Define specific headers for each card
+  const requestHeaders = ['ID', 'Request Date', 'Status', 'Travel Type'];
+  const costHeaders = ['ID', 'Request Date', 'Status', 'Travel Type', 'Estimated Cost'];
+  const tripHeaders = ['ID', 'Request Date', 'Status', 'Travel Type', 'Airline', 'Travel Agency'];
+
+  // Function to format TravelRequest data for export based on headers
+  const formatExportData = (data: TravelRequest[], headers: string[]) => {
+    return data.map(request => {
+      const row: Record<string, any> = {};
+      headers.forEach(header => {
+        switch (header) {
+          case 'ID':
+            row[header] = request.id;
+            break;
+          case 'Request Date':
+            row[header] = request.requestDate;
+            break;
+          case 'Status':
+            row[header] = request.status;
+            break;
+          case 'Travel Type':
+            row[header] = request.travelType;
+            break;
+          case 'Estimated Cost':
+            row[header] = request.estimatedCost;
+            break;
+          case 'Airline':
+            row[header] = request.airline || 'N/A';
+            break;
+          case 'Travel Agency':
+            row[header] = request.travelAgency || 'N/A';
+            break;
+        }
+      });
+      return row;
+    });
+  };
+
   return (
     <div className="space-y-6 animate-fadeIn">
       {/* Header Section */}
@@ -276,89 +335,108 @@ const Reports: React.FC = () => {
         </div>
       </div>
 
-      {/* First Row - Original 3 Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* First Box: Total Requests */}
-        <StatCard 
-          title="Total Requests"
-          value={totalRequests}
-          subtitle="Requests"
-          icon={<Briefcase />}
-          iconClass="text-blue-600"
-          iconBgClass="bg-blue-100"
-        >
-          <div className="grid grid-cols-2 gap-6 text-center">
-            <div className="bg-blue-50 py-2 rounded">
-              <div className="flex items-center justify-center">
-                <span className="text-xs">Approved</span>
+        <div className="relative">
+          <StatCard 
+            title="Total Requests"
+            value={totalRequests}
+            subtitle="Requests"
+            icon={<Briefcase />}
+            iconClass="text-blue-600"
+            iconBgClass="bg-blue-100"
+          >
+            <div className="grid grid-cols-2 gap-6 text-center">
+              <div className="bg-blue-50 py-2 rounded">
+                <div className="flex items-center justify-center">
+                  <span className="text-xs">Approved</span>
+                </div>
+                <p className="font-medium">{approvedRequests}</p>
               </div>
-              <p className="font-medium">{approvedRequests}</p>
-            </div>
-           
-            <div className="bg-red-50 py-2 rounded">
-              <div className="flex items-center justify-center">
-                <span className="text-xs">Rejected</span>
+              <div className="bg-red-50 py-2 rounded">
+                <div className="flex items-center justify-center">
+                  <span className="text-xs">Rejected</span>
+                </div>
+                <p className="font-medium">{rejectedRequests}</p>
               </div>
-              <p className="font-medium">{rejectedRequests}</p>
             </div>
-          </div>
-        </StatCard>
+          </StatCard>
+          <button
+            onClick={() => openModal('Total Requests Details', filteredRequests, requestHeaders)}
+            className="absolute top-5 left-[160px] p-1 rounded-full hover:bg-gray-100 z-20"
+            aria-label="View detailed requests"
+          >
+            <ExternalLink className="h-5 w-5 text-gray-600" />
+          </button>
+        </div>
 
         {/* Second Box: Total Cost */}
-        <StatCard 
-          title="Total Cost"
-          value={`$${totalCost.toLocaleString()}`}
-          subtitle="Expenses"
-          icon={<DollarSign />}
-          iconClass="text-green-600"
-          iconBgClass="bg-green-100"
-        >
-          <div className="grid grid-cols-2 gap-2 text-center">
-            <div className="bg-green-50 py-2 rounded">
-              <div className="flex items-center justify-center">
-                <span className="text-xs">Domestic</span>
+        <div className="relative">
+          <StatCard 
+            title="Total Cost"
+            value={`₹${totalCost.toLocaleString()}`}
+            subtitle="Expenses"
+            icon={<Coins />}
+            iconClass="text-green-600"
+            iconBgClass="bg-green-100"
+          >
+            <div className="grid grid-cols-2 gap-2 text-center">
+              <div className="bg-green-50 py-2 rounded">
+                <div className="flex items-center justify-center">
+                  <span className="text-xs">Domestic</span>
+                </div>
+                <p className="font-medium">₹{domesticCost.toLocaleString()}</p>
               </div>
-              <p className="font-medium">${domesticCost.toLocaleString()}</p>
-            </div>
-            <div className="bg-emerald-50 py-2 rounded">
-              <div className="flex items-center justify-center">
-                <span className="text-xs">International</span>
+              <div className="bg-emerald-50 py-2 rounded">
+                <div className="flex items-center justify-center">
+                  <span className="text-xs">International</span>
+                </div>
+                <p className="font-medium">₹{internationalCost.toLocaleString()}</p>
               </div>
-              <p className="font-medium">
-                ${internationalCost.toLocaleString()}
-              </p>
             </div>
-          </div>
-        </StatCard>
+          </StatCard>
+          <button
+            onClick={() => openModal('Total Cost Details', approvedRequestsData, costHeaders)}
+            className="absolute top-5 left-[120px] p-1 rounded-full hover:bg-gray-100 z-20"
+            aria-label="View detailed costs"
+          >
+            <ExternalLink className="h-5 w-5 text-gray-600" />
+          </button>
+        </div>
 
         {/* Third Box: Total Number of Trips */}
-        <StatCard 
-          title="Total Trips"
-          value={totalTrips}
-          subtitle="Trips"
-          icon={<Plane />}
-          iconClass="text-purple-600"
-          iconBgClass="bg-purple-100"
-        >
-          <div className="grid grid-cols-2 gap-2 text-center">
-            <div className="bg-purple-50 py-2 rounded">
-              <div className="flex items-center justify-center">
-                <span className="text-xs">Domestic</span>
+        <div className="relative">
+          <StatCard 
+            title="Total Trips"
+            value={totalTrips}
+            subtitle="Trips"
+            icon={<Plane />}
+            iconClass="text-purple-600"
+            iconBgClass="bg-purple-100"
+          >
+            <div className="grid grid-cols-2 gap-2 text-center">
+              <div className="bg-purple-50 py-2 rounded">
+                <div className="flex items-center justify-center">
+                  <span className="text-xs">Domestic</span>
+                </div>
+                <p className="font-medium">{domesticTrips}</p>
               </div>
-              <p className="font-medium">
-                {domesticTrips}
-              </p>
-            </div>
-            <div className="bg-indigo-50 py-2 rounded">
-              <div className="flex items-center justify-center">
-                <span className="text-xs">International</span>
+              <div className="bg-indigo-50 py-2 rounded">
+                <div className="flex items-center justify-center">
+                  <span className="text-xs">International</span>
+                </div>
+                <p className="font-medium">{internationalTrips}</p>
               </div>
-              <p className="font-medium">
-                {internationalTrips}
-              </p>
             </div>
-          </div>
-        </StatCard>
+          </StatCard>
+          <button
+            onClick={() => openModal('Total Trips Details', filteredRequests.filter((r: TravelRequest) => tripStatuses.includes(r.status)), tripHeaders)}
+            className="absolute top-5 left-[120px] p-1 rounded-full hover:bg-gray-100 z-20"
+            aria-label="View detailed trips"
+          >
+            <ExternalLink className="h-5 w-5 text-gray-600" />
+          </button>
+        </div>
       </div>
 
       {/* Second Row - New 3 Cards */}
@@ -379,14 +457,14 @@ const Reports: React.FC = () => {
               </div>
               <p className="font-semibold text-orange-600">{passportStatus.withinOneMonth}</p>
             </div>
-            <div className="bg-yellow-50 py-2 rounded">
-              <div className="flex items-center justify-center">
+            <div className="_CloseModalbg-yellow-50 py-2 rounded  bg-orange-50">
+              <div className="flex items-center justify-center" >
                 <span className="text-xs text-gray-600">Expires in 3 Months</span>
               </div>
               <p className="font-semibold text-yellow-600">{passportStatus.withinThreeMonths}</p>
             </div>
           </div>
-        </StatCard>
+           </StatCard>
 
         {/* Fifth Box: Visa Status */}
         <StatCard 
@@ -437,6 +515,61 @@ const Reports: React.FC = () => {
           <AirlineDistributionChart chartData={airlineData} startDate={startDate} endDate={endDate} />
         </div>
       </div>
+
+      {/* Modal for Detailed Data */}
+      {modalData && (
+        <Modal
+          isOpen={!!modalData}
+          onClose={closeModal}
+          title={modalData.title}
+          startDate={startDate}
+          endDate={endDate}
+          exportData={{
+            headers: modalData.headers,
+            data: formatExportData(modalData.data, modalData.headers),
+            filename: modalData.title.toLowerCase().replace(/\s+/g, '-')
+          }}
+        >
+          <table className="w-full text-sm text-left text-gray-600">
+            <thead className="text-xs text-gray-700 uppercase bg-gray-50">
+              <tr>
+                {modalData.headers.map((header, index) => (
+                  <th key={index} className="px-4 py-2">
+                    {header}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {modalData.data.map((request) => (
+                <tr key={request.id} className="border-b">
+                  {modalData.headers.includes('ID') && (
+                    <td className="px-4 py-2">{request.id}</td>
+                  )}
+                  {modalData.headers.includes('Request Date') && (
+                    <td className="px-4 py-2">{request.requestDate}</td>
+                  )}
+                  {modalData.headers.includes('Status') && (
+                    <td className="px-4 py-2">{request.status}</td>
+                  )}
+                  {modalData.headers.includes('Travel Type') && (
+                    <td className="px-4 py-2">{request.travelType}</td>
+                  )}
+                  {modalData.headers.includes('Estimated Cost') && (
+                    <td className="px-4 py-2">₹{request.estimatedCost.toLocaleString()}</td>
+                  )}
+                  {modalData.headers.includes('Airline') && (
+                    <td className="px-4 py-2">{request.airline || 'N/A'}</td>
+                  )}
+                  {modalData.headers.includes('Travel Agency') && (
+                    <td className="px-4 py-2">{request.travelAgency || 'N/A'}</td>
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </Modal>
+      )}
     </div>
   );
 };

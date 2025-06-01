@@ -39,7 +39,8 @@ const MetricCard: React.FC<MetricCardProps> = ({
         <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent"></div>
       </div>
       
-      <div className="relative z-10">
+      {/* Removed z-10 from here to fix modal overlay issue */}
+      <div className="relative">
         {/* Title */}
         <h3 className="text-sm font-medium text-gray-700 mb-2 font-semibold">
           {title}
@@ -101,42 +102,39 @@ const Dashboard: React.FC = () => {
   ];
 
   return (
-   
-      <div className="max-w-7xl mx-auto space-y-8">
-        {/* Header */}
-        <div className="text-left mb-8">
-          <h1 className="text-4xl font-bold text-gray-800 mb-2">Admin Dashboard</h1>
+    <div className="max-w-7xl mx-auto space-y-8">
+      {/* Header */}
+      <div className="text-left mb-8">
+        <h1 className="text-4xl font-bold text-gray-800 mb-2">Admin Dashboard</h1>
+      </div>
+
+      {/* Upcoming Events Section */}
+      <div className="space-y-6">
+        <div className="flex items-center space-x-3">
+          <div className="w-1 h-8 bg-gradient-to-b from-blue-500 to-purple-600 rounded-full"></div>
+          <h2 className="text-2xl font-bold text-gray-800">Todays Statistics</h2>
+        </div>
         
-        </div>
-
-        {/* Upcoming Events Section */}
-        <div className="space-y-6">
-          <div className="flex items-center space-x-3">
-            <div className="w-1 h-8 bg-gradient-to-b from-blue-500 to-purple-600 rounded-full"></div>
-            <h2 className="text-2xl font-bold text-gray-800">Upcoming Events</h2>
-          </div>
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
-            {metricsData.map((metric, index) => (
-              <MetricCard
-                key={index}
-                icon={metric.icon}
-                title={metric.title}
-                value={metric.value}
-                iconColor={metric.iconColor}
-                bgColor={metric.bgColor}
-                hoverColor={metric.hoverColor}
-              />
-            ))}
-          </div>
-        </div>
-
-        {/* Reports Component */}
-        <div className="mt-12">
-          <Reports />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+          {metricsData.map((metric, index) => (
+            <MetricCard
+              key={index}
+              icon={metric.icon}
+              title={metric.title}
+              value={metric.value}
+              iconColor={metric.iconColor}
+              bgColor={metric.bgColor}
+              hoverColor={metric.hoverColor}
+            />
+          ))}
         </div>
       </div>
-    
+
+      {/* Reports Component */}
+      <div className="mt-12">
+        <Reports />
+      </div>
+    </div>
   );
 };
 

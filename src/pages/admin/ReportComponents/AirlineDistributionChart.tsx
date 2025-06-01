@@ -166,7 +166,7 @@ const AirlineDistributionChart: React.FC<AirlineDistributionChartProps> = ({
     <div className="bg-white rounded-lg p-6 shadow-sm">
       <div className="mb-4 flex justify-between items-center">
         <div className="flex items-center">
-          <h3 className="text-lg font-bold text-gray-800">Flight Provider Insights</h3>
+          <h3 className="text-5lg font-bold text-gray-800">Flight Provider Insights</h3>
           {!isEmptyData && (
             <button 
               onClick={() => setIsModalOpen(true)}
