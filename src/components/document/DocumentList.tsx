@@ -1,6 +1,4 @@
-// import React from 'react';
-import { format, isBefore, addMonths } from 'date-fns';
-import { FileText, AlertCircle, Download, Trash2, Calendar, Globe } from 'lucide-react';
+import { FileText, Download, Trash2 } from 'lucide-react';
 import { mockUserDocuments } from '../../data/documentData';
 import { DocumentType } from './types';
 
@@ -22,19 +20,18 @@ interface VisaDocument {
   expiryDate: string;
 }
 
-interface IdentificationDocument {
+interface AadharDocument {
   id: number;
-  idNumber: string;
-  issuingCountry: string;
-  expiryDate: string;
+  aadharNumber: string;
+  fullName: string;
 }
 
-type Document = PassportDocument | VisaDocument | IdentificationDocument;
+type Document = PassportDocument | VisaDocument | AadharDocument;
 
 interface UserDocuments {
   passportDocuments: PassportDocument[];
   visaDocuments: VisaDocument[];
-  identificationDocuments: IdentificationDocument[];
+  aadharDocuments: AadharDocument[];
 }
 
 const isUserDocumentsArray = (data: unknown): data is UserDocuments[] => {
@@ -46,7 +43,7 @@ const isUserDocumentsArray = (data: unknown): data is UserDocuments[] => {
       item !== null &&
       Array.isArray(item.passportDocuments) &&
       Array.isArray(item.visaDocuments) &&
-      Array.isArray(item.identificationDocuments)
+      Array.isArray(item.aadharDocuments)
     );
   });
 };
@@ -67,8 +64,8 @@ function DocumentList({ docType }: DocumentListProps) {
       case 'visa':
         documents = currentUser.visaDocuments;
         break;
-      case 'identification':
-        documents = currentUser.identificationDocuments;
+      case 'aadhar':
+        documents = currentUser.aadharDocuments;
         break;
     }
   }
@@ -80,65 +77,56 @@ function DocumentList({ docType }: DocumentListProps) {
         <p className="text-gray-500">No documents available.</p>
       ) : (
         <div className="space-y-4">
-          {documents.map((doc) => {
-            const isExpiringSoon = isBefore(new Date(doc.expiryDate), addMonths(new Date(), 3));
-            const isExpired = isBefore(new Date(doc.expiryDate), new Date());
+          {documents.map((doc) => (
+            <div
+              key={doc.id}
+              className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors"
+            >
+              <div className="flex items-start justify-between">
+                <div className="space-y-1">
+                  <div className="flex items-center">
+                    <FileText className="h-4 w-4 mr-2 text-blue-600" />
+                    <span className="font-medium text-gray-800">
+                      {'aadharNumber' in doc
+                        ? doc.aadharNumber
+                        : 'passportNumber' in doc
+                        ? doc.passportNumber
+                        : doc.visaNumber}
+                    </span>
+                  </div>
 
-            return (
-              <div
-                key={doc.id}
-                className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors"
-              >
-                <div className="flex items-start justify-between">
-                  <div className="space-y-1">
-                    <div className="flex items-center">
-                      <FileText className="h-4 w-4 mr-2 text-blue-600" />
-                      <span className="font-medium text-gray-800">
-                        {('passportNumber' in doc && doc.passportNumber) ||
-                          ('visaNumber' in doc && doc.visaNumber) ||
-                          ('idNumber' in doc && doc.idNumber) ||
-                          ''}
-                      </span>
+                  {docType === 'aadhar' ? (
+                    <div className="text-sm text-gray-500">
+                      <span>{'fullName' in doc ? doc.fullName : ''}</span>
                     </div>
-                    <div className="flex items-center text-sm text-gray-500">
-                      <Globe className="h-4 w-4 mr-2" />
-                      <span>{doc.issuingCountry}</span>
-                    </div>
-                    <div className="flex items-center text-sm text-gray-500">
-                      <Calendar className="h-4 w-4 mr-2" />
-                      <span>Valid until {format(new Date(doc.expiryDate), 'MMM dd, yyyy')}</span>
-                    </div>
-                    {isExpiringSoon && !isExpired && (
-                      <div className="flex items-center text-sm text-yellow-600 mt-2">
-                        <AlertCircle className="h-4 w-4 mr-2" />
-                        <span>Expiring soon</span>
+                  ) : (
+                    <>
+                      <div className="text-sm text-gray-500">
+                        <span>Issuing Country: {'issuingCountry' in doc ? doc.issuingCountry : ''}</span>
                       </div>
-                    )}
-                    {isExpired && (
-                      <div className="flex items-center text-sm text-red-600 mt-2">
-                        <AlertCircle className="h-4 w-4 mr-2" />
-                        <span>Expired</span>
+                      <div className="text-sm text-gray-500">
+                        <span>Expiry Date: {'expiryDate' in doc ? doc.expiryDate : ''}</span>
                       </div>
-                    )}
-                  </div>
-                  <div className="flex space-x-2">
-                    <button
-                      className="p-2 text-gray-500 hover:text-blue-600 rounded-md hover:bg-gray-100 transition-colors"
-                      title="Download"
-                    >
-                      <Download className="h-4 w-4" />
-                    </button>
-                    <button
-                      className="p-2 text-gray-500 hover:text-red-600 rounded-md hover:bg-gray-100 transition-colors"
-                      title="Delete"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </div>
+                    </>
+                  )}
+                </div>
+                <div className="flex space-x-2">
+                  <button
+                    className="p-2 text-gray-500 hover:text-blue-600 rounded-md hover:bg-gray-100 transition-colors"
+                    title="Download"
+                  >
+                    <Download className="h-4 w-4" />
+                  </button>
+                  <button
+                    className="p-2 text-gray-500 hover:text-red-600 rounded-md hover:bg-gray-100 transition-colors"
+                    title="Delete"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
                 </div>
               </div>
-            );
-          })}
+            </div>
+          ))}
         </div>
       )}
     </div>
