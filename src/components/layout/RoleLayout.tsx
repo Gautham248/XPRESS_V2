@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Outlet, Link, useNavigate } from 'react-router-dom';
+import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import Header from './Header';
 import Footer from './Footer';
 import { 
@@ -53,6 +53,7 @@ interface RoleLayoutProps {
 
 const RoleLayout: React.FC<RoleLayoutProps> = ({ role }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const navItems = navConfig[role];
   const [isOpen, setIsOpen] = useState(true);
 
@@ -63,6 +64,10 @@ const RoleLayout: React.FC<RoleLayoutProps> = ({ role }) => {
 
   const toggleSidebar = () => {
     setIsOpen(!isOpen);
+  };
+
+  const isActive = (path: string) => {
+    return location.pathname === path;
   };
 
   return (
@@ -99,9 +104,15 @@ const RoleLayout: React.FC<RoleLayoutProps> = ({ role }) => {
                 <Link
                   key={item.path}
                   to={item.path}
-                  className="sidebar-link flex items-center px-3 py-2 text-sm font-medium rounded-md hover:bg-muted transition-colors"
+                  className={`sidebar-link flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                    isActive(item.path) 
+                      ? 'bg-muted text-foreground' 
+                      : 'hover:bg-muted text-muted-foreground hover:text-foreground'
+                  }`}
                 >
-                  {item.icon}
+                  <span className={isActive(item.path) ? 'text-foreground' : ''}>
+                    {item.icon}
+                  </span>
                   <span className={`ml-3 transition-opacity duration-200 ${isOpen ? 'opacity-100' : 'opacity-0 hidden'}`}>
                     {item.label}
                   </span>
