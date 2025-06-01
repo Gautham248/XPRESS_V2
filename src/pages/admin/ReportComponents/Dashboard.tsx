@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Briefcase, Ticket, AlertCircle, ArrowUpDown, XCircle } from 'lucide-react';
 import Reports from './Reports';
 
@@ -10,6 +11,7 @@ interface MetricCardProps {
   iconColor: string;
   bgColor: string;
   hoverColor: string;
+  onClick?: () => void;
 }
 
 const MetricCard: React.FC<MetricCardProps> = ({ 
@@ -18,10 +20,14 @@ const MetricCard: React.FC<MetricCardProps> = ({
   value, 
   iconColor, 
   bgColor, 
-  hoverColor 
+  hoverColor,
+  onClick 
 }) => {
   return (
-    <div className={`${bgColor} border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-all duration-300 group cursor-pointer relative overflow-hidden`}>
+    <div 
+      className={`${bgColor} border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-all duration-300 group cursor-pointer relative overflow-hidden`}
+      onClick={onClick}
+    >
       {/* Creative background elements */}
       <div className="absolute inset-0 overflow-hidden">
         {/* Large background icon - more visible */}
@@ -58,6 +64,23 @@ const MetricCard: React.FC<MetricCardProps> = ({
 };
 
 const Dashboard: React.FC = () => {
+  const navigate = useNavigate();
+
+  const handleNewRequestsClick = () => {
+    // Navigate to travel requests with today's date filter
+    const today = new Date();
+    const todayStr = today.toISOString().split('T')[0]; // Format: YYYY-MM-DD
+    
+    // Store the date filter in localStorage or sessionStorage to be picked up by the DataTable
+    sessionStorage.setItem('travelRequestsDateFilter', JSON.stringify({
+      startDate: todayStr,
+      endDate: todayStr
+    }));
+    
+    // Navigate to the travel requests page
+    navigate('/admin/travel-requests');
+  };
+
   const metricsData = [
     {
       icon: <Briefcase className="h-6 w-6" />,
@@ -65,7 +88,8 @@ const Dashboard: React.FC = () => {
       value: 6,
       iconColor: "text-blue-600",
       bgColor: "bg-gradient-to-br from-blue-50 to-blue-100",
-      hoverColor: "from-blue-100 to-blue-150"
+      hoverColor: "from-blue-100 to-blue-150",
+      onClick: handleNewRequestsClick
     },
     {
       icon: <Ticket className="h-6 w-6" />,
@@ -125,6 +149,7 @@ const Dashboard: React.FC = () => {
               iconColor={metric.iconColor}
               bgColor={metric.bgColor}
               hoverColor={metric.hoverColor}
+              onClick={metric.onClick}
             />
           ))}
         </div>
