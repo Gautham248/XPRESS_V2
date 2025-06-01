@@ -10,31 +10,41 @@ import {
   Lock
 } from 'lucide-react';
 import { mockTravelRequests, TravelRequest, getStatusColor } from '../../data/mockData';
-// import TravelRequestInfo from './TravelRequestInfo';
 import ApprovalTimeline from './ApprovalTimeline';
 import TravelInfo from './TravelInfo';
 import TicketComponent from './ticket_options/TicketOptionsComponent';
 import TravelInfoBanner from './TravelInfoBanner';
 import { useModal } from './confirmation_modal/hooks/useModal';
 import ConfirmationModal from './confirmation_modal/ConfirmationModal';
+import CloseRequestModalContent from './CloseRequestModalContent';
 
 const TravelRequestDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { isOpen, title, content, buttons, openModal, closeModal } = useModal();
   const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
-  
-  // const user = { role: 'employee' }; // This would come from your auth context
+  const [approveComment, setApproveComment] = useState('');
+  const [rejectComment, setRejectComment] = useState('');
+  const [actionTaken, setActionTaken] = useState(false);
+
+  const [closeRequestData, setCloseRequestData] = useState({
+    travelAgency: '',
+    sameAirlines: true,
+    departureAirline: '',
+    departureCost: '',
+    returnAirline: '',
+    returnCost: '',
+    totalExpenses: ''
+  });
+
   const userString = localStorage.getItem('user');
   let role = ''
 
   if (userString) {
     const user = JSON.parse(userString);
     role = user.role;
-
-      console.log('User role:', role);
   } else {
-      console.log('No user found in localStorage.');
+    console.log('No user found in localStorage.');
   }
 
   const travelRequest = mockTravelRequests.find(request => request.id === id) as TravelRequest;
@@ -58,16 +68,11 @@ const TravelRequestDetails: React.FC = () => {
 
   const formatDate = (dateString: string): string => {
     if (!dateString) return '';
-    
     const date = new Date(dateString);
-    
-    // Check if date is valid
     if (isNaN(date.getTime())) return dateString;
-    
     const day = date.getDate().toString().padStart(2, '0');
     const month = (date.getMonth() + 1).toString().padStart(2, '0');
     const year = date.getFullYear();
-    
     return `${day}-${month}-${year}`;
   };
 
@@ -79,7 +84,7 @@ const TravelRequestDetails: React.FC = () => {
     openModal(
       <div className="space-y-4">
         <textarea
-          className="w-full p-2 border rounded" 
+          className="w-full p-2 border rounded"
           placeholder="Enter your feedback..."
           rows={4}
         />
@@ -93,14 +98,119 @@ const TravelRequestDetails: React.FC = () => {
     );
   };
 
+  const resetCloseRequestData = () => {
+    setCloseRequestData({
+      travelAgency: '',
+      sameAirlines: true,
+      departureAirline: '',
+      departureCost: '',
+      returnAirline: '',
+      returnCost: '',
+      totalExpenses: ''
+    });
+  };
+
+  const handleCloseRequestInputChange = (field: string, value: string | boolean) => {
+    setCloseRequestData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const validateCloseRequestData = () => {
+    const { travelAgency, departureAirline, departureCost, returnAirline, returnCost, totalExpenses, sameAirlines } = closeRequestData;
+    if (!travelAgency.trim()) return 'Travel agency name is required';
+    if (!departureAirline.trim()) return 'Departure airline is required';
+    if (!departureCost.trim()) return 'Departure cost is required';
+    if (!sameAirlines && !returnAirline.trim()) return 'Return airline is required';
+    if (!sameAirlines && !returnCost.trim()) return 'Return cost is required';
+    if (!totalExpenses.trim()) return 'Total expenses is required';
+    return null;
+  };
+
+  const handleCloseRequestSubmit = () => {
+    const validationError = validateCloseRequestData();
+    if (validationError) {
+      alert(validationError);
+      return;
+    }
+    openModal(
+      <div className="space-y-4">
+        <p className="text-lg font-medium">Are you sure you want to finalize this travel request?</p>
+        <div className="bg-gray-50 p-4 rounded-lg space-y-2 text-sm">
+          <div><strong>Travel Agency:</strong> {closeRequestData.travelAgency}</div>
+          <div><strong>Departure Airline:</strong> {closeRequestData.departureAirline} (${closeRequestData.departureCost})</div>
+          {!closeRequestData.sameAirlines && (
+            <div><strong>Return Airline:</strong> {closeRequestData.returnAirline} (${closeRequestData.returnCost})</div>
+          )}
+          <div><strong>Total Expenses:</strong> ${closeRequestData.totalExpenses}</div>
+        </div>
+        <p className="text-red-600 text-sm">This action cannot be undone.</p>
+      </div>,
+      () => {
+        console.log('Request finalized with data:', closeRequestData);
+        resetCloseRequestData();
+      },
+      'Confirm Finalization',
+      'Finalize Request'
+    );
+  };
+
   const handleCloseRequest = () => {
     openModal(
-      <p>Are you sure you want to close this travel request?</p>,
+      <CloseRequestModalContent
+        closeRequestData={closeRequestData}
+        handleCloseRequestInputChange={handleCloseRequestInputChange}
+      />,
+      handleCloseRequestSubmit,
+      'Finalize Travel Request',
+      'Continue'
+    );
+  };
+
+  const handleApproveSubmit = () => {
+    openModal(
+      <div className="space-y-4">
+        <textarea
+          className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          placeholder="Add approval comments (optional)"
+          rows={4}
+          // value={approveComment}
+          // onChange={(e) => setApproveComment(e.target.value)}
+        />
+      </div>,
       () => {
-        console.log('Request closed');
-        // In a real app, you would update the mock data or make an API call
+        console.log('Request approved with comment:', approveComment);
+        setActionTaken(true);
+        setApproveComment('');
       },
-      'Confirm Request Closure'
+      'Approve Travel Request',
+      'Confirm Approval'
+    );
+  };
+
+  const handleRejectSubmit = () => {
+    openModal(
+      <div className="space-y-4">
+        <textarea
+          className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          placeholder="Add rejection reason (required)"
+          rows={4}
+          // value={rejectComment}
+          // onChange={(e) => setRejectComment(e.target.value)}
+        />
+      </div>,
+      () => {
+        if (!rejectComment.trim()) {
+          alert('Please provide a rejection reason');
+          return; 
+        }
+        console.log('Request rejected with reason:', rejectComment);
+        setActionTaken(true);
+        setRejectComment('');
+      },
+      'Reject Travel Request',
+      'Confirm Rejection'
     );
   };
 
@@ -109,15 +219,17 @@ const TravelRequestDetails: React.FC = () => {
   const isAdmin = role === 'admin';
   const isManager = role === 'manager';
 
-  // Conditions for showing feedback button
-  const showFeedbackButton = isEmployee && 
+  const showFeedbackButton = isEmployee &&
     (travelRequest.status === 'Returned') &&
     !feedbackSubmitted;
 
-  // Conditions for showing close request button
-  const showCloseRequestButton = isAdmin && 
-    travelRequest.status === 'Returned' && 
-    feedbackSubmitted;
+  const showCloseRequestButton = isAdmin &&
+    travelRequest.status === 'Returned';
+
+  // Condition for showing Approve/Reject buttons
+  const showManagerActionButtons = isManager && 
+    travelRequest.status === 'Pending' && 
+    !actionTaken;
 
   return (
     <div className="space-y-6 animate-fadeIn">
@@ -129,11 +241,10 @@ const TravelRequestDetails: React.FC = () => {
         buttons={buttons}
       />
 
-      {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div className="flex items-center gap-4">
-          <button 
-            onClick={() => navigate(-1)} 
+          <button
+            onClick={() => navigate(-1)}
             className="inline-flex items-center gap-1 text-sm font-medium px-3 py-3 rounded-full bg-gray-200 hover:bg-gray-300 text-gray-700"
             aria-label="Go back"
           >
@@ -153,7 +264,7 @@ const TravelRequestDetails: React.FC = () => {
         </div>
 
         <div className="flex space-x-3">
-          <button 
+          <button
             className="btn-accent flex items-center"
             onClick={handleDownloadDocuments}
           >
@@ -162,7 +273,7 @@ const TravelRequestDetails: React.FC = () => {
           </button>
 
           {showFeedbackButton && (
-            <button 
+            <button
               className="btn-secondary flex items-center"
               onClick={handleFeedbackSubmit}
             >
@@ -172,7 +283,7 @@ const TravelRequestDetails: React.FC = () => {
           )}
 
           {showCloseRequestButton && (
-            <button 
+            <button
               className="btn-primary flex items-center"
               onClick={handleCloseRequest}
             >
@@ -181,19 +292,25 @@ const TravelRequestDetails: React.FC = () => {
             </button>
           )}
 
-          {isManager && travelRequest.status === 'Pending' && (
+          {showManagerActionButtons && (
             <>
-              <button className="btn-primary flex items-center">
+              <button
+                className="btn-primary flex items-center"
+                onClick={handleApproveSubmit}
+              >
                 <Check className="h-4 w-4 mr-2" />
                 Approve
               </button>
-              <button className="btn-secondary flex items-center">
+              <button
+                className="btn-secondary flex items-center"
+                onClick={handleRejectSubmit}
+              >
                 <X className="h-4 w-4 mr-2" />
                 Reject
               </button>
             </>
           )}
-          
+
           <button className="btn-accent flex items-center">
             <FileText className="h-4 w-4 mr-2" />
             Export
@@ -201,25 +318,15 @@ const TravelRequestDetails: React.FC = () => {
         </div>
       </div>
 
-      {/* Travel Info Banner */}
       <div>
         <TravelInfoBanner travelRequest={travelRequest} />
       </div>
 
-      {/* Main Content Grid */}
       <div className="flex flex-col lg:flex-row gap-4 items-stretch">
         <div className="flex-1 space-y-6">
-          {/* <TravelRequestInfo
-            travelRequest={travelRequest}
-            getStatusColor={getStatusColor}
-            getPriorityColor={getPriorityColor}
-          /> */}
-          
           <TravelInfo travelRequest={travelRequest} />
-          
           <TicketComponent travelRequest={travelRequest} />
         </div>
-
         <div className="w-full lg:w-[450px] flex flex-col">
           <div className="flex-grow">
             <ApprovalTimeline travelRequest={travelRequest} />
