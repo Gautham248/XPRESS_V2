@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Plus, Upload, Edit, Trash, Save, X } from 'lucide-react';
 import { TicketOption } from '../../../data/mockData';
 
@@ -32,21 +32,8 @@ const AdminTicketOptionsView: React.FC<Props> = ({
   onChangeEditText,
   onUploadOptions,
 }) => {
-  const [agencyName, setAgencyName] = useState('');
   return (
     <div className="space-y-6">
-      {/* Travel Agency Name Input */}
-      <div>
-        <h5 className="text-md font-medium mb-2">Travel Agency:</h5>
-        <input
-          type="text"
-          placeholder="Enter travel agency name"
-          className="w-full p-2 mb-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-          value={agencyName}
-          onChange={(e) => setAgencyName(e.target.value)}
-        />
-      </div>
-      <hr />
       <h5 className="text-md font-medium">Ticket Option:</h5>
 
       <div>
@@ -115,16 +102,16 @@ const AdminTicketOptionsView: React.FC<Props> = ({
               <span>{option.description}</span>
               <div className="flex gap-2">
                 <button
-                  className="flex items-center gap-1 px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600"
+                  className="flex items-center gap-1 px-2 py-1 text-yellow-500 rounded hover:bg-yellow-500 hover:text-white"
                   onClick={() => onEditOption(option)}
                 >
-                  <Edit size={16} />
+                  <Edit size={18} />
                 </button>
                 <button
-                  className="flex items-center gap-1 px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600"
+                  className="flex items-center gap-1 px-2 py-1 text-red-500 rounded hover:bg-red-500 hover:text-white"
                   onClick={() => onDeleteOption(option.id)}
                 >
-                  <Trash size={16} />
+                  <Trash size={18} />
                 </button>
               </div>
             </div>
