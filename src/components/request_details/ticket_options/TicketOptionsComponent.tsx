@@ -81,12 +81,18 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ travelRequest }) => {
   };
 
   const handleSelectOption = (optionId: string) => {
-    if (userRole !== 'manager') return;
-    const updatedOptions = ticketOptions.map(option =>
-      option.id === optionId ? { ...option, selected: !option.selected } : option
-    );
-    setTicketOptions(updatedOptions);
-  };
+  if (userRole !== 'manager') return;
+  
+  const updatedOptions = ticketOptions.map(option => {
+    if (option.id === optionId) {
+      return { ...option, selected: !option.selected };
+    } else {
+      return { ...option, selected: false };
+    }
+  });
+  
+  setTicketOptions(updatedOptions);
+};
 
   const handleEditOption = (option: TicketOption) => {
     setEditingOption(option.id);
