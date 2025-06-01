@@ -49,12 +49,6 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ travelRequest }) => {
     }
   }, []);
 
-  // console.log(userRole);
-  // Role Management
-  const isAdmin = userRole === 'admin';
-  const isManager = userRole === 'manager';
-  const isEmployee = userRole === 'employee';
-
   const handleAddOption = () => {
     if (newOption.trim()) {
       setTicketOptions([
@@ -133,7 +127,7 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ travelRequest }) => {
         </div>
 
         <div className="p-4 overflow-y-auto h-[calc(100%-64px)] space-y-6">
-          {isAdmin && travelRequest.status === 'Manager Approved' ? (
+          {userRole === 'admin' && (
             <AdminTicketOptionsView
               ticketOptions={ticketOptions}
               newOption={newOption}
@@ -148,12 +142,9 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ travelRequest }) => {
               onChangeEditText={setEditText}
               onUploadOptions={handleUploadOptions}
             />
-          ) : isAdmin ? (
-            <p className="text-gray-500 italic">Ticket options can be added after Manager approval.</p>
-          ) : null
-          }
+          )}
 
-          {isManager && dummyTicketOptions.length != 0 && (
+          {userRole === 'manager' && (
             <ManagerTicketOptionsView
               ticketOptions={ticketOptions}
               onSelectOption={handleSelectOption}
@@ -163,7 +154,7 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ travelRequest }) => {
             />
           )}
 
-          {isEmployee && travelRequest.status === 'DU Head Approved' &&(
+          {userRole === 'employee' && (
             <EmployeeTicketOptionsView
               ticketOptions={ticketOptions}
               onDownloadTickets={handleDownloadTickets}
