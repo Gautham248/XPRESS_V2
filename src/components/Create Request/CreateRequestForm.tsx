@@ -4,7 +4,7 @@ import { useTravelRequest } from './TravelRequestContext';
 import BasicInfoSection from './BasicInfoSection';
 import TravelDetailsSection from './TravelDetailsSection';
 import AdditionalServicesSection from './AdditionalServicesSection';
-// import PurposeSection from './PurposeSection';
+import PurposeSection from './PurposeSection';
 
 const CreateRequestForm: React.FC = () => {
   const navigate = useNavigate();
