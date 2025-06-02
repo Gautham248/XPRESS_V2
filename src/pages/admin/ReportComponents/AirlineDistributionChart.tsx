@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
-import { ExternalLink } from 'lucide-react';
+import { ExternalLink, Filter, ChevronDown, Globe, MapPin } from 'lucide-react';
 import ReusableTable from './ReusableTable';
 import Modal from './Modal';
 import EmptyStateView from './EmptyStateView';
@@ -8,13 +8,15 @@ import EmptyStateView from './EmptyStateView';
 interface PieChartItem {
   name: string;
   value: number;
-  cost?: number; // Add cost property
+  cost?: number;
+  travelType?: 'international' | 'domestic';
 }
 
 interface TableDataItem {
   airline: string;
   trips: number;
   cost: string;
+  travel_type: string;
 }
 
 interface AirlineDistributionChartProps {
@@ -23,13 +25,29 @@ interface AirlineDistributionChartProps {
   endDate?: string;
 }
 
-const AirlineDistributionChart: React.FC<AirlineDistributionChartProps> = ({ chartData, startDate, endDate }) => {
+type TravelTypeFilter = 'all' | 'international' | 'domestic';
+
+const AirlineDistributionChart: React.FC<AirlineDistributionChartProps> = ({ 
+  chartData, 
+  startDate, 
+  endDate 
+}) => {
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const [travelTypeFilter, setTravelTypeFilter] = useState<TravelTypeFilter>('all');
+  const [isFilterOpen, setIsFilterOpen] = useState<boolean>(false);
   
-  // Check if data is empty or only contains zero values
-  const isEmptyData = chartData.length === 0 || chartData.every(item => item.value === 0);
+  // Filter data based on travel type
+  const filteredChartData = useMemo(() => {
+    if (travelTypeFilter === 'all') {
+      return chartData;
+    }
+    return chartData.filter(item => item.travelType === travelTypeFilter);
+  }, [chartData, travelTypeFilter]);
   
-  // Generate dynamic colors based on number of travel agencies
+  // Check if filtered data is empty or only contains zero values
+  const isEmptyData = filteredChartData.length === 0 || filteredChartData.every(item => item.value === 0);
+  
+  // Generate dynamic colors based on number of airlines
   const generateColors = (count: number): string[] => {
     const baseColors: string[] = [
       '#D8BFD8', // Light purple 
@@ -60,9 +78,9 @@ const AirlineDistributionChart: React.FC<AirlineDistributionChartProps> = ({ cha
     }
   };
   
-  const COLORS: string[] = generateColors(chartData.length);
-  const totalTrips: number = chartData.reduce((sum, item) => sum + item.value, 0);
-  const totalCost: number = chartData.reduce((sum, item) => sum + (item.cost || 0), 0);
+  const COLORS: string[] = generateColors(filteredChartData.length);
+  const totalTrips: number = filteredChartData.reduce((sum, item) => sum + item.value, 0);
+  const totalCost: number = filteredChartData.reduce((sum, item) => sum + (item.cost || 0), 0);
 
   const renderCustomizedLabel = (props: {
     cx?: number;
@@ -91,13 +109,45 @@ const AirlineDistributionChart: React.FC<AirlineDistributionChartProps> = ({ cha
     );
   };
 
-  // Updated table headers to include Cost instead of Percentage
-  const tableHeaders: string[] = ["Airline", "Trips", "Cost"];
-  const tableData: TableDataItem[] = chartData.map(item => ({
+  // Table headers
+  const tableHeaders: string[] = ["Airline", "Trips", "Cost", "Travel Type"];
+  const tableData: TableDataItem[] = filteredChartData.map(item => ({
     airline: item.name,
     trips: item.value,
-    cost: `$${(item.cost || 0).toLocaleString()}`
+    cost: `$${(item.cost || 0).toLocaleString()}`,
+    travel_type: item.travelType ? item.travelType.charAt(0).toUpperCase() + item.travelType.slice(1) : 'Unknown'
   }));
+
+  // Prepare export configuration for the modal
+  const exportConfig = {
+    headers: tableHeaders,
+    data: tableData,
+    filename: `flight-provider-data-${travelTypeFilter === 'all' ? 'all' : travelTypeFilter}`
+  };
+
+  // Get filter display text
+  const getFilterDisplayText = (): string => {
+    switch (travelTypeFilter) {
+      case 'international':
+        return 'International Flights';
+      case 'domestic':
+        return 'Domestic Flights';
+      default:
+        return 'All Flights';
+    }
+  };
+
+  // Get filter icon
+  const getFilterIcon = () => {
+    switch (travelTypeFilter) {
+      case 'international':
+        return <Globe className="w-4 h-4" />;
+      case 'domestic':
+        return <MapPin className="w-4 h-4" />;
+      default:
+        return <Filter className="w-4 h-4" />;
+    }
+  };
 
   // Flight icon for empty state
   const flightIcon = (
@@ -106,27 +156,84 @@ const AirlineDistributionChart: React.FC<AirlineDistributionChartProps> = ({ cha
     </svg>
   );
 
+  const filterOptions = [
+    { value: 'all', label: 'All Flights', icon: <Filter className="w-4 h-4" />, count: chartData.length },
+    { value: 'international', label: 'International Only', icon: <Globe className="w-4 h-4" />, count: chartData.filter(item => item.travelType === 'international').length },
+    { value: 'domestic', label: 'Domestic Only', icon: <MapPin className="w-4 h-4" />, count: chartData.filter(item => item.travelType === 'domestic').length }
+  ];
+
   return (
     <div className="bg-white rounded-lg p-6 shadow-sm">
       <div className="mb-4 flex justify-between items-center">
         <div className="flex items-center">
-          <h3 className="text-lg font-bold text-gray-800">Flight Provider Insights</h3>
+          <h3 className="text-5lg font-bold text-gray-800">Flight Provider Insights</h3>
           {!isEmptyData && (
             <button 
               onClick={() => setIsModalOpen(true)}
-              className="ml-2 text-blue-600 hover:text-blue-800"
+              className="ml-2 text-blue-600 hover:text-blue-800 transition-colors duration-200"
             >
               <ExternalLink size={16} />
             </button>
           )}
         </div>
+        
+        {/* Modern Filter UI */}
+        <div className="relative">
+          <button
+            onClick={() => setIsFilterOpen(!isFilterOpen)}
+            className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 border border-blue-200 rounded-lg text-sm font-medium text-gray-700 transition-all duration-200 shadow-sm hover:shadow-md min-w-[160px]"
+          >
+            {getFilterIcon()}
+            <span className="flex-1 text-left">{getFilterDisplayText()}</span>
+            <ChevronDown 
+              className={`w-4 h-4 transition-transform duration-200 ${isFilterOpen ? 'rotate-180' : ''}`} 
+            />
+          </button>
+
+          {/* Dropdown Menu */}
+          {isFilterOpen && (
+            <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 z-10 overflow-hidden">
+              <div className="py-1">
+                {filterOptions.map((option) => (
+                  <button
+                    key={option.value}
+                    onClick={() => {
+                      setTravelTypeFilter(option.value as TravelTypeFilter);
+                      setIsFilterOpen(false);
+                    }}
+                    className={`w-full flex items-center justify-between px-4 py-3 text-sm hover:bg-gray-50 transition-colors duration-150 ${
+                      travelTypeFilter === option.value 
+                        ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-500' 
+                        : 'text-gray-700'
+                    }`}
+                  >
+                    <div className="flex items-center space-x-3">
+                      <span className={`${travelTypeFilter === option.value ? 'text-blue-600' : 'text-gray-400'}`}>
+                        {option.icon}
+                      </span>
+                      <span className="font-medium">{option.label}</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
+
+      {/* Overlay to close dropdown when clicking outside */}
+      {isFilterOpen && (
+        <div 
+          className="fixed inset-0 z-5" 
+          onClick={() => setIsFilterOpen(false)}
+        />
+      )}
 
       {isEmptyData ? (
         <EmptyStateView
           icon={flightIcon}
           title="No flight data available"
-          message="No flight provider data is currently available to display."
+          message={`No ${travelTypeFilter === 'all' ? '' : travelTypeFilter + ' '}flight provider data is currently available to display.`}
         />
       ) : (
         <div className="flex h-80">
@@ -134,7 +241,7 @@ const AirlineDistributionChart: React.FC<AirlineDistributionChartProps> = ({ cha
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
-                  data={chartData}
+                  data={filteredChartData}
                   cx="50%"
                   cy="50%"
                   labelLine={false}
@@ -145,7 +252,7 @@ const AirlineDistributionChart: React.FC<AirlineDistributionChartProps> = ({ cha
                   dataKey="value"
                   paddingAngle={2}
                 >
-                  {chartData.map((entry, index) => (
+                  {filteredChartData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
@@ -158,9 +265,9 @@ const AirlineDistributionChart: React.FC<AirlineDistributionChartProps> = ({ cha
           
           <div className="w-1/4 flex items-center">
             <div className="w-full">
-              {chartData.map((entry, index) => (
+              {filteredChartData.map((entry, index) => (
                 <div key={`legend-${index}`} className="flex items-center mb-4">
-                  <div className="w-3 h-3 mr-2" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
+                  <div className="w-3 h-3 mr-2 rounded-sm" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
                   <div className="flex flex-col">
                     <span className="text-sm font-medium">{entry.name}</span>
                     <span className="text-xs text-gray-500">${(entry.cost || 0).toLocaleString()}</span>
@@ -172,12 +279,27 @@ const AirlineDistributionChart: React.FC<AirlineDistributionChartProps> = ({ cha
         </div>
       )}
 
+      {/* Summary statistics */}
+      {!isEmptyData && (
+        <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
+          <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 rounded-lg border border-gray-200">
+            <span className="text-gray-600">Total Trips ({getFilterDisplayText()})</span>
+            <div className="text-lg font-semibold text-gray-800">{totalTrips.toLocaleString()}</div>
+          </div>
+          <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 rounded-lg border border-gray-200">
+            <span className="text-gray-600">Total Cost ({getFilterDisplayText()})</span>
+            <div className="text-lg font-semibold text-gray-800">${totalCost.toLocaleString()}</div>
+          </div>
+        </div>
+      )}
+
       <Modal 
         isOpen={isModalOpen} 
         onClose={() => setIsModalOpen(false)} 
-        title="Flight Provider Details"
+        title={`Flight Provider Details - ${getFilterDisplayText()}`}
         startDate={startDate}
         endDate={endDate}
+        exportData={exportConfig}
       >
         <ReusableTable headers={tableHeaders} data={tableData} />
       </Modal>
