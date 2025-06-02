@@ -48,7 +48,8 @@ function App() {
           </ProtectedRoute>
         }>
           <Route index element={<Navigate to="dashboard" replace />} />
-          <Route path="dashboard" element={<ManagerDashboard />} />
+          <Route path="dashboard" element={<EmployeeDashboard />} />
+          <Route path="new-request" element={<CreateRequest />} />
           <Route path="team-requests" element={<TravelRequests />} />
           <Route path="team-requests/:id" element={<TravelRequestDetails />} />
           <Route path="my-requests" element={<TravelRequests />} />
