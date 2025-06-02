@@ -668,6 +668,205 @@
 
 // export default TravelRequests;
 
+
+
+// import React, { useState, useEffect } from 'react';
+// import { useNavigate } from 'react-router-dom';
+// import DataTable from './DataTable';
+// import { getStatusColor } from '../../data/mockData';
+
+// // Define the TravelRequest interface based on the API data structure
+// interface TravelRequest {
+//   id: string;
+//   travelerName: string;
+//   projectCode: string;
+//   travelType: string;
+//   source: string;
+//   destination: string;
+//   departureDate: string;
+//   returnDate: string;
+//   departmentCode?: string;
+//   reportingManager?: string;
+//   status: string;
+// }
+
+// // Define the API response interface based on RequestDataFormat.json
+// interface ApiTravelRequest {
+//   requestId: number;
+//   sourcePlace: string;
+//   sourceCountry: string;
+//   destinationPlace: string;
+//   destinationCountry: string;
+//   departureDate: string;
+//   returnDate: string;
+//   isAccommodationRequired: boolean;
+//   isPickupRequired: boolean;
+//   isDropoffRequired: boolean;
+//   pickupLocation: string;
+//   dropoffLocation: string;
+//   comments: string;
+//   purposeOfTravel: string;
+//   foodPreference: string;
+//   attendedCct: boolean;
+//   travelAgencyName: string | null;
+//   totalExpense: number | null;
+//   uploadedTicketPdfPath: string | null;
+//   createdAt: string;
+//   updatedAt: string;
+//   employeeName: string;
+//   travelTypeName: string;
+//   tripTypeName: string;
+//   projectName: string;
+//   travelModeName: string;
+//   currentStatusName: string;
+//   selectedTicketOptionName: string | null;
+// }
+
+// const TravelRequests: React.FC = () => {
+//   const navigate = useNavigate();
+//   const [travelRequests, setTravelRequests] = useState<TravelRequest[]>([]);
+//   const [isLoading, setIsLoading] = useState(true);
+//   const [error, setError] = useState<string | null>(null);
+
+//   // Fetch data from the API
+//   useEffect(() => {
+//     const fetchTravelRequests = async () => {
+//       try {
+//         setIsLoading(true);
+//         const response = await fetch('http://localhost:5171/api/TravelRequest/travel-requests');
+//         if (!response.ok) {
+//           throw new Error('Failed to fetch travel requests');
+//         }
+//         const apiData: ApiTravelRequest[] = await response.json();
+        
+//         // Map API data to TravelRequest interface
+//         const mappedData: TravelRequest[] = apiData.map((item) => ({
+//           id: item.requestId.toString(),
+//           travelerName: item.employeeName,
+//           projectCode: item.projectName,
+//           travelType: item.travelTypeName === 'Travel outside the country borders' ? 'International' : 'Domestic',
+//           source: `${item.sourcePlace}, ${item.sourceCountry}`,
+//           destination: `${item.destinationPlace}, ${item.destinationCountry}`,
+//           departureDate: item.departureDate,
+//           returnDate: item.returnDate,
+//           departmentCode: undefined, // Not provided in API data; can be updated if available
+//           reportingManager: undefined, // Not provided in API data; can be updated if available
+//           status: item.currentStatusName,
+//         }));
+
+//         setTravelRequests(mappedData);
+//       } catch (err) {
+//         setError(err instanceof Error ? err.message : 'An error occurred');
+//       } finally {
+//         setIsLoading(false);
+//       }
+//     };
+
+//     fetchTravelRequests();
+//   }, []);
+
+//   const headers = [
+//     { key: 'id', displayName: 'Request ID', sortable: true },
+//     { key: 'status', displayName: 'Status', sortable: true },
+//     { key: 'travelerName', displayName: 'Traveler', sortable: true },
+//     { key: 'projectCode', displayName: 'Project Code', sortable: true },
+//     { key: 'travelType', displayName: 'Type', sortable: true },
+//     { key: 'source', displayName: 'Source', sortable: true },
+//     { key: 'destination', displayName: 'Destination', sortable: true },
+//     { key: 'travelDates', displayName: 'Travel Dates', sortable: true },
+//     { key: 'departmentCode', displayName: 'Department', sortable: true },
+//     { key: 'reportingManager', displayName: 'Manager', sortable: true },
+//   ];
+
+//   const handleRowClick = (item: TravelRequest) => {
+//     const userString = localStorage.getItem('user');
+//     const user = userString ? JSON.parse(userString) : null;
+//     if (!user) return;
+
+//     const path = window.location.pathname;
+//     let basePath = '';
+//     if (user.role === 'admin') {
+//       basePath = '/admin/travel-requests';
+//     } else if (user.role === 'manager') {
+//       basePath = path.includes('team-requests') ? '/manager/team-requests' : '/manager/my-requests';
+//     } else if (user.role === 'employee') {
+//       basePath = '/employee/my-requests';
+//     }
+//     navigate(`${basePath}/${item.id}`);
+//   };
+
+//   if (isLoading) {
+//     return <div className="text-center py-8">Loading...</div>;
+//   }
+
+//   if (error) {
+//     return <div className="text-center py-8 text-error">Error: {error}</div>;
+//   }
+
+//   return (
+//     <DataTable
+//       headers={headers}
+//       data={travelRequests}
+//       title="Travel Requests"
+//       searchableFields={['travelerName', 'destination', 'id', 'projectCode', 'source']}
+//       statusOptions={[
+//         'Pending',
+//         'Approved',
+//         'Rejected',
+//         'Completed',
+//         'Manager Approved',
+//         'Tickets Dispatched',
+//         'Tickets Selected',
+//         'DU Head Approved',
+//         'In-transit',
+//         'Returned',
+//         'Closed',
+//         'Submitted',
+//       ]}
+//       typeOptions={['Domestic', 'International']}
+//       dateFilterKey="departureDate"
+//       newButtonLabel="New Request"
+//       newButtonPath="/create-request"
+//       getStatusColor={getStatusColor}
+//       getTypeColor={(type: string) =>
+//         type === 'Domestic' ? 'bg-primary/10 text-primary' : 'bg-secondary/10 text-secondary'
+//       }
+//       renderActions={(item: TravelRequest) => (
+//         <>
+//           <button 
+//             className="text-sm text-primary hover:text-primary-light font-medium"
+//             onClick={(e) => {
+//               e.stopPropagation();
+//               handleRowClick(item);
+//             }}
+//           >
+//             View
+//           </button>
+//           {item.status === 'Pending' && (
+//             <>
+//               <button 
+//                 className="text-sm text-success hover:text-success/80 font-medium"
+//                 onClick={(e) => e.stopPropagation()}
+//               >
+//                 Approve
+//               </button>
+//               <button 
+//                 className="text-sm text-error hover:text-error/80 font-medium"
+//                 onClick={(e) => e.stopPropagation()}
+//               >
+//                 Reject
+//               </button>
+//             </>
+//           )}
+//         </>
+//       )}
+//       onRowClick={handleRowClick}
+//     />
+//   );
+// };
+
+// export default TravelRequests;
+
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import DataTable from './DataTable';

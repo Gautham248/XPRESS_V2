@@ -233,6 +233,14 @@ export const mockTravelRequests: TravelRequest[] = [
       },
       {
         id: 'TL-004',
+        type: 'DU Head Approved',
+        date: '2025-01-17T13:00:00',
+        actor: 'Riona Maria',
+        description: 'Tickets dispatched',
+        details: 'Train tickets for Chicago uploaded'
+      },
+      {
+        id: 'TL-005',
         type: 'Tickets Dispatched',
         date: '2025-01-18T11:00:00',
         actor: 'Travel Desk',
@@ -381,6 +389,14 @@ export const mockTravelRequests: TravelRequest[] = [
       },
       {
         id: 'TL-004',
+        type: 'DU Head Approved',
+        date: '2025-01-07T13:00:00',
+        actor: 'Riona Maria',
+        description: 'Tickets dispatched',
+        details: 'Flight tickets for Miami uploaded'
+      },
+      {
+        id: 'TL-005',
         type: 'Tickets Dispatched',
         date: '2025-01-08T11:00:00',
         actor: 'Travel Desk',
@@ -388,7 +404,7 @@ export const mockTravelRequests: TravelRequest[] = [
         details: 'Flight tickets dispatched to traveler'
       },
       {
-        id: 'TL-005',
+        id: 'TL-006',
         type: 'In-transit',
         date: '2025-02-20T08:00:00',
         actor: 'System',
@@ -396,7 +412,7 @@ export const mockTravelRequests: TravelRequest[] = [
         details: 'Departed for Miami'
       },
       {
-        id: 'TL-006',
+        id: 'TL-007',
         type: 'Returned',
         date: '2025-02-27T18:00:00',
         actor: 'System',
@@ -404,7 +420,7 @@ export const mockTravelRequests: TravelRequest[] = [
         details: 'Returned from Miami'
       },
       {
-        id: 'TL-007',
+        id: 'TL-008',
         type: 'Closed',
         date: '2025-02-28T09:00:00',
         actor: 'Michael Davis',
@@ -491,6 +507,14 @@ export const mockTravelRequests: TravelRequest[] = [
       },
       {
         id: 'TL-004',
+        type: 'DU Head Approved',
+        date: '2025-01-07T13:00:00',
+        actor: 'Riona Maria',
+        description: 'Tickets dispatched',
+        details: 'Train tickets for Boston uploaded'
+      },
+      {
+        id: 'TL-005',
         type: 'Tickets Dispatched',
         date: '2025-02-08T11:00:00',
         actor: 'Travel Desk',
@@ -498,7 +522,7 @@ export const mockTravelRequests: TravelRequest[] = [
         details: 'Train tickets dispatched to traveler'
       },
       {
-        id: 'TL-005',
+        id: 'TL-006',
         type: 'In-transit',
         date: '2025-03-05T08:00:00',
         actor: 'System',
@@ -601,6 +625,14 @@ export const mockTravelRequests: TravelRequest[] = [
       },
       {
         id: 'TL-004',
+        type: 'DU Head Approved',
+        date: '2025-01-14T13:00:00',
+        actor: 'Riona Maria',
+        description: 'Tickets dispatched',
+        details: 'Flight tickets for Denver uploaded'
+      },
+      {
+        id: 'TL-005',
         type: 'Tickets Dispatched',
         date: '2025-02-15T11:00:00',
         actor: 'Travel Desk',
@@ -608,7 +640,7 @@ export const mockTravelRequests: TravelRequest[] = [
         details: 'Flight tickets dispatched to traveler'
       },
       {
-        id: 'TL-005',
+        id: 'TL-006',
         type: 'In-transit',
         date: '2025-03-12T08:00:00',
         actor: 'System',
@@ -616,7 +648,7 @@ export const mockTravelRequests: TravelRequest[] = [
         details: 'Departed for Denver'
       },
       {
-        id: 'TL-006',
+        id: 'TL-007',
         type: 'Returned',
         date: '2025-03-14T18:00:00',
         actor: 'System',
@@ -703,6 +735,14 @@ export const mockTravelRequests: TravelRequest[] = [
       },
       {
         id: 'TL-004',
+        type: 'DU Head Approved',
+        date: '2025-01-17T13:00:00',
+        actor: 'Riona Maria',
+        description: 'Tickets dispatched',
+        details: 'Flight tickets for Seattle uploaded'
+      },
+      {
+        id: 'TL-005',
         type: 'Tickets Dispatched',
         date: '2025-02-18T11:00:00',
         actor: 'Travel Desk',

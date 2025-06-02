@@ -22,14 +22,11 @@ export interface PassportDocument {
   documentUrl: string;
 }
 
-export interface IdentificationDocument {
+export interface AadharDocument {
   id: string;
   userId: string;
-  type: 'National ID' | 'Drivers License' | 'Social Security';
-  idNumber: string;
-  issuingCountry: string;
-  issueDate: string;
-  expiryDate: string;
+  fullName: string;
+  aadharNumber: string;
   documentUrl: string;
 }
 
@@ -38,7 +35,7 @@ export interface UserDocuments {
   userName: string;
   visaDocuments: VisaDocument[];
   passportDocuments: PassportDocument[];
-  identificationDocuments: IdentificationDocument[];
+  aadharDocuments: AadharDocument[];
 }
 
 export const mockUserDocuments: UserDocuments[] = [
@@ -53,8 +50,8 @@ export const mockUserDocuments: UserDocuments[] = [
         visaClass: 'B1/B2',
         issuingCountry: 'United States',
         issuingPost: 'London',
-        issueDate: '2023-01-15',
-        expiryDate: '2033-01-14',
+        issueDate: '15-01-2023',
+        expiryDate: '14-01-2033',
         documentUrl: 'https://example.com/documents/visa001.pdf'
       }
     ],
@@ -64,21 +61,18 @@ export const mockUserDocuments: UserDocuments[] = [
         userId: 'USER001',
         passportNumber: 'P1234567',
         issuingCountry: 'United Kingdom',
-        issueDate: '2020-05-20',
-        expiryDate: '2030-05-19',
+        issueDate: '20-05-2020',
+        expiryDate: '19-05-2030',
         documentUrl: 'https://example.com/documents/passport001.pdf'
       }
     ],
-    identificationDocuments: [
+    aadharDocuments: [
       {
-        id: 'ID001',
+        id: 'AADHAR001',
         userId: 'USER001',
-        type: 'National ID',
-        idNumber: 'ID12345678',
-        issuingCountry: 'United Kingdom',
-        issueDate: '2019-03-10',
-        expiryDate: '2029-03-09',
-        documentUrl: 'https://example.com/documents/id001.pdf'
+        fullName: 'John Smith',
+        aadharNumber: '1234-5678-9012',
+        documentUrl: 'https://example.com/documents/aadhar001.pdf'
       }
     ]
   },
@@ -93,8 +87,8 @@ export const mockUserDocuments: UserDocuments[] = [
         visaClass: 'H1B',
         issuingCountry: 'United States',
         issuingPost: 'Sydney',
-        issueDate: '2022-11-30',
-        expiryDate: '2025-11-29',
+        issueDate: '30-11-2022',
+        expiryDate: '29-11-2025',
         documentUrl: 'https://example.com/documents/visa002.pdf'
       }
     ],
@@ -104,21 +98,18 @@ export const mockUserDocuments: UserDocuments[] = [
         userId: 'USER002',
         passportNumber: 'P7654321',
         issuingCountry: 'Australia',
-        issueDate: '2018-08-15',
-        expiryDate: '2028-08-14',
+        issueDate: '15-08-2018',
+        expiryDate: '14-08-2028',
         documentUrl: 'https://example.com/documents/passport002.pdf'
       }
     ],
-    identificationDocuments: [
+    aadharDocuments: [
       {
-        id: 'ID002',
+        id: 'AADHAR002',
         userId: 'USER002',
-        type: 'Drivers License',
-        idNumber: 'DL98765432',
-        issuingCountry: 'Australia',
-        issueDate: '2021-07-25',
-        expiryDate: '2026-07-24',
-        documentUrl: 'https://example.com/documents/id002.pdf'
+        fullName: 'Emily Johnson',
+        aadharNumber: '9876-5432-1098',
+        documentUrl: 'https://example.com/documents/aadhar002.pdf'
       }
     ]
   }
