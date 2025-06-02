@@ -400,7 +400,7 @@ const Reports: React.FC = () => {
           <button onClick={() => openModal('Visa Status Details', visaStatus.modalRelevantItems, visaHeaders)} className="absolute top-5 left-[125px] p-1 rounded-full hover:bg-gray-100 z-20" aria-label="View detailed visa status"><ExternalLink className="h-5 w-5 text-gray-600" /></button>
         </div>
         <div className="relative">
-          <StatCard title="Processing Metrics" value={`${processingTimeData.avgDays} days`} subtitle="avg. completion (illustrative)" icon={<Clock />} iconClass="text-cyan-600" iconBgClass="bg-cyan-100">
+          <StatCard title="Processing Metrics" value={`${processingTimeData.avgDays} days`} subtitle="Avg Completion Time" icon={<Clock />} iconClass="text-cyan-600" iconBgClass="bg-cyan-100">
             <div className="grid grid-cols-2 gap-2 text-center">
               <div className="bg-cyan-50 py-2 rounded"><span className="text-xs text-gray-600">Within SLA</span><p className="font-semibold text-cyan-600">{processingTimeData.withinSLA}</p></div>
               <div className="bg-red-50 py-2 rounded"><span className="text-xs text-gray-600">SLA Breach</span><p className="font-semibold text-red-600">{processingTimeData.slaBreachCount}</p></div>
