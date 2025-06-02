@@ -175,8 +175,6 @@ const TravelRequestDetails: React.FC = () => {
           className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           placeholder="Add approval comments (optional)"
           rows={4}
-          // value={approveComment}
-          // onChange={(e) => setApproveComment(e.target.value)}
         />
       </div>,
       () => {
@@ -196,8 +194,6 @@ const TravelRequestDetails: React.FC = () => {
           className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           placeholder="Add rejection reason (required)"
           rows={4}
-          // value={rejectComment}
-          // onChange={(e) => setRejectComment(e.target.value)}
         />
       </div>,
       () => {
