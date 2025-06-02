@@ -162,7 +162,7 @@ const TravelAgencyBarChart: React.FC<TravelAgencyBarChartProps> = ({
   const tableData: TableDataItem[] = filteredChartData.map(item => ({
     agency: item.name, // Keep original name for table
     bookings: item.value,
-    cost: `$${(item.cost || 0).toLocaleString()}`,
+    cost: `₹${(item.cost || 0).toLocaleString()}`,
     travel_type: item.travelType ? item.travelType.charAt(0).toUpperCase() + item.travelType.slice(1) : 'Unknown'
   }));
 
@@ -320,7 +320,7 @@ const TravelAgencyBarChart: React.FC<TravelAgencyBarChartProps> = ({
                       {/* Cost label positioned vertically inside the bar */}
                       <div className="absolute inset-0 flex items-center justify-center">
                         <div className="-rotate-90 text-xs font-medium text-white whitespace-nowrap">
-                          ${(entry.cost || 0).toLocaleString()}
+                          ₹{(entry.cost || 0).toLocaleString()}
                         </div>
                       </div>
                     </div>
@@ -345,7 +345,7 @@ const TravelAgencyBarChart: React.FC<TravelAgencyBarChartProps> = ({
         </div>
         <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 rounded-lg border border-gray-200">
           <span className="text-gray-600">Total Cost ({getFilterDisplayText()})</span>
-          <div className="text-lg font-semibold text-gray-800">${totalCost.toLocaleString()}</div>
+          <div className="text-lg font-semibold text-gray-800">₹{totalCost.toLocaleString()}</div>
         </div>
       </div>
 
