@@ -10,7 +10,7 @@ import {
   Settings, 
   LogOut, 
   ChevronLeft,
-  // User
+
   User,
   PlusCircle,
   FileText
@@ -29,7 +29,7 @@ const navConfig: Record<string, NavItem[]> = {
     { label: 'Calendar', path: '/admin/calendar', icon: <Calendar className="h-5 w-5" /> },
     { label: 'Reports', path: '/admin/reports', icon: <BarChart className="h-5 w-5" /> },
     // { label: 'Settings', path: '/admin/settings', icon: <Settings className="h-5 w-5" /> },
-    { label: 'Documents', path: '/admin/documents', icon: <FileText className="h-5 w-5" /> },
+   
     // { label: 'New Request', path: '/admin/create-request', icon: <PlusCircle className="h-5 w-5" /> }
     // { label: 'Settings', path: '/admin/settings', icon: <Settings className="h-5 w-5" /> }
   ],
@@ -37,12 +37,14 @@ const navConfig: Record<string, NavItem[]> = {
     { label: 'Dashboard', path: '/manager/dashboard', icon: <Home className="h-5 w-5" /> },
     { label: 'Team Requests', path: '/manager/team-requests', icon: <Briefcase className="h-5 w-5" /> },
     { label: 'My Requests', path: '/manager/my-requests', icon: <Briefcase className="h-5 w-5" /> },
+     { label: 'Documents', path: '/manager/documents', icon: <FileText className="h-5 w-5" /> },
     { label: 'Calendar', path: '/manager/calendar', icon: <Calendar className="h-5 w-5" /> }
   ],
   employee: [
     { label: 'Dashboard', path: '/employee/dashboard', icon: <Home className="h-5 w-5" /> },
-    { label: 'New Request', path: '/employee/new-request', icon: <Briefcase className="h-5 w-5" /> },
+    { label: 'New Request', path: '/employee/new-request', icon: <PlusCircle className="h-5 w-5" /> },
     { label: 'My Requests', path: '/employee/my-requests', icon: <Briefcase className="h-5 w-5" /> },
+     { label: 'Documents', path: '/employee/documents', icon: <FileText className="h-5 w-5" /> },
     { label: 'Calendar', path: '/employee/calendar', icon: <Calendar className="h-5 w-5" /> }
   ]
 };
