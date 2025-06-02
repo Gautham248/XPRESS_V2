@@ -89,7 +89,7 @@ const DateRangePicker: React.FC<DateRangePickerProps> = ({
   const endDateHasError = hasValidationError && endDate !== '';
 
   return (
-    <div className="relative">
+    <div className="relative z-30">
       <div
         className={`flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-md cursor-pointer border transition-colors ${
           hasValidationError

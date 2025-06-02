@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Outlet, Link, useNavigate } from 'react-router-dom';
+import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import Header from './Header';
 import Footer from './Footer';
 import { 
@@ -10,7 +10,7 @@ import {
   Settings, 
   LogOut, 
   ChevronLeft,
-  // User
+
   User,
   PlusCircle,
   FileText
@@ -29,7 +29,7 @@ const navConfig: Record<string, NavItem[]> = {
     { label: 'Calendar', path: '/admin/calendar', icon: <Calendar className="h-5 w-5" /> },
     { label: 'Reports', path: '/admin/reports', icon: <BarChart className="h-5 w-5" /> },
     // { label: 'Settings', path: '/admin/settings', icon: <Settings className="h-5 w-5" /> },
-    { label: 'Documents', path: '/admin/documents', icon: <FileText className="h-5 w-5" /> },
+   
     // { label: 'New Request', path: '/admin/create-request', icon: <PlusCircle className="h-5 w-5" /> }
     // { label: 'Settings', path: '/admin/settings', icon: <Settings className="h-5 w-5" /> }
   ],
@@ -37,12 +37,14 @@ const navConfig: Record<string, NavItem[]> = {
     { label: 'Dashboard', path: '/manager/dashboard', icon: <Home className="h-5 w-5" /> },
     { label: 'Team Requests', path: '/manager/team-requests', icon: <Briefcase className="h-5 w-5" /> },
     { label: 'My Requests', path: '/manager/my-requests', icon: <Briefcase className="h-5 w-5" /> },
+     { label: 'Documents', path: '/manager/documents', icon: <FileText className="h-5 w-5" /> },
     { label: 'Calendar', path: '/manager/calendar', icon: <Calendar className="h-5 w-5" /> }
   ],
   employee: [
     { label: 'Dashboard', path: '/employee/dashboard', icon: <Home className="h-5 w-5" /> },
-    { label: 'New Request', path: '/employee/new-request', icon: <Briefcase className="h-5 w-5" /> },
+    { label: 'New Request', path: '/employee/new-request', icon: <PlusCircle className="h-5 w-5" /> },
     { label: 'My Requests', path: '/employee/my-requests', icon: <Briefcase className="h-5 w-5" /> },
+     { label: 'Documents', path: '/employee/documents', icon: <FileText className="h-5 w-5" /> },
     { label: 'Calendar', path: '/employee/calendar', icon: <Calendar className="h-5 w-5" /> }
   ]
 };
@@ -53,6 +55,7 @@ interface RoleLayoutProps {
 
 const RoleLayout: React.FC<RoleLayoutProps> = ({ role }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const navItems = navConfig[role];
   const [isOpen, setIsOpen] = useState(true);
 
@@ -63,6 +66,10 @@ const RoleLayout: React.FC<RoleLayoutProps> = ({ role }) => {
 
   const toggleSidebar = () => {
     setIsOpen(!isOpen);
+  };
+
+  const isActive = (path: string) => {
+    return location.pathname === path;
   };
 
   return (
@@ -99,9 +106,15 @@ const RoleLayout: React.FC<RoleLayoutProps> = ({ role }) => {
                 <Link
                   key={item.path}
                   to={item.path}
-                  className="sidebar-link flex items-center px-3 py-2 text-sm font-medium rounded-md hover:bg-muted transition-colors"
+                  className={`sidebar-link flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                    isActive(item.path) 
+                      ? 'bg-muted text-foreground' 
+                      : 'hover:bg-muted text-muted-foreground hover:text-foreground'
+                  }`}
                 >
-                  {item.icon}
+                  <span className={isActive(item.path) ? 'text-foreground' : ''}>
+                    {item.icon}
+                  </span>
                   <span className={`ml-3 transition-opacity duration-200 ${isOpen ? 'opacity-100' : 'opacity-0 hidden'}`}>
                     {item.label}
                   </span>
