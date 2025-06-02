@@ -30,7 +30,7 @@ function App() {
           </ProtectedRoute>
         }>
           <Route index element={<Navigate to="dashboard" replace />} />
-          <Route path="dashboard" element={<AdminDashboard />} />
+          <Route path="dashboard" element={<Dashboard />} />
           <Route path="travel-requests" element={<TravelRequests />} />
           <Route path="travel-requests/:id" element={<TravelRequestDetails />} />
           <Route path="calendar" element={<Calendar />} />
