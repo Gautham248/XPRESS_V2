@@ -2,25 +2,25 @@ import React, { useState } from 'react';
 import { Download, Briefcase, Plane, FileText, Clock, ExternalLink, Globe, Coins } from 'lucide-react';
 import StatCard from './StatCard';
 import AirlineDistributionChart from './AirlineDistributionChart';
-import TravelAgencyBarChart from './TravelAgencyBarChart'; 
-import { mockTravelRequests } from '../../../data/mockData'; 
-import DateRangePicker from './DateRangePicker'; 
-import Modal from './Modal'; 
+import TravelAgencyBarChart from './TravelAgencyBarChart';
+import { mockTravelRequests } from '../../../data/mockData';
+import DateRangePicker from './DateRangePicker';
+import Modal from './Modal';
 
 
 interface TravelRequest {
   id: string;
-  requestDate: string; 
+  requestDate: string;
   status: string;
   travelType: 'Domestic' | 'International';
   estimatedCost: number;
   airline?: string;
   travelAgency?: string;
   passportExpiry?: string;
-  visaExpiry?: string; 
+  visaExpiry?: string;
   travelerName?: string;
   departmentCode?: string;
-  previousRequestDate?: string; 
+  previousRequestDate?: string;
 }
 
 interface ChartDataItem {
@@ -38,8 +38,8 @@ interface ModalData {
 
 interface CalculatedExpiryStatus {
   expiredCount: number;
-  withinOneMonthCount: number;
-  withinOneToThreeMonthsCount: number;
+  withinOneMonthCount: number; // This will now represent "within 45 days"
+  withinOneToThreeMonthsCount: number; // This will now represent "within 45-90 days"
   modalRelevantItems: TravelRequest[];
 }
 
@@ -55,13 +55,11 @@ const Reports: React.FC = () => {
   // Calculate default date range: 6 months ago to today
   const getInitialEndDate = (): Date => {
     const date = new Date();
-    
     return date;
   };
   const getInitialStartDate = (): Date => {
     const date = new Date();
     date.setMonth(date.getMonth() - 6); // 6 months ago
-    // date.setHours(0,0,0,0);
     return date;
   };
 
@@ -78,7 +76,7 @@ const Reports: React.FC = () => {
     { id: 'PT005', requestDate: '2025-03-25', status: 'Manager Approved', travelType: 'International', estimatedCost: 50000 },
   ];
 
-  // Sample data for Passport Status 
+  // Sample data for Passport Status
   const passportSampleData: TravelRequest[] = [
     {
       id: 'PS001', travelerName: 'John Doe', departmentCode: 'HR-101', requestDate: '2025-01-10', status: 'Active', travelType: 'Domestic', estimatedCost: 100,
@@ -86,7 +84,7 @@ const Reports: React.FC = () => {
     },
     {
       id: 'PS002', travelerName: 'Jane Smith', departmentCode: 'IT-202', requestDate: '2025-02-15', status: 'Active', travelType: 'International', estimatedCost: 200,
-      passportExpiry: new Date(new Date().setDate(new Date().getDate() + 70)).toISOString().split('T')[0], // Expires in 70 days 
+      passportExpiry: new Date(new Date().setDate(new Date().getDate() + 70)).toISOString().split('T')[0], // Expires in 70 days
     },
     {
       id: 'PS003', travelerName: 'Alice Wonder', departmentCode: 'FIN-301', requestDate: '2025-03-10', status: 'Active', travelType: 'International', estimatedCost: 300,
@@ -94,11 +92,11 @@ const Reports: React.FC = () => {
     },
     {
       id: 'PS004', travelerName: 'Bob Builder', departmentCode: 'ENG-401', requestDate: '2025-04-01', status: 'Active', travelType: 'Domestic', estimatedCost: 400,
-      passportExpiry: new Date(new Date().setDate(new Date().getDate() + 5)).toISOString().split('T')[0], // Expires in 5 days
+      passportExpiry: new Date(new Date().setDate(new Date().getDate() + 40)).toISOString().split('T')[0], // Expires in 40 days
     },
     {
       id: 'PS005', travelerName: 'Charlie Brown', departmentCode: 'ENG-402', requestDate: '2025-04-05', status: 'Active', travelType: 'Domestic', estimatedCost: 500,
-      passportExpiry: new Date(new Date().setDate(new Date().getDate() + 120)).toISOString().split('T')[0], // Expires in 120 days
+      passportExpiry: new Date(new Date().setDate(new Date().getDate() + 85)).toISOString().split('T')[0], // Expires in 85 days
     },
   ];
 
@@ -110,7 +108,7 @@ const Reports: React.FC = () => {
     },
     {
       id: 'VS002', travelerName: 'Diana Prince', departmentCode: 'MKT-505', requestDate: '2025-03-20', status: 'Active', travelType: 'International', estimatedCost: 250,
-      visaExpiry: new Date(new Date().setDate(new Date().getDate() + 80)).toISOString().split('T')[0], // Expires in 80 days 
+      visaExpiry: new Date(new Date().setDate(new Date().getDate() + 80)).toISOString().split('T')[0], // Expires in 80 days
     },
     {
       id: 'VS003', travelerName: 'Edward Nigma', departmentCode: 'RND-601', requestDate: '2025-04-10', status: 'Active', travelType: 'International', estimatedCost: 350,
@@ -120,50 +118,43 @@ const Reports: React.FC = () => {
 
   // Filter requests based on date range
   const filteredRequests = mockTravelRequests.filter((request: TravelRequest) => {
-    const requestDate = new Date(request.requestDate); 
+    const requestDate = new Date(request.requestDate);
     let startFilterDate: Date;
     let endFilterDate: Date;
 
-    // Determine start date for filtering
     if (startDate) {
       startFilterDate = new Date(startDate);
-      startFilterDate.setHours(0, 0, 0, 0);  
+      startFilterDate.setHours(0, 0, 0, 0);
     } else {
-      // Default start: 6 months ago from today
       const defaultStart = new Date();
       defaultStart.setMonth(defaultStart.getMonth() - 6);
       defaultStart.setHours(0, 0, 0, 0);
       startFilterDate = defaultStart;
     }
 
-    // Determine end date for filtering
     if (endDate) {
       endFilterDate = new Date(endDate);
-      endFilterDate.setHours(23, 59, 59, 999); 
+      endFilterDate.setHours(23, 59, 59, 999);
     } else {
-      // Default end: today
       const defaultEnd = new Date();
       defaultEnd.setHours(23, 59, 59, 999);
       endFilterDate = defaultEnd;
     }
-    
+
     return requestDate >= startFilterDate && requestDate <= endFilterDate;
   });
 
   const approvedStatuses = ['Tickets Dispatched', 'In-transit', 'Returned', 'Closed'];
 
-  // Total Requests Card
   const totalRequests = filteredRequests.length;
   const approvedRequestsCount = filteredRequests.filter(r => approvedStatuses.includes(r.status)).length;
   const rejectedRequestsCount = filteredRequests.filter(r => r.status === 'Rejected').length;
 
-  // Total Cost Card
   const approvedRequestsData = filteredRequests.filter(r => approvedStatuses.includes(r.status));
   const totalCost = approvedRequestsData.reduce((sum, r) => sum + r.estimatedCost, 0);
   const domesticCost = approvedRequestsData.filter(r => r.travelType === 'Domestic').reduce((sum, r) => sum + r.estimatedCost, 0);
   const internationalCost = approvedRequestsData.filter(r => r.travelType === 'International').reduce((sum, r) => sum + r.estimatedCost, 0);
 
-  // Total Trips Card
   const tripStatuses = ['Tickets Dispatched', 'In-transit', 'Returned', 'Closed'];
   const totalTrips = filteredRequests.filter(r => tripStatuses.includes(r.status)).length;
   const domesticTrips = filteredRequests.filter(r => tripStatuses.includes(r.status) && r.travelType === 'Domestic').length;
@@ -174,22 +165,22 @@ const Reports: React.FC = () => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const oneMonthMarker = new Date(today);
-    oneMonthMarker.setDate(today.getDate() + 30); // Approx 1 month
+    const fortyFiveDayMarker = new Date(today);
+    fortyFiveDayMarker.setDate(today.getDate() + 45); // 45 days from today
 
-    const threeMonthsMarker = new Date(today);
-    threeMonthsMarker.setDate(today.getDate() + 90); // Approx 3 months
+    const ninetyDayMarker = new Date(today);
+    ninetyDayMarker.setDate(today.getDate() + 90); // 90 days from today
 
     let expiredCount = 0;
-    let withinOneMonthCount = 0;
-    let withinThreeMonthsCumulativeCount = 0; // Counts items expiring in (0, 90) days and not expired
-    
+    let withinFortyFiveDaysCount = 0; // Counts items expiring in (0, 45] days
+    let withinNinetyDaysCumulativeCount = 0; // Counts items expiring in (0, 90] days and not expired
+
     const modalRelevantItems: TravelRequest[] = [];
 
     items.forEach(item => {
       const expiryDateString = item[dateKey];
       if (expiryDateString) {
-        const expiryDate = new Date(expiryDateString); 
+        const expiryDate = new Date(expiryDateString);
         expiryDate.setHours(0, 0, 0, 0); // Ensure comparison at date level
 
         let isRelevantForModal = false;
@@ -198,12 +189,12 @@ const Reports: React.FC = () => {
           expiredCount++;
           isRelevantForModal = true;
         } else { // Not expired
-          if (expiryDate <= oneMonthMarker) { // Expires within 0-30 days
-            withinOneMonthCount++;
+          if (expiryDate <= fortyFiveDayMarker) { // Expires within 0-45 days (inclusive)
+            withinFortyFiveDaysCount++;
           }
-          if (expiryDate <= threeMonthsMarker) { // Expires within 0-90 days
-            withinThreeMonthsCumulativeCount++;
-            isRelevantForModal = true; 
+          if (expiryDate <= ninetyDayMarker) { // Expires within 0-90 days (inclusive)
+            withinNinetyDaysCumulativeCount++;
+            isRelevantForModal = true;
           }
         }
         if (isRelevantForModal) {
@@ -211,42 +202,40 @@ const Reports: React.FC = () => {
         }
       }
     });
-    
-    // withinOneToThreeMonthsCount is for items expiring between 1 month and 3 months (exclusive of the first month)
-    const withinOneToThreeMonthsCount = withinThreeMonthsCumulativeCount - withinOneMonthCount;
+
+    // withinFortyFiveToNinetyDaysCount is for items expiring between 45 days (exclusive) and 90 days (inclusive)
+    const withinFortyFiveToNinetyDaysCount = withinNinetyDaysCumulativeCount - withinFortyFiveDaysCount;
 
     return {
       expiredCount,
-      withinOneMonthCount,
-      withinOneToThreeMonthsCount: withinOneToThreeMonthsCount < 0 ? 0 : withinOneToThreeMonthsCount, 
+      withinOneMonthCount: withinFortyFiveDaysCount, // Re-using the key for "within 45 days"
+      withinOneToThreeMonthsCount: withinFortyFiveToNinetyDaysCount < 0 ? 0 : withinFortyFiveToNinetyDaysCount, // Re-using the key for "within 45-90 days"
       modalRelevantItems,
     };
   };
 
   const passportStatus = calculateExpiryStatus(passportSampleData, 'passportExpiry');
   const visaStatus = calculateExpiryStatus(visaSampleData, 'visaExpiry');
-  
-  // Simplified Processing Metrics Card
+
   const getSimplifiedProcessingMetrics = () => {
-    const avgDays = 1; 
+    const avgDays = 1;
     let slaBreachCount = 0;
     let withinSLA = 0;
     const relevantRequests = filteredRequests.filter(r => approvedStatuses.includes(r.status));
-    const sourceForCounts = relevantRequests.length > 0 
-        ? relevantRequests 
+    const sourceForCounts = relevantRequests.length > 0
+        ? relevantRequests
         : processingContextSampleData.filter(r => approvedStatuses.includes(r.status));
 
     if (sourceForCounts.length > 0) {
-      slaBreachCount = Math.floor(sourceForCounts.length * 0.2); // Illustrative 20%
+      slaBreachCount = Math.floor(sourceForCounts.length * 0.2);
       withinSLA = sourceForCounts.length - slaBreachCount;
     } else {
-      slaBreachCount = 1; withinSLA = 3; // Defaults
+      slaBreachCount = 1; withinSLA = 3;
     }
     return { avgDays, slaBreachCount, withinSLA };
   };
   const processingTimeData = getSimplifiedProcessingMetrics();
 
-  // Airline Distribution
   const getAirlineDistribution = (): ChartDataItem[] => {
     const airlineCounts: Record<string, number> = {};
     const airlineCosts: Record<string, number> = {};
@@ -269,7 +258,6 @@ const Reports: React.FC = () => {
   };
   const airlineData = getAirlineDistribution();
 
-  // Agency Distribution
   const getAgencyDistribution = (): ChartDataItem[] => {
     const agencyData: Record<string, { domestic: { count: number; cost: number }, international: { count: number; cost: number } }> = {};
     filteredRequests
@@ -295,11 +283,9 @@ const Reports: React.FC = () => {
   };
   const agencyData = getAgencyDistribution();
 
-  // Modal handlers
   const openModal = (title: string, data: TravelRequest[], headers: string[]) => setModalData({ title, data, headers });
   const closeModal = () => setModalData(null);
 
-  // Headers for modals
   const requestHeaders = ['ID', 'Request Date', 'Status', 'Travel Type'];
   const costHeaders = ['ID', 'Request Date', 'Status', 'Travel Type', 'Estimated Cost'];
   const tripHeaders = ['ID', 'Request Date', 'Status', 'Travel Type', 'Airline', 'Travel Agency'];
@@ -307,12 +293,11 @@ const Reports: React.FC = () => {
   const passportHeaders = ['ID', 'Traveler Name', 'Expiry Date', 'Department Code'];
   const visaHeaders = ['ID', 'Traveler Name', 'Expiry Date', 'Department Code'];
 
-  // Format data for export
   const formatExportData = (data: TravelRequest[], headers: string[]) => {
     return data.map(request => {
       const row: Record<string, any> = {};
       headers.forEach(header => {
-        const lowerHeader = header.toLowerCase().trim(); // Ensure consistent matching
+        const lowerHeader = header.toLowerCase().trim();
         if (lowerHeader === 'id') row[header] = request.id;
         else if (lowerHeader === 'request date') row[header] = request.requestDate;
         else if (lowerHeader === 'status') row[header] = request.status;
@@ -324,17 +309,16 @@ const Reports: React.FC = () => {
         else if (lowerHeader === 'expiry date') row[header] = request.passportExpiry || request.visaExpiry || 'N/A';
         else if (lowerHeader === 'department code') row[header] = request.departmentCode || 'N/A';
         else if (lowerHeader === 'previous request date') row[header] = request.previousRequestDate || 'N/A';
-        else row[header] = 'N/A'; // Default for unmapped headers
+        else row[header] = 'N/A';
       });
       return row;
     });
   };
-  
+
   const handleExportAllReports = () => alert("Export functionality for all reports is not yet implemented.");
 
   return (
     <div className="space-y-6 animate-fadeIn">
-      {/* Header Section */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div className="flex items-center space-x-3">
           <div className="w-1 h-8 bg-gradient-to-b from-blue-500 to-purple-600 rounded-full"></div>
@@ -348,7 +332,6 @@ const Reports: React.FC = () => {
         </div>
       </div>
 
-      {/* First Row of StatCards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="relative">
           <StatCard title="Total Requests" value={totalRequests} subtitle="Requests" icon={<Briefcase />} iconClass="text-blue-600" iconBgClass="bg-blue-100">
@@ -379,13 +362,12 @@ const Reports: React.FC = () => {
         </div>
       </div>
 
-      {/* Second Row of StatCards (Passport, Visa, Processing) */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="relative">
           <StatCard title="Passport Status" value={passportStatus.expiredCount} subtitle="Expired Passports" icon={<FileText />} iconClass="text-orange-600" iconBgClass="bg-orange-100">
             <div className="grid grid-cols-2 gap-2 text-center">
-              <div className="bg-orange-50 py-2 rounded"><span className="text-xs text-gray-600">Expires in 1 Month</span><p className="font-semibold text-orange-600">{passportStatus.withinOneMonthCount}</p></div>
-              <div className="bg-yellow-50 py-2 rounded"><span className="text-xs text-gray-600">Expires in 1-3 Months</span><p className="font-semibold text-yellow-600">{passportStatus.withinOneToThreeMonthsCount}</p></div>
+              <div className="bg-orange-50 py-2 rounded"><span className="text-xs text-gray-600">Expires in 45 Days</span><p className="font-semibold text-orange-600">{passportStatus.withinOneMonthCount}</p></div>
+              <div className="bg-yellow-50 py-2 rounded"><span className="text-xs text-gray-600">Expires in 45-90 Days</span><p className="font-semibold text-yellow-600">{passportStatus.withinOneToThreeMonthsCount}</p></div>
             </div>
           </StatCard>
           <button onClick={() => openModal('Passport Status Details', passportStatus.modalRelevantItems, passportHeaders)} className="absolute top-5 left-[170px] p-1 rounded-full hover:bg-gray-100 z-20" aria-label="View detailed passport status"><ExternalLink className="h-5 w-5 text-gray-600" /></button>
@@ -393,8 +375,8 @@ const Reports: React.FC = () => {
         <div className="relative">
           <StatCard title="Visa Status" value={visaStatus.expiredCount} subtitle="Expired Visas" icon={<Globe />} iconClass="text-teal-600" iconBgClass="bg-teal-100">
             <div className="grid grid-cols-2 gap-2 text-center">
-              <div className="bg-teal-50 py-2 rounded"><span className="text-xs text-gray-600">Expires in 1 Month</span><p className="font-semibold text-teal-600">{visaStatus.withinOneMonthCount}</p></div>
-              <div className="bg-cyan-50 py-2 rounded"><span className="text-xs text-gray-600">Expires in 1-3 Months</span><p className="font-semibold text-cyan-600">{visaStatus.withinOneToThreeMonthsCount}</p></div>
+              <div className="bg-teal-50 py-2 rounded"><span className="text-xs text-gray-600">Expires in 45 Days</span><p className="font-semibold text-teal-600">{visaStatus.withinOneMonthCount}</p></div>
+              <div className="bg-cyan-50 py-2 rounded"><span className="text-xs text-gray-600">Expires in 45-90 Days</span><p className="font-semibold text-cyan-600">{visaStatus.withinOneToThreeMonthsCount}</p></div>
             </div>
           </StatCard>
           <button onClick={() => openModal('Visa Status Details', visaStatus.modalRelevantItems, visaHeaders)} className="absolute top-5 left-[125px] p-1 rounded-full hover:bg-gray-100 z-20" aria-label="View detailed visa status"><ExternalLink className="h-5 w-5 text-gray-600" /></button>
@@ -406,26 +388,24 @@ const Reports: React.FC = () => {
               <div className="bg-red-50 py-2 rounded"><span className="text-xs text-gray-600">SLA Breach</span><p className="font-semibold text-red-600">{processingTimeData.slaBreachCount}</p></div>
             </div>
           </StatCard>
-          <button onClick={() => openModal('Processing Metrics Details', 
-            filteredRequests.filter(r => approvedStatuses.includes(r.status)).length > 0 
+          <button onClick={() => openModal('Processing Metrics Details',
+            filteredRequests.filter(r => approvedStatuses.includes(r.status)).length > 0
             ? filteredRequests.filter(r => approvedStatuses.includes(r.status))
-            : processingContextSampleData.filter(r => approvedStatuses.includes(r.status)), 
+            : processingContextSampleData.filter(r => approvedStatuses.includes(r.status)),
             processingHeaders)} className="absolute top-5 left-[200px] p-1 rounded-full hover:bg-gray-100 z-20" aria-label="View detailed processing metrics"><ExternalLink className="h-5 w-5 text-gray-600" /></button>
         </div>
       </div>
 
-      {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="border rounded-lg p-4 bg-white shadow-sm"><TravelAgencyBarChart chartData={agencyData} startDate={startDate} endDate={endDate} /></div>
         <div className="border rounded-lg p-4 bg-white shadow-sm"><AirlineDistributionChart chartData={airlineData} startDate={startDate} endDate={endDate} /></div>
       </div>
 
-      {/* Modal */}
       {modalData && (
         <Modal isOpen={!!modalData} onClose={closeModal} title={modalData.title} startDate={startDate} endDate={endDate}
           exportData={{ headers: modalData.headers, data: formatExportData(modalData.data, modalData.headers), filename: modalData.title.toLowerCase().replace(/\s+/g, '-') + '_report' }}>
           {modalData.data.length > 0 ? (
-            <div className="overflow-x-auto"> {/* Added for responsiveness */}
+            <div className="overflow-x-auto">
               <table className="w-full text-sm text-left text-gray-600">
                 <thead className="text-xs text-gray-700 uppercase bg-gray-50"><tr>{modalData.headers.map((h, i) => <th key={i} className="px-4 py-2 whitespace-nowrap">{h}</th>)}</tr></thead>
                 <tbody>
@@ -433,7 +413,7 @@ const Reports: React.FC = () => {
                     <tr key={request.id} className="border-b hover:bg-gray-50">
                       {modalData.headers.map(header => {
                          let cellValue: string | number = '';
-                         const lowerHeader = header.toLowerCase().trim(); // Ensure consistent matching
+                         const lowerHeader = header.toLowerCase().trim();
                          if (lowerHeader === 'id') cellValue = request.id;
                          else if (lowerHeader === 'request date') cellValue = request.requestDate;
                          else if (lowerHeader === 'status') cellValue = request.status;
@@ -445,7 +425,7 @@ const Reports: React.FC = () => {
                          else if (lowerHeader === 'expiry date') cellValue = request.passportExpiry || request.visaExpiry || 'N/A';
                          else if (lowerHeader === 'department code') cellValue = request.departmentCode || 'N/A';
                          else if (lowerHeader === 'previous request date') cellValue = request.previousRequestDate || 'N/A';
-                         else cellValue = 'N/A'; // Default for unmapped headers
+                         else cellValue = 'N/A';
                          return <td key={`${request.id}-${header}`} className="px-4 py-2 whitespace-nowrap">{cellValue}</td>;
                       })}
                     </tr>

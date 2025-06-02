@@ -114,7 +114,7 @@ const AirlineDistributionChart: React.FC<AirlineDistributionChartProps> = ({
   const tableData: TableDataItem[] = filteredChartData.map(item => ({
     airline: item.name,
     trips: item.value,
-    cost: `$${(item.cost || 0).toLocaleString()}`,
+    cost: `₹${(item.cost || 0).toLocaleString()}`,
     travel_type: item.travelType ? item.travelType.charAt(0).toUpperCase() + item.travelType.slice(1) : 'Unknown'
   }));
 
@@ -270,7 +270,7 @@ const AirlineDistributionChart: React.FC<AirlineDistributionChartProps> = ({
                   <div className="w-3 h-3 mr-2 rounded-sm" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
                   <div className="flex flex-col">
                     <span className="text-sm font-medium">{entry.name}</span>
-                    <span className="text-xs text-gray-500">${(entry.cost || 0).toLocaleString()}</span>
+                    <span className="text-xs text-gray-500">₹{(entry.cost || 0).toLocaleString()}</span>
                   </div>
                 </div>
               ))}
@@ -288,7 +288,7 @@ const AirlineDistributionChart: React.FC<AirlineDistributionChartProps> = ({
           </div>
           <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 rounded-lg border border-gray-200">
             <span className="text-gray-600">Total Cost ({getFilterDisplayText()})</span>
-            <div className="text-lg font-semibold text-gray-800">${totalCost.toLocaleString()}</div>
+            <div className="text-lg font-semibold text-gray-800">₹{totalCost.toLocaleString()}</div>
           </div>
         </div>
       )}
