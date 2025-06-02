@@ -1,7 +1,8 @@
-import React, { createContext, useContext, useReducer, ReactNode, useState } from 'react';
-import { travelRequestService } from './TravelRequestService';
+import React, { createContext, useContext, useReducer, ReactNode, useState, useEffect } from 'react';
+import { travelRequestService } from './TravelRequestService'; // Ensure this path is correct
 
-interface Location {
+// Interfaces (assuming Location is defined elsewhere or you can define it here)
+export interface Location { // Make sure this matches the definition used in your LocationSearch/other components
   country: string;
   city: string;
   state?: string;
@@ -16,21 +17,21 @@ interface TravelRequestState {
   destination: Location | null;
   departureDate: Date | null;
   returnDate: Date | null;
-  transportMode: string;
+  transportMode: string; // Consider a more specific type e.g., 'flight' | 'train' | 'bus' | 'cab'
   requiresAccommodation: boolean;
   requiresPickup: boolean;
   requiresDropoff: boolean;
   pickupLocation: string;
   dropoffLocation: string;
-  pickupTime: Date | null;
-  dropoffTime: Date | null;
-  requestCode: string;
+  pickupTime: Date | null; // Not in cURL payload, ensure this is intentional if not sent
+  dropoffTime: Date | null; // Not in cURL payload, ensure this is intentional if not sent
+  requestCode: string; // Not in cURL payload, ensure this is intentional if not sent
   projectCode: string;
   reason: string;
   comments: string;
   requiresFoodPreference: boolean;
   foodPreference: 'veg' | 'non-veg';
-  attendedCct: boolean;
+  attendedCct: boolean; // Not in cURL, ensure backend handles or add to mapping if needed
 }
 
 type TravelRequestAction =
@@ -65,7 +66,7 @@ const initialState: TravelRequestState = {
   destination: null,
   departureDate: null,
   returnDate: null,
-  transportMode: 'flight',
+  transportMode: 'flight', // Default transport mode
   requiresAccommodation: false,
   requiresPickup: false,
   requiresDropoff: false,
@@ -78,7 +79,7 @@ const initialState: TravelRequestState = {
   reason: '',
   comments: '',
   requiresFoodPreference: false,
-  foodPreference: 'veg',
+  foodPreference: 'veg', // Default food preference
   attendedCct: false,
 };
 
@@ -86,9 +87,14 @@ const initialState: TravelRequestState = {
 const travelRequestReducer = (state: TravelRequestState, action: TravelRequestAction): TravelRequestState => {
   switch (action.type) {
     case 'SET_TRAVEL_TYPE':
-      return { ...state, travelType: action.payload };
+      // When changing travel type, international implies flight only.
+      // Domestic can have other options. Reset transport mode if needed.
+      const newTransportMode = action.payload === 'international' ? 'flight' : state.transportMode;
+      return { ...state, travelType: action.payload, transportMode: newTransportMode };
     case 'SET_TRIP_TYPE':
-      return { ...state, tripType: action.payload };
+      // If changing to oneWay, clear returnDate
+      const newReturnDate = action.payload === 'oneWay' ? null : state.returnDate;
+      return { ...state, tripType: action.payload, returnDate: newReturnDate };
     case 'SET_SOURCE':
       return { ...state, source: action.payload };
     case 'SET_DESTINATION':
@@ -102,9 +108,13 @@ const travelRequestReducer = (state: TravelRequestState, action: TravelRequestAc
     case 'SET_REQUIRES_ACCOMMODATION':
       return { ...state, requiresAccommodation: action.payload };
     case 'SET_REQUIRES_PICKUP':
-      return { ...state, requiresPickup: action.payload };
+      // If pickup is not required, clear pickup location
+      const newPickupLocation = !action.payload ? '' : state.pickupLocation;
+      return { ...state, requiresPickup: action.payload, pickupLocation: newPickupLocation };
     case 'SET_REQUIRES_DROPOFF':
-      return { ...state, requiresDropoff: action.payload };
+      // If dropoff is not required, clear dropoff location
+      const newDropoffLocation = !action.payload ? '' : state.dropoffLocation;
+      return { ...state, requiresDropoff: action.payload, dropoffLocation: newDropoffLocation };
     case 'SET_PICKUP_LOCATION':
       return { ...state, pickupLocation: action.payload };
     case 'SET_DROPOFF_LOCATION':
@@ -130,30 +140,64 @@ const travelRequestReducer = (state: TravelRequestState, action: TravelRequestAc
     case 'RESET_FORM':
       return initialState;
     default:
+      // Should be exhaustive, if not, TypeScript will warn
+      // const _exhaustiveCheck: never = action;
       return state;
   }
 };
 
-// Validation function for travel locations
-const validateTravelLocations = (state: TravelRequestState): string | null => {
+// Validation function for travel locations (domestic/international consistency)
+const validateTravelLocationsConsistency = (state: TravelRequestState): string | null => {
   if (!state.source?.country || !state.destination?.country) {
-    return null; // No validation if countries are not selected yet
+    return null; // Not enough info to validate
   }
 
-  const sameCountry = state.source.country === state.destination.country;
+  const sameCountry = state.source.country.toLowerCase() === state.destination.country.toLowerCase();
 
   if (state.travelType === 'domestic' && !sameCountry) {
-    return `Domestic travel must be within the same country. Source: ${state.source.country}, Destination: ${state.destination.country}`;
+    return `Domestic travel must be within the same country. Source: ${state.source.country}, Destination: ${state.destination.country}.`;
   }
 
   if (state.travelType === 'international' && sameCountry) {
-    return `International travel requires different countries. Both source and destination are in ${state.source.country}`;
+    return `International travel requires different countries. Both source and destination are in ${state.source.country}.`;
   }
-
   return null;
 };
 
-// Create context
+// Success Popup Component (remains the same as provided)
+const SuccessPopup: React.FC<{ message: string; onClose: () => void }> = ({ message, onClose }) => {
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      onClose();
+    }, 4000);
+    return () => clearTimeout(timer);
+  }, [onClose]);
+
+  return (
+    <div className="fixed top-4 right-4 z-50 max-w-sm">
+      <div className="bg-green-500 text-white px-6 py-4 rounded-lg shadow-lg flex items-center space-x-3 transform transition-all duration-300 ease-out">
+        <div className="flex-shrink-0">
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+          </svg>
+        </div>
+        <div className="flex-1">
+          <p className="font-medium">{message}</p>
+        </div>
+        <button
+          onClick={onClose}
+          className="flex-shrink-0 text-green-200 hover:text-white transition-colors duration-200"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  );
+};
+
+
 interface TravelRequestContextType {
   state: TravelRequestState;
   dispatch: React.Dispatch<TravelRequestAction>;
@@ -161,66 +205,123 @@ interface TravelRequestContextType {
   isSubmitting: boolean;
   submitError: string | null;
   resetForm: () => void;
-  getValidationError: () => string | null;
+  getValidationError: () // Renamed for clarity, as it gives overall form validation error
+    => string | null; // This was previously just for location consistency, now it's for the whole form for internal use
 }
 
 const TravelRequestContext = createContext<TravelRequestContextType | undefined>(undefined);
 
-// Create provider
 interface TravelRequestProviderProps {
   children: ReactNode;
-  employeeId?: number; // Make employeeId configurable
+  employeeId?: number;
 }
 
-export const TravelRequestProvider: React.FC<TravelRequestProviderProps> = ({ 
-  children, 
-  employeeId = 1 // Default employeeId
+export const TravelRequestProvider: React.FC<TravelRequestProviderProps> = ({
+  children,
+  employeeId = 1, // Default employeeId if not provided
 }) => {
   const [state, dispatch] = useReducer(travelRequestReducer, initialState);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [showSuccessPopup, setShowSuccessPopup] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
 
-  const getValidationError = (): string | null => {
-    return validateTravelLocations(state);
+  const validateForm = (): string | null => {
+    if (!state.source || !state.source.city || !state.source.country) {
+      return 'Please select a valid source location (city and country).';
+    }
+    if (!state.destination || !state.destination.city || !state.destination.country) {
+      return 'Please select a valid destination location (city and country).';
+    }
+    // Check if source and destination are the same
+    if (state.source.value && state.destination.value && state.source.value === state.destination.value) {
+        return 'Source and destination cannot be the same location.';
+    }
+
+
+    const locationConsistencyError = validateTravelLocationsConsistency(state);
+    if (locationConsistencyError) {
+      return locationConsistencyError;
+    }
+
+    if (!state.departureDate) {
+      return 'Please select a departure date.';
+    }
+    // Check if departure date is in the past (ignoring time part for simplicity)
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (state.departureDate < today) {
+        return 'Departure date cannot be in the past.';
+    }
+
+    if (state.tripType === 'roundTrip') {
+      if (!state.returnDate) {
+        return 'Please select a return date for round trip.';
+      }
+      if (state.departureDate && state.returnDate && state.returnDate < state.departureDate) {
+        return 'Return date must be on or after departure date.';
+      }
+    }
+
+    if (!state.transportMode) {
+      return 'Please select a mode of transport.';
+    }
+    if (!state.projectCode.trim()) {
+      return 'Please enter a project code.';
+    }
+    if (!state.reason.trim()) {
+      return 'Please enter the purpose of travel.';
+    }
+
+    if (state.requiresPickup && !state.pickupLocation.trim()) {
+      return 'Please specify a pickup location when "Requires Pickup" is selected.';
+    }
+    if (state.requiresDropoff && !state.dropoffLocation.trim()) {
+      return 'Please specify a drop-off location when "Requires Drop-off" is selected.';
+    }
+
+    return null; // Form is valid
   };
+  
+  // This function is kept for external use if a component specifically needs only location consistency error
+  const getLocationConsistencyError = (): string | null => {
+    return validateTravelLocationsConsistency(state);
+  };
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Clear previous errors
-    setSubmitError(null);
+    setSubmitError(null); // Clear previous errors
 
-    // Check for validation errors before proceeding
-    const validationError = getValidationError();
+    const validationError = validateForm();
     if (validationError) {
       setSubmitError(validationError);
-      alert(`Validation Error: ${validationError}`);
+      console.error("Form validation failed:", validationError);
       return;
     }
 
     setIsSubmitting(true);
+    console.log('Form validation passed. Submitting with state:', state);
 
     try {
-      // Use the service to submit the request
       const result = await travelRequestService.submitTravelRequest(state, employeeId);
-      
+
       if (result.success) {
-        alert(result.message || 'Travel request submitted successfully!');
-        
-        // Optionally reset form after successful submission
-        // dispatch({ type: 'RESET_FORM' });
-        
-        // If you have navigation, you can redirect here
-        // navigate('/travel-requests');
+        console.log('Submission successful:', result);
+        setSuccessMessage(result.message || 'Travel request submitted successfully!');
+        setShowSuccessPopup(true);
+        // Reset form after a short delay to allow popup visibility
+        setTimeout(() => {
+          dispatch({ type: 'RESET_FORM' });
+        }, 1500);
       } else {
-        setSubmitError(result.message || 'Failed to submit travel request');
-        alert(result.message || 'Failed to submit travel request');
+        console.error('Submission failed:', result.message);
+        setSubmitError(result.message || 'Failed to submit travel request. Please try again.');
       }
-    } catch (error) {
-      const errorMessage = 'An unexpected error occurred. Please try again.';
-      setSubmitError(errorMessage);
-      alert(errorMessage);
+    } catch (error: any) {
       console.error('Unexpected error in handleSubmit:', error);
+      const errorMessage = error.message || 'An unexpected error occurred. Please try again.';
+      setSubmitError(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -229,24 +330,37 @@ export const TravelRequestProvider: React.FC<TravelRequestProviderProps> = ({
   const resetForm = () => {
     dispatch({ type: 'RESET_FORM' });
     setSubmitError(null);
+    setShowSuccessPopup(false);
+  };
+
+  const handleCloseSuccessPopup = () => {
+    setShowSuccessPopup(false);
   };
 
   return (
-    <TravelRequestContext.Provider value={{ 
-      state, 
-      dispatch, 
-      handleSubmit, 
-      isSubmitting, 
-      submitError,
-      resetForm,
-      getValidationError
-    }}>
-      {children}
-    </TravelRequestContext.Provider>
+    <>
+      <TravelRequestContext.Provider value={{
+        state,
+        dispatch,
+        handleSubmit,
+        isSubmitting,
+        submitError,
+        resetForm,
+        getValidationError: getLocationConsistencyError // Expose the specific location consistency validator if needed by components
+      }}>
+        {children}
+      </TravelRequestContext.Provider>
+
+      {showSuccessPopup && (
+        <SuccessPopup
+          message={successMessage}
+          onClose={handleCloseSuccessPopup}
+        />
+      )}
+    </>
   );
 };
 
-// Custom hook to use the context
 export const useTravelRequest = () => {
   const context = useContext(TravelRequestContext);
   if (context === undefined) {
