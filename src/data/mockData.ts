@@ -720,7 +720,7 @@ export const mockTravelRequests: TravelRequest[] = [
       {
         id: 'TL-002',
         type: 'Manager Approved',
-        date: '2025-02-16T14:00:00',
+        date: '2025-02-16T14:30:00',
         actor: 'David Wilson',
         description: 'Request approved by manager',
         details: 'Approved for industry conference'

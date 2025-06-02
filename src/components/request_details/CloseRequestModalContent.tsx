@@ -57,7 +57,7 @@ const CloseRequestModalContent: React.FC<CloseRequestModalContentProps> = ({
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-2">Airline Cost ($) *</label>
+              <label className="block text-sm font-medium mb-2">Airline Cost (₹) *</label>
               <input
                 type="number"
                 className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -80,7 +80,7 @@ const CloseRequestModalContent: React.FC<CloseRequestModalContentProps> = ({
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-2">Departure Cost ($) *</label>
+              <label className="block text-sm font-medium mb-2">Departure Cost (₹) *</label>
               <input
                 type="number"
                 className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -100,7 +100,7 @@ const CloseRequestModalContent: React.FC<CloseRequestModalContentProps> = ({
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-2">Return Cost ($) *</label>
+              <label className="block text-sm font-medium mb-2">Return Cost (₹) *</label>
               <input
                 type="number"
                 className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -114,7 +114,7 @@ const CloseRequestModalContent: React.FC<CloseRequestModalContentProps> = ({
       </div>
 
       <div>
-        <label className="block text-sm font-medium mb-2">Total Travel Expenses ($) *</label>
+        <label className="block text-sm font-medium mb-2">Total Travel Expenses (₹) *</label>
         <input
           type="number"
           className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
