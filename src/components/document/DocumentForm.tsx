@@ -49,6 +49,7 @@ function DocumentForm({ docType, formState, dispatch }: DocumentFormProps) {
                   selected={fieldValue instanceof Date || fieldValue === null ? fieldValue : null}
                   onChange={(date) => handleChange(field.key, date)}
                   className="mt-1 block w-full rounded-md bg-gray-100 px-3 py-2 text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-600"
+                  dateFormat="dd/MM/yyyy"
                   maxDate={field.maxDate}
                   minDate={field.minDate}
                   required={field.required}
