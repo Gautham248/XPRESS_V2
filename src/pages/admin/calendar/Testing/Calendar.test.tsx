@@ -1,6 +1,5 @@
 // src/pages/admin/calendar/Testing/Calendar.test.tsx
 
-import React from 'react';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import axios from 'axios';
@@ -31,7 +30,7 @@ jest.mock('../WeekView', () => (props: any) => (
   </div>
 ));
 
-// ***** CORRECTED MOCKS START HERE *****
+
 jest.mock('../MonthView', () => (props: any) => (
   <div data-testid="monthview">
     Mock MonthView - Date: {props.currentDate.toISOString().split('T')[0]}
@@ -53,7 +52,6 @@ jest.mock('../ViewToggle', () => (props: any) => (
     <button onClick={() => props.onViewChange('Week')}>Set Week View</button>
   </div>
 ));
-// ***** CORRECTED MOCKS END HERE *****
 
 
 
@@ -110,7 +108,7 @@ describe('Calendar Component', () => {
       global.Date = originalDateConstructor;
       (global as any).originalDateConstructor = undefined;
     }
-     // Date.now is restored by jest.restoreAllMocks if it was a jest.fn()
+     
   });
 
 
