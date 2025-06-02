@@ -316,7 +316,7 @@ const TravelDetailsSection: React.FC = () => {
               rows={4}
               value={reason}
               onChange={(e) => dispatch({ type: 'SET_REASON', payload: e.target.value })}
-              placeholder="Please provide details about the purpose of your travel..."
+              placeholder="Provide details about the purpose of your travel..."
               required
             />
           </div>
