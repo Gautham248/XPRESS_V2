@@ -869,20 +869,21 @@
 
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import DataTable from './DataTable';
+import DataTable from './DataTable'; // Assuming DataTable.tsx is in the same directory or correct path
 import { mockTravelRequests, TravelRequest, getStatusColor } from '../../data/mockData';
+import { Eye, CheckCircle, XCircle } from 'lucide-react'; // Import the icons you need
 
 const TravelRequests: React.FC = () => {
   const navigate = useNavigate();
 
   const headers = [
-    { key: 'id', displayName: 'Request ID', sortable: true },
-    { key: 'status', displayName: 'Status', sortable: true },
-    { key: 'travelerName', displayName: 'Traveler', sortable: true },
-    { key: 'projectCode', displayName: 'Project Code', sortable: true },
+    { key: 'id', displayName: 'Request ID', sortable: true, filterable: true },
+    { key: 'status', displayName: 'Status', sortable: true, filterable: true },
+    { key: 'travelerName', displayName: 'Traveler', sortable: true, filterable: true },
+    { key: 'projectCode', displayName: 'Project Code', sortable: true, filterable: true },
     { key: 'travelType', displayName: 'Type', sortable: true },
-    { key: 'source', displayName: 'Source', sortable: true },
-    { key: 'destination', displayName: 'Destination', sortable: true },
+    { key: 'source', displayName: 'Source', sortable: true, filterable: true },
+    { key: 'destination', displayName: 'Destination', sortable: true, filterable: true },
     { key: 'travelDates', displayName: 'Travel Dates', sortable: true },
     { key: 'departmentCode', displayName: 'Department', sortable: true },
     { key: 'reportingManager', displayName: 'Manager', sortable: true },
@@ -902,11 +903,21 @@ const TravelRequests: React.FC = () => {
     } else if (user.role === 'employee') {
       basePath = '/employee/my-requests';
     }
-    navigate(`${basePath}/${item.id}`);
+    navigate(`${basePath}/${item.id}`); 
+  };
+
+  const handleApproveAction = (item: TravelRequest) => {
+    console.log("Approving item:", item.id);
+    // Add your approval logic here
+  };
+
+  const handleRejectAction = (item: TravelRequest) => {
+    console.log("Rejecting item:", item.id);
+    // Add your rejection logic here
   };
 
   return (
-    <DataTable
+    <DataTable<TravelRequest>
       headers={headers}
       data={mockTravelRequests}
       title="Travel Requests"
@@ -933,33 +944,46 @@ const TravelRequests: React.FC = () => {
         type === 'Domestic' ? 'bg-primary/10 text-primary' : 'bg-secondary/10 text-secondary'
       }
       renderActions={(item: TravelRequest) => (
-        <>
+        <div className="flex items-center justify-end gap-1.5">
           <button 
-            className="text-sm text-primary hover:text-primary-light font-medium"
+            className="p-1.5 text-blue-600 hover:text-blue-800 hover:bg-blue-100 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400"
+            title="View Details" // Tooltip text
             onClick={(e) => {
               e.stopPropagation();
               handleRowClick(item);
             }}
           >
-            View
+            <Eye size={18} />
           </button>
-          {item.status === 'Pending' && (
+
+          {/* Conditionally render Approve/Reject based on status */}
+          {/* Adjust these conditions based on your application's workflow */}
+          {['Pending', 'Manager Approved', 'DU Head Approved', 'Tickets Selected'].includes(item.status) && (
             <>
               <button 
-                className="text-sm text-success hover:text-success/80 font-medium"
-                onClick={(e) => e.stopPropagation()}
+                className="p-1.5 text-green-600 hover:text-green-800 hover:bg-green-100 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-green-400"
+                title="Approve" // Tooltip text
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleApproveAction(item); 
+                }}
               >
-                Approve
+                <CheckCircle size={18} />
               </button>
               <button 
-                className="text-sm text-error hover:text-error/80 font-medium"
-                onClick={(e) => e.stopPropagation()}
+                className="p-1.5 text-red-600 hover:text-red-800 hover:bg-red-100 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-red-400"
+                title="Reject" // Tooltip text
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleRejectAction(item);
+                }}
               >
-                Reject
+                <XCircle size={18} />
               </button>
             </>
           )}
-        </>
+          {/* Edit button has been removed */}
+        </div>
       )}
       onRowClick={handleRowClick}
     />

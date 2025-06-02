@@ -24,10 +24,10 @@ interface NavItem {
 
 const navConfig: Record<string, NavItem[]> = {
   admin: [
-    { label: 'Dashboard', path: '/admin/dashboard', icon: <Home className="h-5 w-5" /> },
+    // { label: 'Dashboard', path: '/admin/dashboard', icon: <Home className="h-5 w-5" /> },
+    { label: 'Dashboard', path: '/admin/reports', icon: <Home className="h-5 w-5" /> },
     { label: 'Travel Requests', path: '/admin/travel-requests', icon: <Briefcase className="h-5 w-5" /> },
     { label: 'Calendar', path: '/admin/calendar', icon: <Calendar className="h-5 w-5" /> },
-    { label: 'Reports', path: '/admin/reports', icon: <BarChart className="h-5 w-5" /> },
     // { label: 'Settings', path: '/admin/settings', icon: <Settings className="h-5 w-5" /> },
    
     // { label: 'New Request', path: '/admin/create-request', icon: <PlusCircle className="h-5 w-5" /> }
