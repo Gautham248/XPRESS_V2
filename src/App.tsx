@@ -36,7 +36,7 @@ function App() {
           <Route path="calendar" element={<Calendar />} />
           <Route path="reports" element={<Dashboard/>} />
           <Route path="settings" element={<Settings />} />
-          <Route path="documents" element={<Documents />} />
+          
           {/* <Route path="create-request" element={<CreateRequest />} /> */}
         
         </Route>
@@ -54,6 +54,7 @@ function App() {
           <Route path="my-requests" element={<TravelRequests />} />
           <Route path="my-requests/:id" element={<TravelRequestDetails />} />
           <Route path="calendar" element={<Calendar />} />
+          <Route path="documents" element={<Documents />} />
         </Route>
 
         {/* Employee Routes */}
@@ -68,7 +69,7 @@ function App() {
           <Route path="my-requests" element={<TravelRequests />} />
           <Route path="my-requests/:id" element={<TravelRequestDetails />} />
           <Route path="create-request" element={<CreateRequest />} />
-          
+          <Route path="documents" element={<Documents />} />
           <Route path="calendar" element={<Calendar />} />
         </Route>
 
