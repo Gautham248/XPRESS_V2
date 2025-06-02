@@ -419,7 +419,7 @@ const DataTable = <T extends Record<string, any>>({
                   placeholderText="End date"
                   className="px-2.5 py-1.5 bg-gray-100 rounded-md text-sm w-32 focus:outline-none focus:ring-1 focus:ring-blue-500"
                   dateFormat="dd/MM/yyyy"
-                  minDate={startDate}
+                  minDate={startDate ?? undefined}
                   isClearable
                 />
               </div>
