@@ -46,13 +46,13 @@ const UploadTicketView: React.FC<Props> = ({
       <div className="flex-1 overflow-y-auto">
         <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <h4 className="text-xl font-bold text-gray-800">Create Ticket Options</h4>
+            <h4 className="text-lg font-bold text-gray-800">Create Ticket Options</h4>
             <span className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
               {ticketOptions.length} option{ticketOptions.length !== 1 ? 's' : ''}
             </span>
           </div>
           <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-            <h5 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+            <h5 className="text-med font-semibold text-gray-800 mb-4 flex items-center gap-2">
               <Plus className="w-5 h-5 text-blue-600" />
               Add New Ticket Option
             </h5>
@@ -64,12 +64,12 @@ const UploadTicketView: React.FC<Props> = ({
                 onChange={(e) => onChangeNewOption(e.target.value)}
               />
               <button
-                className="flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl font-medium hover:from-blue-600 hover:to-indigo-700 shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                className="flex items-center gap-2 px-4 py-3 bg-indigo-600 text-white rounded-xl font-medium hover:bg-indigo-700 shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
                 onClick={onAddOption}
                 disabled={!newOption.trim()}
               >
                 <Plus size={18} />
-                <span className="hidden sm:inline">Add</span>
+                {/* <span className="hidden sm:inline">Add</span> */}
               </button>
             </div>
           </div>
@@ -96,14 +96,14 @@ const UploadTicketView: React.FC<Props> = ({
                       />
                       <div className="flex gap-3">
                         <button
-                          className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg font-medium hover:from-green-600 hover:to-emerald-700 shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200"
+                          className="flex items-center gap-2 px-4 py-2 bg-indigo-500 text-white rounded-lg font-medium hover:bg-indigo-700 shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200"
                           onClick={() => onSaveEdit(option.id)}
                         >
                           <Save size={16} />
                           Save Changes
                         </button>
                         <button
-                          className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-gray-500 to-slate-600 text-white rounded-lg font-medium hover:from-gray-600 hover:to-slate-700 shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200"
+                          className="flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg font-medium hover:bg-gray-700 shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200"
                           onClick={onCancelEdit}
                         >
                           <X size={16} />
@@ -157,7 +157,7 @@ const UploadTicketView: React.FC<Props> = ({
           </div>
           <div className="flex gap-3">
             <button
-              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl font-medium hover:from-green-600 hover:to-emerald-700 shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200"
+              className="flex items-center gap-2 px-6 py-3 bg-emerald-500 text-white rounded-xl font-medium hover:bg-emerald-700 shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200"
               onClick={onUploadOptions}
             >
               <Upload size={18} />
