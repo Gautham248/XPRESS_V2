@@ -31,7 +31,6 @@ const SelectedView: React.FC<Props> = ({
 
   return (
     <div className="space-y-6">
-      <h4 className="text-lg font-semibold">Your Ticket</h4>
       {ticketOptions.length === 0 ? (
         <p>No ticket options available yet.</p>
       ) : (
