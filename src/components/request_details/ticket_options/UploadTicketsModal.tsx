@@ -1,5 +1,5 @@
 import React, { useState, useCallback, memo } from 'react';
-import { X, Plus, Plane, Trash2 } from 'lucide-react';
+import { X, Plus, Plane } from 'lucide-react';
 import FileUploader from '../../document/FileUploader';
  
 export interface Airline {
@@ -23,7 +23,7 @@ const UploadTicketsModal: React.FC<UploadTicketsModalProps> = memo(({
     const [totalExpense, setTotalExpense] = useState<string>('');
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [airlines, setAirlines] = useState<Airline[]>([{ name: '', cost: '' }]);
-    const [dragActive, setDragActive] = useState<boolean>(false);
+    const [, setDragActive] = useState<boolean>(false);
     const [errors, setErrors] = useState<{
         agencyName?: string;
         agencyExpense?: string;
@@ -137,33 +137,30 @@ const UploadTicketsModal: React.FC<UploadTicketsModalProps> = memo(({
  
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col">
+            <div className="bg-white rounded-lg shadow-2xl w-full max-w-4xl max-h-[80vh] flex flex-col">
                 {/* Header */}
-                <div className="flex items-center justify-between p-8 border-b border-gray-100">
-                    <div className="flex items-center space-x-3">
-                        <div className="p-2 bg-blue-50 rounded-lg">
-                            <Plane className="w-6 h-6 text-blue-600" />
-                        </div>
-                        <h2 className="text-2xl font-bold text-gray-900">Upload Tickets</h2>
+                <div className="flex items-center justify-between p-4 border-b border-gray-200">
+                    <div className="flex items-center space-x-2">
+                        <Plane className="w-5 h-5 text-blue-600" />
+                        <h2 className="text-lg font-semibold text-gray-900">Upload Travel Tickets</h2>
                     </div>
                     <button
                         onClick={handleClose}
-                        className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                        className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
                         aria-label="Close modal"
                     >
-                        <X size={24} />
+                        <X size={20} />
                     </button>
                 </div>
  
-                {/* Scrollable Body */}
-                <div className="overflow-y-auto p-8 space-y-8 flex-1">
-                    {/* Travel Agency Section */}
-                    <div className="bg-gray-50 p-6 rounded-xl">
-                        <h3 className="text-lg font-semibold text-gray-900 mb-4">Travel Agency Details</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Body */}
+                <div className="p-6 space-y-6 flex-1 overflow-y-auto">
+                    {/* Travel Agency Details Row */}
+                    <div className="border border-gray-200 rounded-lg p-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <label htmlFor="agencyName" className="block text-sm font-semibold text-gray-700 mb-2">
-                                    Agency Name *
+                                <label htmlFor="agencyName" className="block text-sm font-medium text-gray-700 mb-1">
+                                    Travel Agency Name <span className='text-red-500'>*</span>
                                 </label>
                                 <input
                                     type="text"
@@ -175,21 +172,21 @@ const UploadTicketsModal: React.FC<UploadTicketsModalProps> = memo(({
                                             setErrors(prev => ({ ...prev, agencyName: undefined }));
                                         }
                                     }}
-                                    className={`w-full px-4 py-3 border rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
-                                        errors.agencyName ? 'border-red-300 bg-red-50' : 'border-gray-200 hover:border-gray-300'
+                                    className={`w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 ${
+                                        errors.agencyName ? 'border-red-300' : 'border-gray-300'
                                     }`}
-                                    placeholder="Enter travel agency name"
+                                    placeholder="Enter agency name"
                                 />
                                 {errors.agencyName && (
-                                    <p className="mt-2 text-sm text-red-600">{errors.agencyName}</p>
+                                    <p className="mt-1 text-xs text-red-600">{errors.agencyName}</p>
                                 )}
                             </div>
                             <div>
-                                <label htmlFor="agencyExpense" className="block text-sm font-semibold text-gray-700 mb-2">
-                                    Agency Expense *
+                                <label htmlFor="agencyExpense" className="block text-sm font-medium text-gray-700 mb-1">
+                                    Travel Agency Expense <span className='text-red-500'>*</span>
                                 </label>
                                 <div className="relative">
-                                    <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 font-medium">₹</span>
+                                    <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">₹</span>
                                     <input
                                         type="text"
                                         id="agencyExpense"
@@ -200,100 +197,81 @@ const UploadTicketsModal: React.FC<UploadTicketsModalProps> = memo(({
                                                 setErrors(prev => ({ ...prev, agencyExpense: undefined }));
                                             }
                                         }}
-                                        className={`w-full pl-8 pr-4 py-3 border rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
-                                            errors.agencyExpense ? 'border-red-300 bg-red-50' : 'border-gray-200 hover:border-gray-300'
+                                        className={`w-full pl-8 pr-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 ${
+                                            errors.agencyExpense ? 'border-red-300' : 'border-gray-300'
                                         }`}
                                         placeholder="0.00"
                                     />
                                 </div>
                                 {errors.agencyExpense && (
-                                    <p className="mt-2 text-sm text-red-600">{errors.agencyExpense}</p>
+                                    <p className="mt-1 text-xs text-red-600">{errors.agencyExpense}</p>
                                 )}
                             </div>
                         </div>
                     </div>
- 
-                    {/* Airline Information */}
-                    <div className="bg-blue-50 p-6 rounded-xl">
-                        <div className="flex items-center justify-between mb-6">
-                            <h3 className="text-lg font-semibold text-gray-900">Airline Information</h3>
+
+                    {/* Airlines Details Section */}
+                    <div className="border border-gray-200 rounded-lg p-4">
+                        <div className="flex items-center justify-between mb-4">
+                            <h3 className="text-sm font-medium text-gray-900">Airlines Details <span className='text-red-500'>*</span></h3>
                             <button
                                 type="button"
                                 onClick={addAirline}
-                                className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 shadow-sm hover:shadow-md"
+                                className="flex items-center px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
                             >
-                                <Plus size={18} className="mr-2" />
+                                <Plus size={14} className="mr-1" />
                                 Add Airline
                             </button>
                         </div>
-                       
-                        <div className="space-y-6">
+                        
+                        <div className="space-y-3 max-h-40 overflow-y-auto">
                             {airlines.map((airline, index) => (
-                                <div key={index} className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-                                    <div className="flex items-center justify-between mb-4">
-                                        <h4 className="text-md font-medium text-gray-700">Airline #{index + 1}</h4>
-                                        {airlines.length > 1 && (
-                                            <button
-                                                type="button"
-                                                onClick={() => removeAirline(index)}
-                                                className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
-                                                aria-label="Remove airline"
-                                            >
-                                                <Trash2 size={16} />
-                                            </button>
-                                        )}
+                                <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 rounded border">
+                                    <div className="flex-1">
+                                        <input
+                                            type="text"
+                                            placeholder="Airline Name"
+                                            value={airline.name}
+                                            onChange={(e) => handleAirlineChange(index, 'name', e.target.value)}
+                                            className={`w-full px-2 py-1 border rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 ${
+                                                errors.airlines?.[index]?.name ? 'border-red-300' : 'border-gray-300'
+                                            }`}
+                                        />
                                     </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div>
-                                            <label htmlFor={`airlineName-${index}`} className="block text-sm font-semibold text-gray-700 mb-2">
-                                                Airline Name *
-                                            </label>
-                                            <input
-                                                type="text"
-                                                id={`airlineName-${index}`}
-                                                value={airline.name}
-                                                onChange={(e) => handleAirlineChange(index, 'name', e.target.value)}
-                                                className={`w-full px-4 py-3 border rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
-                                                    errors.airlines?.[index]?.name ? 'border-red-300 bg-red-50' : 'border-gray-200 hover:border-gray-300'
-                                                }`}
-                                                placeholder="e.g., Air India, IndiGo"
-                                            />
-                                            {errors.airlines?.[index]?.name && (
-                                                <p className="mt-2 text-sm text-red-600">{errors.airlines[index].name}</p>
-                                            )}
-                                        </div>
-                                        <div>
-                                            <label htmlFor={`airlineCost-${index}`} className="block text-sm font-semibold text-gray-700 mb-2">
-                                                Cost *
-                                            </label>
-                                            <div className="relative">
-                                                <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 font-medium">₹</span>
-                                                <input
-                                                    type="text"
-                                                    id={`airlineCost-${index}`}
-                                                    value={airline.cost}
-                                                    onChange={(e) => handleAirlineChange(index, 'cost', e.target.value)}
-                                                    className={`w-full pl-8 pr-4 py-3 border rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
-                                                        errors.airlines?.[index]?.cost ? 'border-red-300 bg-red-50' : 'border-gray-200 hover:border-gray-300'
-                                                    }`}
-                                                    placeholder="0.00"
-                                                />
-                                            </div>
-                                            {errors.airlines?.[index]?.cost && (
-                                                <p className="mt-2 text-sm text-red-600">{errors.airlines[index].cost}</p>
-                                            )}
-                                        </div>
+                                    <div className="flex-1 relative">
+                                        <span className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-500 text-xs">₹</span>
+                                        <input
+                                            type="text"
+                                            placeholder="Cost"
+                                            value={airline.cost}
+                                            onChange={(e) => handleAirlineChange(index, 'cost', e.target.value)}
+                                            className={`w-full pl-6 pr-2 py-1 border rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 ${
+                                                errors.airlines?.[index]?.cost ? 'border-red-300' : 'border-gray-300'
+                                            }`}
+                                        />
                                     </div>
+                                    {airlines.length > 1 && (
+                                        <button
+                                            type="button"
+                                            onClick={() => removeAirline(index)}
+                                            className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded"
+                                            aria-label="Remove airline"
+                                        >
+                                            <X size={16} />
+                                        </button>
+                                    )}
                                 </div>
                             ))}
                         </div>
                     </div>
- 
-                    {/* Total Expense */}
-                    <div className="bg-green-50 p-6 rounded-xl">
-                        <h3 className="text-lg font-semibold text-gray-900 mb-4">Total Expense</h3>
+
+                    {/* Total Expense Section */}
+                    <div className="border border-gray-200 rounded-lg p-4">
+                        <label htmlFor="totalExpense" className="block text-sm font-medium text-gray-900 mb-2">
+                            Total Expense
+                        </label>
                         <div className="relative">
-                            <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 font-medium text-lg">₹</span>
+                            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-600 font-medium">₹</span>
                             <input
                                 type="text"
                                 id="totalExpense"
@@ -304,45 +282,45 @@ const UploadTicketsModal: React.FC<UploadTicketsModalProps> = memo(({
                                         setErrors(prev => ({ ...prev, totalExpense: undefined }));
                                     }
                                 }}
-                                className={`w-full pl-8 pr-4 py-4 border rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 text-lg font-semibold ${
-                                    errors.totalExpense ? 'border-red-300 bg-red-50' : 'border-gray-200 hover:border-gray-300'
+                                className={`w-full pl-8 pr-4 py-2 border rounded-md text-lg font-normal focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 ${
+                                    errors.totalExpense ? 'border-red-300' : 'border-gray-300'
                                 }`}
                                 placeholder="0.00"
                             />
                         </div>
                         {errors.totalExpense && (
-                            <p className="mt-2 text-sm text-red-600">{errors.totalExpense}</p>
+                            <p className="mt-1 text-xs text-red-600">{errors.totalExpense}</p>
                         )}
                     </div>
- 
-                    {/* File Upload Area */}
-                    <div className="bg-purple-50 p-6 rounded-xl">
-                        <h3 className="text-lg font-semibold text-gray-900 mb-4">Upload Documents</h3>
+
+                    {/* File Upload Section */}
+                    <div className="border border-blue-200 rounded-lg p-4 bg-blue-50">
+                        <h3 className="text-sm font-medium text-gray-900 mb-2">Attach Ticket(s)</h3>
                         <FileUploader
                             onFileSelect={handleFileSelect}
                             showValidation={!!errors.file}
                             selectedFile={selectedFile}
                         />
                         {errors.file && (
-                            <p className="mt-2 text-sm text-red-600">{errors.file}</p>
+                            <p className="mt-1 text-xs text-red-600">{errors.file}</p>
                         )}
                     </div>
                 </div>
  
                 {/* Footer */}
-                <div className="flex items-center justify-end space-x-4 p-8 border-t border-gray-100 bg-gray-50">
+                <div className="flex items-center justify-end gap-3 p-4 border-t border-gray-200">
                     <button
                         onClick={handleClose}
-                        className="px-6 py-3 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 transition-all duration-200"
+                        className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 focus:outline-none focus:ring-1 focus:ring-gray-400"
                     >
                         Cancel
                     </button>
                     <button
                         onClick={handleSubmit}
                         disabled={!agencyName.trim() || !agencyExpense.trim() || !totalExpense.trim() || !selectedFile || airlines.some(airline => !airline.name.trim() || !airline.cost.trim())}
-                        className="px-8 py-3 text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-blue-700 border border-transparent rounded-xl hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl"
+                        className="px-6 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded hover:bg-blue-700 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        Upload Tickets
+                        Submit
                     </button>
                 </div>
             </div>

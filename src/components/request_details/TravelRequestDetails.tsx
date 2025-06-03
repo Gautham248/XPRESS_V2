@@ -22,8 +22,8 @@ const TravelRequestDetails: React.FC = () => {
   const navigate = useNavigate();
   const { isOpen, title, content, buttons, openModal, closeModal } = useModal();
   const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
-  const [approveComment, setApproveComment] = useState('');
-  const [rejectComment, setRejectComment] = useState('');
+  const [, setApproveComment] = useState('');
+  const [, setRejectComment] = useState('');
   const [actionTaken, setActionTaken] = useState(false);
   const [requestClosed, setRequestClosed] = useState(false);
 
