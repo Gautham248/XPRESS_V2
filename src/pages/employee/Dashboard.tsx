@@ -209,9 +209,9 @@ const EmployeeDashboard: React.FC = () => {
       <div className="card bg-white shadow-sm p-6 rounded-lg">
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-lg font-semibold">Active Travel Requests</h3>
-          <button className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
+          {/* <button className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
             <Calendar className="h-4 w-4 inline mr-2" /> View Calendar
-          </button>
+          </button> */}
         </div>
         {filteredRequests.length === 0 ? (
           <p className="text-gray-500 text-center py-6">No active requests. Start a new request!</p>

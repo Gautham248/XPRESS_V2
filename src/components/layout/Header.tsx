@@ -105,11 +105,11 @@ const Header: React.FC<HeaderProps> = ({ pageTitle, toggleSidebar, sidebarOpen }
                     </p>
                   </div>
                 </div>
-                <div className="p-2 border-t">
+                {/* <div className="p-2 border-t">
                   <button className="w-full text-center text-sm text-primary hover:text-primary-light py-1">
                     View all notifications
                   </button>
-                </div>
+                </div> */}
               </div>
             )}
           </div>

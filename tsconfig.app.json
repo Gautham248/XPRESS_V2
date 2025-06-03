@@ -7,18 +7,34 @@
     "skipLibCheck": true,
 
     /* Bundler mode */
-    "moduleResolution": "bundler",
-    "allowImportingTsExtensions": true,
+    "moduleResolution": "bundler", // Or "node" if that's what you were using
+    "allowImportingTsExtensions": true, // Keep if you use .ts extensions in imports
+    "resolveJsonModule": true,         // Add this: Good for importing JSON files
     "isolatedModules": true,
-    "moduleDetection": "force",
+    "moduleDetection": "force",       // Keep this if it's from your bundler setup (e.g., Vite)
     "noEmit": true,
     "jsx": "react-jsx",
+    "esModuleInterop": true,          // Add this: Highly recommended for better interop with CJS modules
 
     /* Linting */
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true
+    "noFallthroughCasesInSwitch": true,
+
+    /* Add Jest and Testing Library Types */
+    "types": [
+      "jest",                         // For Jest global types (describe, expect, etc.)
+      "@testing-library/jest-dom",    // For custom DOM matchers (toBeInTheDocument, etc.)
+      "node"                          // Often useful for general Node.js types, can be optional
+    ]
   },
-  "include": ["src"]
+  "include": [
+    "src"                             // Ensure this covers your components and test files
+  ],
+  "exclude": [                        // Good practice to add this
+    "node_modules",
+    "dist",                           // Or your build output folder
+    "**/__tests__/**/__snapshots__"   // Exclude Jest snapshots from TS compilation
+  ]
 }
