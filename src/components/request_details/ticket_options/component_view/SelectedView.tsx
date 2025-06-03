@@ -46,12 +46,12 @@ const SelectedView: React.FC<Props> = ({
             >
               {option.selected && (
                 <>
-                  <div className="absolute top-2 right-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1 font-medium shadow-md">
+                  <div className="absolute top-2 right-2 bg-emerald-600 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1 font-medium shadow-md">
                     <Check size={12} />
                     Selected
                   </div>
-                  <div className="absolute inset-0 bg-gradient-to-r from-green-400/10 to-emerald-400/10 animate-pulse"></div>
-                  <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-green-500 to-emerald-600"></div>
+                  <div className="absolute inset-0 bg-green-400/10 animate-pulse"></div>
+                  <div className="absolute left-0 top-0 bottom-0 w-1 bg-green-500"></div>
                 </>
               )}
               <div className={`relative z-10 ${option.selected ? 'font-semibold text-slate-800 pr-20' : 'text-slate-600'}`}>
@@ -71,7 +71,7 @@ const SelectedView: React.FC<Props> = ({
         <div className="flex justify-end gap-3">
           {buttons.includes('downloadTickets') && onDownloadTickets && (
             <button
-              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl font-medium hover:from-blue-600 hover:to-indigo-700 shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200"
+              className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-xl font-medium hover:bg-indigo-700 shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200"
               onClick={onDownloadTickets}
             >
               <Download size={18} /> Download Tickets
@@ -79,7 +79,7 @@ const SelectedView: React.FC<Props> = ({
           )}
           {buttons.includes('uploadTickets') && onUploadTickets && (
             <button
-              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl font-medium hover:from-green-600 hover:to-emerald-700 shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200"
+              className="flex items-center gap-2 px-6 py-3 bg-emerald-600 text-white rounded-xl font-medium hover:bg-emerald-700 shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200"
               onClick={onUploadTickets}
             >
               <Upload size={18} /> Upload Tickets
@@ -87,7 +87,7 @@ const SelectedView: React.FC<Props> = ({
           )}
           {buttons.includes('confirmTicketOption') && onConfirmTicketOption && (
             <button
-              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-teal-500 to-cyan-600 text-white rounded-xl font-medium hover:from-teal-600 hover:to-cyan-700 shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200"
+              className="flex items-center gap-2 px-6 py-3 bg-cyan-600 text-white rounded-xl font-medium hover:bg-cyan-700 shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200"
               onClick={onConfirmTicketOption}
             >
               <Check size={18} /> Confirm Ticket Option
