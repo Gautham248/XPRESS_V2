@@ -487,7 +487,7 @@ const DataTable = <T extends Record<string, any>>({
                     <td key={header.key} className="py-3 px-4 whitespace-nowrap text-sm">
                       {header.key === 'travelDates' && item.departureDate && item.returnDate ? (
                         <div className="flex items-center"><Calendar className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
-                          <span>{formatDateForDisplay(item.departureDate)} - ${formatDateForDisplay(item.returnDate)}</span>
+                          <span>{formatDateForDisplay(item.departureDate)} - {formatDateForDisplay(item.returnDate)}</span>
                         </div>
                       ) : header.key === 'status' && getStatusColor ? (
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(item[header.key])}`}>

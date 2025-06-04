@@ -35,17 +35,18 @@ const navConfig: Record<string, NavItem[]> = {
   ],
   manager: [
     { label: 'Dashboard', path: '/manager/dashboard', icon: <Home className="h-5 w-5" /> },
+    { label: 'New Request', path: '/manager/new-request', icon: <PlusCircle className="h-5 w-5" /> },
     { label: 'Team Requests', path: '/manager/team-requests', icon: <Briefcase className="h-5 w-5" /> },
-    { label: 'My Requests', path: '/manager/my-requests', icon: <Briefcase className="h-5 w-5" /> },
+    // { label: 'My Requests', path: '/manager/my-requests', icon: <Briefcase className="h-5 w-5" /> },
      { label: 'Documents', path: '/manager/documents', icon: <FileText className="h-5 w-5" /> },
-    { label: 'Calendar', path: '/manager/calendar', icon: <Calendar className="h-5 w-5" /> }
+    // { label: 'Calendar', path: '/manager/calendar', icon: <Calendar className="h-5 w-5" /> }
   ],
   employee: [
     { label: 'Dashboard', path: '/employee/dashboard', icon: <Home className="h-5 w-5" /> },
     { label: 'New Request', path: '/employee/new-request', icon: <PlusCircle className="h-5 w-5" /> },
     { label: 'My Requests', path: '/employee/my-requests', icon: <Briefcase className="h-5 w-5" /> },
      { label: 'Documents', path: '/employee/documents', icon: <FileText className="h-5 w-5" /> },
-    { label: 'Calendar', path: '/employee/calendar', icon: <Calendar className="h-5 w-5" /> }
+    // { label: 'Calendar', path: '/employee/calendar', icon: <Calendar className="h-5 w-5" /> }
   ]
 };
 
