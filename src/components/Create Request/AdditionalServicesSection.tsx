@@ -1,5 +1,5 @@
 import React from 'react';
-import { MapPin } from 'lucide-react';
+import { MapPin, MessageSquare } from 'lucide-react';
 import { useTravelRequest } from './TravelRequestContext';
 import LocationSearch from './LocationSearch';
 
@@ -13,6 +13,7 @@ const AdditionalServicesSection: React.FC = () => {
     dropoffLocation,
     requiresFoodPreference,
     foodPreference,
+    foodPreferenceComment, // Add this to your state type
     source // Added source to get the source location
   } = state;
 
@@ -242,7 +243,7 @@ const AdditionalServicesSection: React.FC = () => {
               <label className="text-sm font-medium mb-3 block text-gray-700">
                 Select Food Preference
               </label>
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <div className="flex items-center space-x-2">
                   <input
                     type="radio"
@@ -277,6 +278,41 @@ const AdditionalServicesSection: React.FC = () => {
                 </div>
               </div>
             </div>
+
+            {/* Food Preference Comment Box */}
+            {foodPreference && (
+              <div className="mt-4">
+                <label htmlFor="foodComment" className="block text-sm font-medium text-gray-700 mb-2">
+                  <div className="flex items-center space-x-2">
+                    <MessageSquare className="h-4 w-4 text-gray-500" />
+                    <span>Additional Food Requirements or Comments</span>
+                  </div>
+                </label>
+                <div className="relative">
+                  <textarea
+                    id="foodComment"
+                    rows={3}
+                    className="block w-full rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-gray-700 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 resize-none"
+                    placeholder="Specify any allergies, dietary restrictions, or special food requirements..."
+                    value={foodPreferenceComment || ''}
+                    onChange={(e) => 
+                      dispatch({ type: 'SET_FOOD_PREFERENCE_COMMENT', payload: e.target.value })
+                    }
+                    maxLength={500}
+                  />
+                  <div className="absolute bottom-2 right-3 text-xs text-gray-400">
+                    {(foodPreferenceComment || '').length}/500
+                  </div>
+                </div>
+                {foodPreferenceComment && (
+                  <div className="mt-2 p-3 bg-green-50 rounded-lg text-sm border border-green-100">
+                    <p className="text-green-800">
+                      <strong>Note:</strong> Your food preferences and requirements have been noted.
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>
