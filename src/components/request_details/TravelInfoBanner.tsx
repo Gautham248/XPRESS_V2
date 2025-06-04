@@ -67,9 +67,7 @@ const TravelInfoBanner: React.FC<TravelInfoBannerProps> = ({ travelRequest }) =>
                 <div className="flex items-center space-x-6">
                     <div className="text-right">
                         <div className="text-xs text-gray-500">From</div>
-                        {/* <div className="text-xl font-bold text-gray-900">{travelRequest.origin || 'Not specified'}</div> */}
                         <div className="text-xl font-bold text-gray-900">{travelRequest.source || 'Not specified'}</div>
-                        {/* <div className="text-sm text-gray-500">{travelRequest.originCountry || ''}</div> */}
                     </div>
                     <div className="flex flex-col items-center mx-2">
                         <div className="h-12 w-12 rounded-full bg-blue-50 flex items-center justify-center">
@@ -79,8 +77,6 @@ const TravelInfoBanner: React.FC<TravelInfoBannerProps> = ({ travelRequest }) =>
                     <div className="text-left">
                         <div className="text-xs text-gray-500">To</div>
                         <div className="text-xl font-bold text-gray-900">{travelRequest.destination || 'Not specified'}</div>
-                        {/* <div className="text-sm text-gray-500">{travelRequest.destinationCountry || ''}</div> */}
-                        {/* <div className="text-sm text-gray-500">{travelRequest.destination || ''}</div> */}
                     </div>
                 </div>
             </div>

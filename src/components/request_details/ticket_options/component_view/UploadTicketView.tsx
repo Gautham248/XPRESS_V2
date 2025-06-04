@@ -1,6 +1,14 @@
 import React from 'react';
 import { Plus, Upload, Edit, Trash, Save, X, Ticket } from 'lucide-react';
-import { TicketOption } from '../../../data/mockData';
+import { TicketOption } from '../../../../data/mockData';
+
+interface CustomButton {
+  label: string;
+  icon?: React.ReactNode;
+  onClick: () => void;
+  className?: string;
+  disabled?: boolean;
+}
 
 interface Props {
   ticketOptions: TicketOption[];
@@ -15,9 +23,10 @@ interface Props {
   onCancelEdit: () => void;
   onChangeEditText: (value: string) => void;
   onUploadOptions: () => void;
+  customButtons?: CustomButton[];
 }
 
-const AdminTicketOptionsView: React.FC<Props> = ({
+const UploadTicketView: React.FC<Props> = ({
   ticketOptions,
   newOption,
   editingOption,
@@ -30,23 +39,20 @@ const AdminTicketOptionsView: React.FC<Props> = ({
   onCancelEdit,
   onChangeEditText,
   onUploadOptions,
+  customButtons = [],
 }) => {
   return (
     <div className="flex flex-col h-full">
-      {/* Main content area */}
       <div className="flex-1 overflow-y-auto">
         <div className="space-y-6">
-          {/* Header */}
           <div className="flex items-center justify-between">
-            <h4 className="text-xl font-bold text-gray-800">Create Ticket Options</h4>
+            <h4 className="text-lg font-bold text-gray-800">Create Ticket Options</h4>
             <span className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
               {ticketOptions.length} option{ticketOptions.length !== 1 ? 's' : ''}
             </span>
           </div>
-
-          {/* Add New Option Section */}
           <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-            <h5 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+            <h5 className="text-med font-semibold text-gray-800 mb-4 flex items-center gap-2">
               <Plus className="w-5 h-5 text-blue-600" />
               Add New Ticket Option
             </h5>
@@ -58,17 +64,15 @@ const AdminTicketOptionsView: React.FC<Props> = ({
                 onChange={(e) => onChangeNewOption(e.target.value)}
               />
               <button
-                className="flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl font-medium hover:from-blue-600 hover:to-indigo-700 shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                className="flex items-center gap-2 px-4 py-3 bg-indigo-600 text-white rounded-xl font-medium hover:bg-indigo-700 shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
                 onClick={onAddOption}
                 disabled={!newOption.trim()}
               >
                 <Plus size={18} />
-                <span className="hidden sm:inline">Add</span>
+                {/* <span className="hidden sm:inline">Add</span> */}
               </button>
             </div>
           </div>
-
-          {/* Options List */}
           <div className="space-y-4">
             {ticketOptions.length === 0 ? (
               <div className="text-center py-12 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
@@ -80,7 +84,6 @@ const AdminTicketOptionsView: React.FC<Props> = ({
               ticketOptions.map((option, index) => (
                 <div key={option.id} className="group bg-white p-6 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200">
                   {editingOption === option.id ? (
-                    // Edit Mode
                     <div className="space-y-4">
                       <div className="flex items-center gap-2 text-sm text-blue-600 font-medium">
                         <Edit size={16} />
@@ -93,14 +96,14 @@ const AdminTicketOptionsView: React.FC<Props> = ({
                       />
                       <div className="flex gap-3">
                         <button
-                          className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg font-medium hover:from-green-600 hover:to-emerald-700 shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200"
+                          className="flex items-center gap-2 px-4 py-2 bg-indigo-500 text-white rounded-lg font-medium hover:bg-indigo-700 shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200"
                           onClick={() => onSaveEdit(option.id)}
                         >
                           <Save size={16} />
                           Save Changes
                         </button>
                         <button
-                          className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-gray-500 to-slate-600 text-white rounded-lg font-medium hover:from-gray-600 hover:to-slate-700 shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200"
+                          className="flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg font-medium hover:bg-gray-700 shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200"
                           onClick={onCancelEdit}
                         >
                           <X size={16} />
@@ -109,7 +112,6 @@ const AdminTicketOptionsView: React.FC<Props> = ({
                       </div>
                     </div>
                   ) : (
-                    // View Mode
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2">
@@ -145,24 +147,35 @@ const AdminTicketOptionsView: React.FC<Props> = ({
           </div>
         </div>
       </div>
-
-      {/* Fixed Upload Button at Bottom */}
       {ticketOptions.length > 0 && (
-        <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-6 border-t border-green-200 mt-auto">
-          <div className="flex items-center justify-between">
-            <div>
-              <h5 className="font-semibold text-gray-800 mb-1">Ready to Upload</h5>
-              <p className="text-sm text-gray-600">
-                {ticketOptions.length} option{ticketOptions.length !== 1 ? 's' : ''} ready to be made available
-              </p>
-            </div>
+        <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-6 border-t border-green-200 mt-auto flex gap-3 justify-between">
+          <div>
+            <h5 className="font-semibold text-gray-800 mb-1">Ready to Upload</h5>
+            <p className="text-sm text-gray-600">
+              {ticketOptions.length} option{ticketOptions.length !== 1 ? 's' : ''} ready to be made available
+            </p>
+          </div>
+          <div className="flex gap-3">
             <button
-              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl font-medium hover:from-green-600 hover:to-emerald-700 shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200"
+              className="flex items-center gap-2 px-6 py-3 bg-emerald-500 text-white rounded-xl font-medium hover:bg-emerald-700 shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200"
               onClick={onUploadOptions}
             >
               <Upload size={18} />
               Upload All Options
             </button>
+            {customButtons.map((button, index) => (
+              <button
+                key={index}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-all duration-200 ${
+                  button.className || 'bg-gray-500 text-white hover:bg-gray-600'
+                } ${button.disabled ? 'opacity-50 cursor-not-allowed' : 'hover:shadow-lg hover:-translate-y-0.5'}`}
+                onClick={button.onClick}
+                disabled={button.disabled}
+              >
+                {button.icon}
+                {button.label}
+              </button>
+            ))}
           </div>
         </div>
       )}
@@ -170,4 +183,4 @@ const AdminTicketOptionsView: React.FC<Props> = ({
   );
 };
 
-export default AdminTicketOptionsView;
+export default UploadTicketView;
