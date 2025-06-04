@@ -1,18 +1,51 @@
 import React, { useState, useCallback, memo } from 'react';
 import { X, Plus, Plane } from 'lucide-react';
 import FileUploader from '../../document/FileUploader';
- 
+import Autocomplete from './Autocomplete';
+
 export interface Airline {
     name: string;
     cost: string;
 }
- 
+
 interface UploadTicketsModalProps {
     isOpen: boolean;
     onClose: () => void;
     onConfirm: (agencyName: string, agencyExpense: string, totalExpense: string, file: File | null, airlines: Airline[]) => void;
 }
- 
+
+// Sample data - replace with your actual data source
+const TRAVEL_AGENCIES = [
+    'MakeMyTrip',
+    'Goibibo',
+    'Cleartrip',
+    'Yatra',
+    'Booking.com',
+    'Expedia',
+    'Thomas Cook',
+    'Cox & Kings',
+    'SOTC Travel',
+    'Kesari Tours'
+];
+
+const AIRLINE_NAMES = [
+    'IndiGo',
+    'Air India',
+    'SpiceJet',
+    'Vistara',
+    'GoAir',
+    'AirAsia India',
+    'Emirates',
+    'Qatar Airways',
+    'Singapore Airlines',
+    'Lufthansa',
+    'British Airways',
+    'Thai Airways',
+    'Etihad Airways',
+    'Turkish Airlines',
+    'Malaysia Airlines'
+];
+
 const UploadTicketsModal: React.FC<UploadTicketsModalProps> = memo(({
     isOpen,
     onClose,
@@ -31,21 +64,21 @@ const UploadTicketsModal: React.FC<UploadTicketsModalProps> = memo(({
         file?: string;
         airlines?: { name?: string; cost?: string }[];
     }>({});
- 
+
     const handleFileSelect = useCallback((file: File | null) => {
         setSelectedFile(file);
         if (file) {
             setErrors(prev => ({ ...prev, file: undefined }));
         }
     }, []);
- 
+
     const handleAirlineChange = useCallback((index: number, field: keyof Airline, value: string) => {
         setAirlines(prev => {
             const updatedAirlines = [...prev];
             updatedAirlines[index] = { ...updatedAirlines[index], [field]: value };
             return updatedAirlines;
         });
- 
+
         setErrors(prev => {
             if (!prev.airlines) return prev;
             const updatedErrors = [...prev.airlines];
@@ -53,7 +86,7 @@ const UploadTicketsModal: React.FC<UploadTicketsModalProps> = memo(({
             return { ...prev, airlines: updatedErrors };
         });
     }, []);
- 
+
     const addAirline = useCallback(() => {
         setAirlines(prev => [...prev, { name: '', cost: '' }]);
     }, []);
@@ -68,32 +101,32 @@ const UploadTicketsModal: React.FC<UploadTicketsModalProps> = memo(({
             });
         }
     }, [airlines.length]);
- 
+
     const validateForm = useCallback(() => {
         const newErrors: typeof errors = {};
- 
+
         if (!agencyName.trim()) {
             newErrors.agencyName = 'Travel agency name is required';
         }
- 
+
         if (!agencyExpense.trim()) {
             newErrors.agencyExpense = 'Agency expense is required';
         } else if (isNaN(Number(agencyExpense)) || Number(agencyExpense) <= 0) {
             newErrors.agencyExpense = 'Expense must be a positive number';
         }
- 
+
         if (!totalExpense.trim()) {
             newErrors.totalExpense = 'Total expense is required';
         } else if (isNaN(Number(totalExpense)) || Number(totalExpense) <= 0) {
             newErrors.totalExpense = 'Total expense must be a positive number';
         }
- 
+
         if (!selectedFile) {
             newErrors.file = 'Please select a file to upload';
         } else if (selectedFile.size > 10 * 1024 * 1024) {
             newErrors.file = 'File size must be less than 10MB';
         }
- 
+
         const airlineErrors = airlines.map((airline) => {
             const error: { name?: string; cost?: string } = {};
             if (!airline.name.trim()) {
@@ -106,22 +139,22 @@ const UploadTicketsModal: React.FC<UploadTicketsModalProps> = memo(({
             }
             return error;
         });
- 
+
         if (airlineErrors.some(error => Object.keys(error).length > 0)) {
             newErrors.airlines = airlineErrors;
         }
- 
+
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     }, [agencyName, agencyExpense, totalExpense, selectedFile, airlines]);
- 
+
     const handleSubmit = useCallback(() => {
         if (validateForm()) {
             onConfirm(agencyName, agencyExpense, totalExpense, selectedFile, airlines);
             handleClose();
         }
     }, [agencyName, agencyExpense, totalExpense, selectedFile, airlines, validateForm, onConfirm]);
- 
+
     const handleClose = useCallback(() => {
         setAgencyName('');
         setAgencyExpense('');
@@ -132,9 +165,9 @@ const UploadTicketsModal: React.FC<UploadTicketsModalProps> = memo(({
         setDragActive(false);
         onClose();
     }, [onClose]);
- 
+
     if (!isOpen) return null;
- 
+
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-lg shadow-2xl w-full max-w-4xl max-h-[80vh] flex flex-col">
@@ -152,7 +185,7 @@ const UploadTicketsModal: React.FC<UploadTicketsModalProps> = memo(({
                         <X size={20} />
                     </button>
                 </div>
- 
+
                 {/* Body */}
                 <div className="p-6 space-y-6 flex-1 overflow-y-auto">
                     {/* Travel Agency Details Row */}
@@ -162,24 +195,18 @@ const UploadTicketsModal: React.FC<UploadTicketsModalProps> = memo(({
                                 <label htmlFor="agencyName" className="block text-sm font-medium text-gray-700 mb-1">
                                     Travel Agency Name <span className='text-red-500'>*</span>
                                 </label>
-                                <input
-                                    type="text"
-                                    id="agencyName"
+                                <Autocomplete
                                     value={agencyName}
-                                    onChange={(e) => {
-                                        setAgencyName(e.target.value);
+                                    onChange={(value) => {
+                                        setAgencyName(value);
                                         if (errors.agencyName) {
                                             setErrors(prev => ({ ...prev, agencyName: undefined }));
                                         }
                                     }}
-                                    className={`w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 ${
-                                        errors.agencyName ? 'border-red-300' : 'border-gray-300'
-                                    }`}
-                                    placeholder="Enter agency name"
+                                    options={TRAVEL_AGENCIES}
+                                    placeholder="Select or type agency name"
+                                    error={errors.agencyName}
                                 />
-                                {errors.agencyName && (
-                                    <p className="mt-1 text-xs text-red-600">{errors.agencyName}</p>
-                                )}
                             </div>
                             <div>
                                 <label htmlFor="agencyExpense" className="block text-sm font-medium text-gray-700 mb-1">
@@ -211,7 +238,7 @@ const UploadTicketsModal: React.FC<UploadTicketsModalProps> = memo(({
                     </div>
 
                     {/* Airlines Details Section */}
-                    <div className="border border-gray-200 rounded-lg p-4">
+                    <div className="border border-gray-200 rounded-lg p-4 relative z-10">
                         <div className="flex items-center justify-between mb-4">
                             <h3 className="text-sm font-medium text-gray-900">Airlines Details <span className='text-red-500'>*</span></h3>
                             <button
@@ -224,22 +251,20 @@ const UploadTicketsModal: React.FC<UploadTicketsModalProps> = memo(({
                             </button>
                         </div>
                         
-                        <div className="space-y-3 max-h-40 overflow-y-auto">
+                        <div className="space-y-3 max-h-40 overflow-visible">
                             {airlines.map((airline, index) => (
                                 <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 rounded border">
                                     <div className="flex-1">
-                                        <input
-                                            type="text"
-                                            placeholder="Airline Name"
+                                        <Autocomplete
                                             value={airline.name}
-                                            onChange={(e) => handleAirlineChange(index, 'name', e.target.value)}
-                                            className={`w-full px-2 py-1 border rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 ${
-                                                errors.airlines?.[index]?.name ? 'border-red-300' : 'border-gray-300'
-                                            }`}
+                                            onChange={(value) => handleAirlineChange(index, 'name', value)}
+                                            options={AIRLINE_NAMES}
+                                            placeholder="Select or type airline name"
+                                            error={errors.airlines?.[index]?.name}
                                         />
                                     </div>
                                     <div className="flex-1 relative">
-                                        <span className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-500 text-xs">₹</span>
+                                        <span className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-500 text-xs z-10">₹</span>
                                         <input
                                             type="text"
                                             placeholder="Cost"
@@ -249,6 +274,9 @@ const UploadTicketsModal: React.FC<UploadTicketsModalProps> = memo(({
                                                 errors.airlines?.[index]?.cost ? 'border-red-300' : 'border-gray-300'
                                             }`}
                                         />
+                                        {errors.airlines?.[index]?.cost && (
+                                            <p className="mt-1 text-xs text-red-600">{errors.airlines[index].cost}</p>
+                                        )}
                                     </div>
                                     {airlines.length > 1 && (
                                         <button
@@ -294,8 +322,8 @@ const UploadTicketsModal: React.FC<UploadTicketsModalProps> = memo(({
                     </div>
 
                     {/* File Upload Section */}
-                    <div className="border border-blue-200 rounded-lg p-4 bg-blue-50">
-                        <h3 className="text-sm font-medium text-gray-900 mb-2">Attach Ticket(s)</h3>
+                    <div className="border border-gray-200 rounded-lg p-4">
+                        <h3 className="text-sm font-medium text-gray-900 mb-2">Attach Ticket</h3>
                         <FileUploader
                             onFileSelect={handleFileSelect}
                             showValidation={!!errors.file}
@@ -306,7 +334,7 @@ const UploadTicketsModal: React.FC<UploadTicketsModalProps> = memo(({
                         )}
                     </div>
                 </div>
- 
+
                 {/* Footer */}
                 <div className="flex items-center justify-end gap-3 p-4 border-t border-gray-200">
                     <button
@@ -327,5 +355,5 @@ const UploadTicketsModal: React.FC<UploadTicketsModalProps> = memo(({
         </div>
     );
 });
- 
+
 export default UploadTicketsModal;
