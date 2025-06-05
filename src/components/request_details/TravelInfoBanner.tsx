@@ -64,7 +64,7 @@ const TravelInfoBanner: React.FC<TravelInfoBannerProps> = ({
         
         if (response.data.isSuccess && response.data.result.length > 0) {
             const apiData = response.data.result[0];
-            console.log(apiData);
+            // console.log(apiData);
           
           // Transform API data to component format
           const transformedData: TravelRequestData = {
@@ -101,9 +101,7 @@ const TravelInfoBanner: React.FC<TravelInfoBannerProps> = ({
     fetchTravelRequest();
   }, [requestId, apiUrl]);
 
-  console.log(travelRequest);
-  
-  
+//   console.log(travelRequest);  
 
   const getTravelModeIcon = (travelMode: string) => {
     switch (travelMode) {
