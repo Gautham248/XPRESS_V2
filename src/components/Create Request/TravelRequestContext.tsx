@@ -299,19 +299,21 @@ interface TravelRequestProviderProps {
   children: ReactNode;
   userId: number; 
 }
-const userString = localStorage.getItem('user');
-  let userId;
+// const userString = localStorage.getItem('user');
+//   let userId;
  
-  if (userString) {
-    const user = JSON.parse(userString);
-    userId = user.userId;
-  } else {
-    console.log('No user found in localStorage.');
-  }
+//   if (userString) {
+//     const user = JSON.parse(userString);
+//     userId = user.userId;
+//   } else {
+//     console.log('No user found in localStorage.');
+//   }
+
+
 
 export const TravelRequestProvider: React.FC<TravelRequestProviderProps> = ({
   children,
-  userId ,
+  userId =1,
 }) => {
   const [state, dispatch] = useReducer(travelRequestReducer, initialState);
   const [isSubmitting, setIsSubmitting] = useState(false);
