@@ -210,7 +210,7 @@ const UploadTicketsModal: React.FC<UploadTicketsModalProps> = memo(({
                             </div>
                             <div>
                                 <label htmlFor="agencyExpense" className="block text-sm font-medium text-gray-700 mb-1">
-                                    Travel Agency Expense <span className='text-red-500'>*</span>
+                                    Agency Booking Charges <span className='text-red-500'>*</span>
                                 </label>
                                 <div className="relative">
                                     <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">₹</span>
