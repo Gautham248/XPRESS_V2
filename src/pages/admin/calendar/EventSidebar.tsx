@@ -1,27 +1,16 @@
+// src/pages/admin/calendar/EventSidebar.tsx
+import React from 'react';
+import { TravelEvent, TravelRequest } from './Calendar'; // Import main types
 import { NavigateFunction } from 'react-router-dom';
-
-interface TravelRequest {
-  requestId: number;
-  employeeName: string;
-  sourcePlace: string;
-  sourceCountry: string;
-  destinationPlace: string;
-  destinationCountry: string;
-  currentStatusName: string;
-}
-
-interface TravelEvent {
-  type: 'Departure' | 'Return';
-  request: TravelRequest;
-}
+import { CalendarDays, PlaneTakeoff, PlaneLanding, User, MapPin, Flag, Info } from 'lucide-react';
 
 interface EventSidebarProps {
   selectedDate: Date | null;
-  selectedEventType: 'Departure' | 'Return' | null;
+  selectedEventType: 'OutboundDeparture' | 'ReturnArrival' | null;
   getEventsForDate: (date: Date) => TravelEvent[];
   navigate: NavigateFunction;
-  view: 'Month' | 'Week';
-  currentDate: Date;
+  // Optional: A function to switch the selectedEventType if tabs are used in sidebar
+  onEventTypeChange?: (type: 'OutboundDeparture' | 'ReturnArrival' | null) => void;
 }
 
 const EventSidebar: React.FC<EventSidebarProps> = ({
@@ -29,172 +18,152 @@ const EventSidebar: React.FC<EventSidebarProps> = ({
   selectedEventType,
   getEventsForDate,
   navigate,
-  view,
-  currentDate,
+  onEventTypeChange, // Optional prop for tab-like behavior
 }) => {
-  const formatDate = (date: Date): string => {
-    return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+  if (!selectedDate) {
+    return (
+      <div className="lg:flex-[0.35] bg-white rounded-lg shadow-sm p-6 text-center text-gray-500">
+        <CalendarDays className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+        <p className="text-lg font-medium">Select a date</p>
+        <p className="text-sm">Click on a day in the calendar to see travel events.</p>
+      </div>
+    );
+  }
+
+  const eventsForSelectedDate = getEventsForDate(selectedDate);
+  let displayedEvents: TravelEvent[] = []; // Changed to TravelEvent[] to include type info
+  let title = "Events";
+
+  if (selectedEventType) {
+    displayedEvents = eventsForSelectedDate.filter(event => event.type === selectedEventType);
+    title = selectedEventType === 'OutboundDeparture' ? "Outbound Departures" : "Return Arrivals";
+  } else if (eventsForSelectedDate.length > 0) {
+    // If no specific type is selected, show all events for the day
+    displayedEvents = eventsForSelectedDate;
+    title = "All Events for Selected Date";
+  }
+
+  const formatDate = (dateString: string | null | undefined): string => {
+    if (!dateString) return 'N/A';
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true
+    });
   };
 
-  const formatMonth = (date: Date): string => {
-    return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  const handleRequestClick = (requestId: string) => {
+    // Example navigation: navigate to a travel request detail page
+    // Adjust the path as per your routing setup
+    navigate(`/admin/travel-requests/${requestId}`);
+    // Or if it's a modal:
+    // openModalWithRequest(requestId);
   };
 
-  const getEventTypeStyles = (eventType: 'Departure' | 'Return') => {
-    if (eventType === 'Departure') {
+  // Helper function to get color classes based on event type
+  const getEventColorClasses = (eventType: 'OutboundDeparture' | 'ReturnArrival') => {
+    if (eventType === 'OutboundDeparture') {
       return {
-        borderColor: 'border-blue-500',
-        bgColor: 'bg-blue-50',
-        hoverBgColor: 'hover:bg-blue-100',
-        badgeColor: 'bg-blue-500',
-        textColor: 'text-blue-700',
-        icon: (
-          <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
-          </svg>
-        )
+        background: 'bg-blue-50',
+        border: 'border-blue-200 hover:border-blue-300',
+        iconColor: 'text-blue-500'
       };
     } else {
       return {
-        borderColor: 'border-green-500',
-        bgColor: 'bg-green-50',
-        hoverBgColor: 'hover:bg-green-100',
-        badgeColor: 'bg-green-500',
-        textColor: 'text-green-700',
-        icon: (
-          <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
-          </svg>
-        )
+        background: 'bg-green-50',
+        border: 'border-green-200 hover:border-green-300',
+        iconColor: 'text-green-500'
       };
     }
   };
 
   return (
-    <div className="flex-[0.35] bg-white rounded-lg shadow-lg border border-gray-200 p-6 h-fit overflow-hidden">
-      {/* Header */}
-      <div className="flex items-center mb-6 pb-4 border-b border-gray-100">
-        <div className="flex items-center justify-center w-10 h-10 bg-gray-100 rounded-full mr-3">
-          <svg
-            className="w-5 h-5 text-gray-600"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            xmlns="http://www.w3.org/2000/svg"
+    <div className="lg:flex-[0.35] bg-white rounded-lg shadow-sm p-4 sm:p-6 h-full max-h-[calc(100vh-150px)] overflow-y-auto">
+      <h2 className="text-xl sm:text-2xl font-semibold text-gray-800 mb-1">
+        {selectedDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+      </h2>
+      <p className="text-lg font-medium text-blue-600 mb-4">{title}</p>
+
+      {/* Optional: Tabs to switch between OutboundDeparture and ReturnArrival if both exist */}
+      {onEventTypeChange && eventsForSelectedDate.some(e => e.type === 'OutboundDeparture') && eventsForSelectedDate.some(e => e.type === 'ReturnArrival') && (
+        <div className="mb-4 flex border-b">
+          <button
+            onClick={() => onEventTypeChange('OutboundDeparture')}
+            className={`py-2 px-4 font-medium ${selectedEventType === 'OutboundDeparture' ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-            />
-          </svg>
+            Outbound Departures
+          </button>
+          <button
+            onClick={() => onEventTypeChange('ReturnArrival')}
+            className={`py-2 px-4 font-medium ${selectedEventType === 'ReturnArrival' ? 'border-b-2 border-green-500 text-green-600' : 'text-gray-500 hover:text-gray-700'}`}
+          >
+            Return Arrivals
+          </button>
         </div>
-        <div>
-          <h2 className="text-xl font-semibold text-gray-800">
-            {selectedDate ? formatDate(selectedDate) : (view === 'Month' ? formatMonth(currentDate) : formatDate(currentDate))}
-          </h2>
-          {selectedDate && (
-            <p className="text-sm text-gray-500 mt-1">Travel Events</p>
-          )}
-        </div>
-      </div>
+      )}
 
-      {/* Content */}
-      {selectedDate ? (
-        <div className="space-y-2" style={{ maxHeight: 'calc(100vh - 300px)', overflowY: 'hidden' }}>
-          {getEventsForDate(selectedDate).length > 0 ? (
-            getEventsForDate(selectedDate)
-              .filter((event: TravelEvent) => !selectedEventType || event.type === selectedEventType)
-              .map((event: TravelEvent, idx: number) => {
-                const isDeparture = event.type === 'Departure';
-                const fromPlace = isDeparture ? event.request.sourcePlace : event.request.destinationPlace;
-                const fromCountry = isDeparture ? event.request.sourceCountry : event.request.destinationCountry;
-                const toPlace = isDeparture ? event.request.destinationPlace : event.request.sourcePlace;
-                const toCountry = isDeparture ? event.request.destinationCountry : event.request.sourceCountry;
-
-                const styles = getEventTypeStyles(event.type);
-
-                return (
-                  <div
-                    key={`${event.type}-${event.request.requestId}-${idx}`}
-                    className={`${styles.bgColor} p-3 rounded-md border-l-3 ${styles.borderColor} cursor-pointer
-                      ${styles.hoverBgColor} transition-all duration-200 hover:shadow-md overflow-hidden`}
-                    onClick={() => navigate(`/admin/travel-requests/${event.request.requestId}`)}
-                  >
-                    {/* Event Type Badge */}
-                    <div className="flex items-center justify-between mb-2">
-                      <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold text-white ${styles.badgeColor}`}>
-                        {styles.icon}
-                        {event.type.toUpperCase()}
-                      </div>
-                      <span className="text-xs text-gray-500 font-medium">
-                        ID: #{event.request.requestId}
-                      </span>
-                    </div>
-
-                    {/* Employee Name */}
-                    <div className="mb-2">
-                      <h3 className="text-base font-semibold text-gray-800">
-                        {event.request.employeeName}
-                      </h3>
-                    </div>
-
-                    {/* Route Information */}
-                    <div className="space-y-1">
-                      <div className="flex items-center text-sm">
-                        <div className="flex items-center mr-2">
-                          <div className="w-2 h-2 bg-gray-400 rounded-full mr-2"></div>
-                          <span className="font-medium text-gray-600">From:</span>
-                        </div>
-                        <span className="text-gray-800 font-medium">
-                          {fromPlace}, {fromCountry}
-                        </span>
-                      </div>
-
-                      <div className="flex items-center text-sm">
-                        <div className="flex items-center mr-2">
-                          <div className={`w-2 h-2 rounded-full mr-2 ${event.type === 'Departure' ? 'bg-blue-500' : 'bg-green-500'}`}></div>
-                          <span className="font-medium text-gray-600">To:</span>
-                        </div>
-                        <span className="text-gray-800 font-medium">
-                          {toPlace}, {toCountry}
-                        </span>
-                      </div>
-
-                      {/* Status */}
-                      <div className="flex items-center text-sm mt-2">
-                        <span className="font-medium text-gray-600">Status:</span>
-                        <span className="ml-2 text-gray-800 font-medium">
-                          {event.request.currentStatusName}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })
-          ) : (
-            <div className="text-center py-8">
-              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-              </div>
-              <p className="text-gray-500 font-medium">No travel events</p>
-              <p className="text-gray-400 text-sm mt-1">No travel requests scheduled for this date</p>
-            </div>
-          )}
+      {displayedEvents.length === 0 ? (
+        <div className="text-center text-gray-500 py-10">
+          <Info className="mx-auto h-10 w-10 text-gray-400 mb-3" />
+          <p>No {selectedEventType ? (selectedEventType === 'OutboundDeparture' ? 'outbound departures' : 'return arrivals') : 'events'} scheduled for this date.</p>
         </div>
       ) : (
-        <div className="text-center py-12">
-          <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
-            </svg>
-          </div>
-          <p className="text-gray-500 font-medium text-lg">Select a date</p>
-          <p className="text-gray-400 text-sm mt-2">Choose a date from the calendar to view travel events</p>
-        </div>
+        <ul className="space-y-4">
+          {displayedEvents.map((event) => {
+            const colorClasses = getEventColorClasses(event.type);
+            const request = event.request;
+            
+            return (
+              <li
+                key={request.requestId}
+                onClick={() => handleRequestClick(request.requestId)}
+                className={`${colorClasses.background} p-3 sm:p-4 rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer border ${colorClasses.border}`}
+              >
+                <div className="flex items-center mb-2">
+                  {event.type === 'OutboundDeparture' ? (
+                    <PlaneTakeoff className={`h-5 w-5 ${colorClasses.iconColor} mr-3 flex-shrink-0`} />
+                  ) : (
+                    <PlaneLanding className={`h-5 w-5 ${colorClasses.iconColor} mr-3 flex-shrink-0`} />
+                  )}
+                  <h3 className="text-md sm:text-lg font-semibold text-gray-700 truncate" title={request.employeeName}>
+                    {request.employeeName}
+                  </h3>
+                </div>
+
+                <div className="text-xs sm:text-sm text-gray-600 space-y-1.5">
+                  <p className="flex items-center">
+                    <MapPin className="h-3.5 w-3.5 mr-2 text-gray-400 flex-shrink-0" />
+                    <span className="font-medium">From:</span> {request.sourcePlace}, {request.sourceCountry}
+                  </p>
+                  <p className="flex items-center">
+                    <Flag className="h-3.5 w-3.5 mr-2 text-gray-400 flex-shrink-0" />
+                    <span className="font-medium">To:</span> {request.destinationPlace}, {request.destinationCountry}
+                  </p>
+                  <p>
+                    <span className="font-medium">Outbound:</span> {formatDate(request.outboundDepartureDate)} - {formatDate(request.outboundArrivalDate)}
+                  </p>
+                  {request.returnDepartureDate && (
+                    <p>
+                      <span className="font-medium">Return:</span> {formatDate(request.returnDepartureDate)} - {formatDate(request.returnArrivalDate)}
+                    </p>
+                  )}
+                  <p className="mt-1 pt-1 border-t border-gray-200">
+                    <span className="font-medium">Status:</span> 
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ml-2
+                      ${request.currentStatusName === 'Pending' ? 'bg-yellow-100 text-yellow-700' :
+                        request.currentStatusName === 'Tickets Dispatched' ? 'bg-blue-100 text-blue-700' :
+                        request.currentStatusName === 'In-transit' ? 'bg-indigo-100 text-indigo-700' :
+                        request.currentStatusName === 'Returned' ? 'bg-green-100 text-green-700' :
+                        request.currentStatusName === 'Closed' ? 'bg-gray-200 text-gray-700' :
+                        'bg-gray-100 text-gray-600' // Default
+                      }`}
+                    >
+                      {request.currentStatusName}
+                    </span>
+                  </p>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
       )}
     </div>
   );
