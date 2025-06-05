@@ -43,7 +43,7 @@ function App() {
 
         {/* Manager Routes */}
         <Route path="/manager" element={
-          <ProtectedRoute allowedRoles={['manager']}>
+          <ProtectedRoute allowedRoles={['manager','project manager','ceo','associate software engineer','vice president']}>
             <RoleLayout role="manager" />
           </ProtectedRoute>
         }>
