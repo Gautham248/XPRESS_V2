@@ -1,129 +1,133 @@
-import EventCard from './EventCard';
-
-interface TravelEvent {
-  type: 'Departure' | 'Return';
-  request: any;
-}
+// src/pages/admin/calendar/WeekView.tsx
+import React from 'react';
+import { TravelEvent, DayInfo, TravelRequest } from './Calendar'; // Import DayInfo and TravelRequest
+import EventCard from './EventCard'; // Assuming EventCard is designed for these event types
 
 interface WeekViewProps {
   currentDate: Date;
-  getEventsForDate: (date: Date) => TravelEvent[];
+  getEventsForDate: (date: Date) => TravelEvent[]; // Uses updated TravelEvent
   selectedDate: Date | null;
-  setSelectedDate: (date: Date | null) => void;
-  setSelectedEventType: (type: 'Departure' | 'Return' | null) => void;
+  onDayCellClick: (dayInfo: DayInfo) => void; // New prop
 }
 
 const WeekView: React.FC<WeekViewProps> = ({
   currentDate,
   getEventsForDate,
   selectedDate,
-  setSelectedDate,
-  setSelectedEventType,
+  onDayCellClick, // Use this prop
 }) => {
   const startOfWeek = new Date(currentDate);
-  startOfWeek.setDate(currentDate.getDate() - currentDate.getDay());
-  const weekDays: Date[] = Array.from({ length: 7 }, (_, i) => {
-    const day = new Date(startOfWeek);
-    day.setDate(startOfWeek.getDate() + i);
-    return day;
+  startOfWeek.setDate(currentDate.getDate() - currentDate.getDay()); // Ensure start of week is Sunday
+
+  const weekDays: DayInfo[] = Array.from({ length: 7 }, (_, i) => {
+    const dayDate = new Date(startOfWeek);
+    dayDate.setDate(startOfWeek.getDate() + i);
+    return {
+      day: dayDate.getDate(),
+      currentMonth: dayDate.getMonth() === currentDate.getMonth(), // Check if day is in current view's primary month
+      month: dayDate.getMonth(),
+      year: dayDate.getFullYear(),
+    };
   });
 
-  const today = new Date();
-  const istOffset = 5.5 * 60 * 60 * 1000;
-  const todayIST = new Date(today.getTime() + istOffset);
+  const today = new Date(); // Use local today
 
-  const handleDateClick = (day: number, month: number, year: number): void => {
-    const clickedDate = new Date(year, month, day);
-    setSelectedDate(clickedDate);
-    setSelectedEventType(null);
+  // Handle day click - this will show both return and departure events
+  const handleDayClick = (dayInfo: DayInfo) => {
+    onDayCellClick(dayInfo);
   };
 
-  const getEventCounts = (events: TravelEvent[]): { Departure: number; Return: number } => {
-    const counts = {
-      Departure: 0,
-      Return: 0,
-    };
+  // This function now prepares data for EventCard
+  const renderEventCardsForDay = (dayInfo: DayInfo): JSX.Element[] => {
+    const dayDate = new Date(dayInfo.year, dayInfo.month, dayInfo.day);
+    const events = getEventsForDate(dayDate);
+    const eventCards: JSX.Element[] = [];
 
-    events.forEach((event: TravelEvent) => {
-      if (event.type === 'Departure') counts.Departure++;
-      if (event.type === 'Return') counts.Return++;
-    });
+    const outboundDepartures = events.filter(e => e.type === 'OutboundDeparture');
+    const returnArrivals = events.filter(e => e.type === 'ReturnArrival');
 
-    return counts;
-  };
-
-  const renderEventCards = (day: Date, events: TravelEvent[]): JSX.Element => {
-    const counts = getEventCounts(events);
-    const cards: JSX.Element[] = [];
-
-    if (counts.Departure > 0) {
-      cards.push(
+    if (outboundDepartures.length > 0) {
+      eventCards.push(
         <EventCard
-          key="departure"
-          type="Departure"
-          count={counts.Departure}
-          onClick={() => {
-            setSelectedDate(day);
-            setSelectedEventType('Departure');
+          key={`${dayInfo.year}-${dayInfo.month}-${dayInfo.day}-outbound`}
+          type="OutboundDeparture" // Ensure EventCard handles this type
+          count={outboundDepartures.length}
+          requests={outboundDepartures.map(e => e.request)} // Pass requests to EventCard
+          onClick={(e) => {
+           
+            handleDayClick(dayInfo); // Still trigger day selection to show both types
           }}
         />
       );
     }
 
-    if (counts.Return > 0) {
-      cards.push(
+    if (returnArrivals.length > 0) {
+      eventCards.push(
         <EventCard
-          key="return"
-          type="Return"
-          count={counts.Return}
-          onClick={() => {
-            setSelectedDate(day);
-            setSelectedEventType('Return');
+          key={`${dayInfo.year}-${dayInfo.month}-${dayInfo.day}-return`}
+          type="ReturnArrival" // Ensure EventCard handles this type
+          count={returnArrivals.length}
+          requests={returnArrivals.map(e => e.request)} // Pass requests to EventCard
+          onClick={(e) => {
+          
+            handleDayClick(dayInfo); // Still trigger day selection to show both types
           }}
         />
       );
     }
-
-    return cards.length > 0 ? (
-      <div className="flex flex-col space-y-2">
-        {cards}
-      </div>
-    ) : (
-      <div className="text-gray-500 text-sm text-center py-2">No events</div>
-    );
+    return eventCards;
   };
 
   return (
-    <div className="h-[384px]">
-      <div className="grid grid-cols-7 gap-2 h-full">
-        {weekDays.map((day: Date, index: number) => {
-          const events = getEventsForDate(day);
+    <div className="h-[calc(100vh-250px)] min-h-[384px]"> {/* Responsive height */}
+      <div className="grid grid-cols-7 gap-1 sm:gap-2 h-full">
+        {weekDays.map((dayInfo: DayInfo, index: number) => {
+          const dayDate = new Date(dayInfo.year, dayInfo.month, dayInfo.day);
           const isSelected =
             selectedDate &&
-            selectedDate.getFullYear() === day.getFullYear() &&
-            selectedDate.getMonth() === day.getMonth() &&
-            selectedDate.getDate() === day.getDate();
+            selectedDate.getFullYear() === dayInfo.year &&
+            selectedDate.getMonth() === dayInfo.month &&
+            selectedDate.getDate() === dayInfo.day;
+
           const isToday =
-            day.getFullYear() === todayIST.getFullYear() &&
-            day.getMonth() === todayIST.getMonth() &&
-            day.getDate() === todayIST.getDate();
+            today.getFullYear() === dayInfo.year &&
+            today.getMonth() === dayInfo.month &&
+            today.getDate() === dayInfo.day;
+
+          let headerClasses = `text-center text-xs sm:text-sm font-medium py-2 `;
+          headerClasses += isToday ? 'text-blue-600' : 'text-gray-600';
+
+          let dayCellClasses = `flex-1 p-1 sm:p-2 rounded-md cursor-pointer transition-all duration-200 overflow-y-auto bg-white border border-gray-200`;
+          if (isSelected) {
+           dayCellClasses += ` border-2 border-blue-500 ring-2 ring-blue-300 bg-white`;
+          } else if (isToday) {
+            dayCellClasses += ` !border-2 !border-blue-500 bg-blue-50`;
+          } else {
+            dayCellClasses += ` hover:bg-gray-100`;
+          }
 
           return (
-            <div key={index} className="flex flex-col h-full">
-              <div className="text-center text-gray-600 font-medium">
-                {day.toLocaleDateString('en-US', { weekday: 'short' })}
+            <div key={index} className="flex flex-col h-full bg-gray-50 rounded-lg">
+              <div className={headerClasses}>
+                <div>{dayDate.toLocaleDateString('en-US', { weekday: 'short' })}</div>
+                <div
+                  className={`text-lg font-semibold mt-1 cursor-pointer ${isSelected ? 'text-blue-700' : ''}`}
+                  onClick={() => handleDayClick(dayInfo)} // Click on date number selects day and shows both event types
+                >
+                  {dayInfo.day}
+                </div>
               </div>
               <div
-                className={`h-10 flex items-center justify-center rounded-md cursor-pointer relative
-                  ${isSelected ? 'bg-blue-100' : 'bg-gray-50'}
-                  ${isToday ? 'bg-blue-200' : ''}
-                  hover:bg-gray-200 hover:shadow-sm hover:border hover:border-gray-300 transition-all duration-200`}
-                onClick={() => handleDateClick(day.getDate(), day.getMonth(), day.getFullYear())}
+                className={dayCellClasses}
+                onClick={() => handleDayClick(dayInfo)} // Click anywhere in the day cell shows both event types
               >
-                <span className="text-gray-800 text-lg">{day.getDate()}</span>
-              </div>
-              <div className="flex-1 mt-2 flex flex-col space-y-1 overflow-auto">
-                {renderEventCards(day, events)}
+                {renderEventCardsForDay(dayInfo).length > 0 ? (
+                    <div className="space-y-1 sm:space-y-2">
+                        {renderEventCardsForDay(dayInfo)}
+                    </div>
+                ) : (
+                    <div className="text-gray-400 text-xs sm:text-sm text-center pt-4">No events</div>
+                )}
               </div>
             </div>
           );
