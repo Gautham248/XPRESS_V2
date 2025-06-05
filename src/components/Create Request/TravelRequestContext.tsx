@@ -297,12 +297,21 @@ const TravelRequestContext = createContext<TravelRequestContextType | undefined>
 
 interface TravelRequestProviderProps {
   children: ReactNode;
-  userId?: number; 
+  userId: number; 
 }
+const userString = localStorage.getItem('user');
+  let userId;
+ 
+  if (userString) {
+    const user = JSON.parse(userString);
+    userId = user.userId;
+  } else {
+    console.log('No user found in localStorage.');
+  }
 
 export const TravelRequestProvider: React.FC<TravelRequestProviderProps> = ({
   children,
-  userId = 1, 
+  userId ,
 }) => {
   const [state, dispatch] = useReducer(travelRequestReducer, initialState);
   const [isSubmitting, setIsSubmitting] = useState(false);
