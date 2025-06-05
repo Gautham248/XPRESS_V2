@@ -13,8 +13,8 @@ const AdditionalServicesSection: React.FC = () => {
     dropoffLocation,
     requiresFoodPreference,
     foodPreference,
-    foodPreferenceComment, // Add this to your state type
-    source // Added source to get the source location
+    foodPreferenceComment, 
+    source 
   } = state;
 
   const parseLocationFromLabel = (label: string) => {
@@ -25,22 +25,18 @@ const AdditionalServicesSection: React.FC = () => {
     let country = "";
     
     if (parts.length === 1) {
-      // Only city provided
       city = parts[0];
     } else if (parts.length === 2) {
-      // City and Country
       city = parts[0];
-      country = parts[1]; // Last element is country
+      country = parts[1]; 
     } else if (parts.length === 3) {
-      // City, State, Country
       city = parts[0];
       state = parts[1];
-      country = parts[2]; // Last element is country
+      country = parts[2]; 
     } else if (parts.length >= 4) {
-      // City, District/Area, State, Country (like Kochi, Ernakulam, Kerala, India)
       city = parts[0];
-      state = parts[parts.length - 2]; // Second to last is state
-      country = parts[parts.length - 1]; // Last element is country
+      state = parts[parts.length - 2]; 
+      country = parts[parts.length - 1]; 
     }
     
     return { city, state, country };
@@ -50,7 +46,6 @@ const AdditionalServicesSection: React.FC = () => {
     let pickupLocationData;
     
     if (location.custom && location.label) {
-      // For custom entries, parse the label properly
       const parsed = parseLocationFromLabel(location.label);
       pickupLocationData = {
         country: parsed.country,
@@ -60,7 +55,6 @@ const AdditionalServicesSection: React.FC = () => {
         value: location.value || `${parsed.city}-${parsed.state}-${parsed.country}`.toLowerCase().replace(/\s+/g, '-')
       };
     } else {
-      // For API results, use the existing logic
       pickupLocationData = {
         country: location.country || '',
         city: location.city || location.town || location.village || '',
@@ -81,7 +75,6 @@ const AdditionalServicesSection: React.FC = () => {
     let dropoffLocationData;
     
     if (location.custom && location.label) {
-      // For custom entries, parse the label properly
       const parsed = parseLocationFromLabel(location.label);
       dropoffLocationData = {
         country: parsed.country,
@@ -91,7 +84,6 @@ const AdditionalServicesSection: React.FC = () => {
         value: location.value || `${parsed.city}-${parsed.state}-${parsed.country}`.toLowerCase().replace(/\s+/g, '-')
       };
     } else {
-      // For API results, use the existing logic
       dropoffLocationData = {
         country: location.country || '',
         city: location.city || location.town || location.village || '',
@@ -108,7 +100,6 @@ const AdditionalServicesSection: React.FC = () => {
     dispatch({ type: 'SET_DROPOFF_LOCATION', payload: dropoffLocationData.label });
   };
 
-  // Set pickup location to source location when pickup is required
   React.useEffect(() => {
     if (requiresPickup && source && !pickupLocation) {
       const sourceLocationString = source.label || [source.city, source.state, source.country].filter(Boolean).join(", ");
@@ -279,7 +270,6 @@ const AdditionalServicesSection: React.FC = () => {
               </div>
             </div>
 
-            {/* Food Preference Comment Box */}
             {foodPreference && (
               <div className="mt-4">
                 <label htmlFor="foodComment" className="block text-sm font-medium text-gray-700 mb-2">

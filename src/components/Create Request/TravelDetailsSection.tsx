@@ -2,11 +2,10 @@ import React, { useEffect, useState } from 'react';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 import { Plane, Train, Bus, Car, AlertCircle, MapPin, Calendar, Clock } from 'lucide-react';
-import Select from 'react-select'; // Import react-select
+import Select from 'react-select'; 
 import { useTravelRequest } from './TravelRequestContext';
 import LocationSearch from './LocationSearch';
 
-// Define a type for project code options
 interface ProjectCodeOption {
   value: string;
   label: string;
@@ -71,7 +70,6 @@ const TravelDetailsSection: React.FC = () => {
     }
   }, [travelType, source, destination]);
 
-  // Fetch project codes from API
   useEffect(() => {
     const fetchProjectCodes = async () => {
       setProjectCodesLoading(true);
@@ -81,16 +79,13 @@ const TravelDetailsSection: React.FC = () => {
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
-        // --- MODIFICATION START ---
-        // Expect an array of strings directly from the API
         const data: string[] = await response.json(); 
         
-        // Map the array of strings to the { value, label } format for react-select
         const formattedCodes = data.map((code: string) => ({
           value: code,
           label: code 
         }));
-        // --- MODIFICATION END ---
+        
 
         setProjectCodesList(formattedCodes);
       } catch (error) {

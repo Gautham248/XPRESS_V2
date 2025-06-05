@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useReducer, ReactNode, useState, useEffect } from 'react';
-import { travelRequestService } from './TravelRequestService'; // Ensure this path is correct
+import { travelRequestService } from './TravelRequestService'; 
 
-// Location interface - matches TravelRequestService
+
 export interface Location {
   country: string;
   city: string;
@@ -10,7 +10,7 @@ export interface Location {
   value: string;
 }
 
-// Updated interface to match TravelRequestService exactly
+
 interface TravelRequestState {
   travelType: 'domestic' | 'international';
   tripType: 'oneWay' | 'roundTrip';
@@ -31,13 +31,12 @@ interface TravelRequestState {
   pickupLocation: string;
   dropoffLocation: string;
   projectCode: string;
-  reason: string; // Maps to purposeOfTravel in service
+  reason: string; 
   comments: string;
   requiresFoodPreference: boolean;
   foodPreference: 'veg' | 'non-veg';
   foodPreferenceComment: string | null;
   attendedCct: boolean;
-  // Legacy fields for backward compatibility
   departureDate: Date | null;
   returnDate: Date | null;
 }
@@ -72,7 +71,6 @@ type TravelRequestAction =
   | { type: 'SET_ATTENDED_CCT'; payload: boolean }
   | { type: 'RESET_FORM' };
 
-// Initial state
 const initialState: TravelRequestState = {
   travelType: 'domestic',
   tripType: 'roundTrip',
@@ -99,21 +97,17 @@ const initialState: TravelRequestState = {
   foodPreference: 'veg',
   foodPreferenceComment: null,
   attendedCct: false,
-  // Legacy fields
   departureDate: null,
   returnDate: null,
 };
 
-// Reducer function
 const travelRequestReducer = (state: TravelRequestState, action: TravelRequestAction): TravelRequestState => {
   switch (action.type) {
     case 'SET_TRAVEL_TYPE':
-      // International travel defaults to flight, domestic can be flexible
       const newTransportMode = action.payload === 'international' ? 'flight' : state.transportMode;
       return { ...state, travelType: action.payload, transportMode: newTransportMode };
     
     case 'SET_TRIP_TYPE':
-      // If changing to oneWay, clear return-related dates and times
       if (action.payload === 'oneWay') {
         return { 
           ...state, 
@@ -137,7 +131,7 @@ const travelRequestReducer = (state: TravelRequestState, action: TravelRequestAc
       return { 
         ...state, 
         outboundDepartureDate: action.payload,
-        departureDate: action.payload // Keep legacy field in sync
+        departureDate: action.payload 
       };
     
     case 'SET_OUTBOUND_DEPARTURE_TIME':
@@ -153,7 +147,7 @@ const travelRequestReducer = (state: TravelRequestState, action: TravelRequestAc
       return { 
         ...state, 
         returnDepartureDate: action.payload,
-        returnDate: action.payload // Keep legacy field in sync
+        returnDate: action.payload 
       };
     
     case 'SET_RETURN_DEPARTURE_TIME':
@@ -165,7 +159,7 @@ const travelRequestReducer = (state: TravelRequestState, action: TravelRequestAc
     case 'SET_RETURN_ARRIVAL_TIME':
       return { ...state, returnArrivalTime: action.payload };
     
-    // Legacy actions for backward compatibility
+    
     case 'SET_DEPARTURE_DATE':
       return { 
         ...state, 
@@ -238,10 +232,10 @@ const travelRequestReducer = (state: TravelRequestState, action: TravelRequestAc
   }
 };
 
-// Validation function for travel locations (domestic/international consistency)
+
 const validateTravelLocationsConsistency = (state: TravelRequestState): string | null => {
   if (!state.source?.country || !state.destination?.country) {
-    return null; // Not enough info to validate
+    return null; 
   }
 
   const sameCountry = state.source.country.toLowerCase() === state.destination.country.toLowerCase();
@@ -256,7 +250,7 @@ const validateTravelLocationsConsistency = (state: TravelRequestState): string |
   return null;
 };
 
-// Success Popup Component
+
 const SuccessPopup: React.FC<{ message: string; onClose: () => void }> = ({ message, onClose }) => {
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -303,12 +297,12 @@ const TravelRequestContext = createContext<TravelRequestContextType | undefined>
 
 interface TravelRequestProviderProps {
   children: ReactNode;
-  userId?: number; // Changed from employeeId to userId to match service
+  userId?: number; 
 }
 
 export const TravelRequestProvider: React.FC<TravelRequestProviderProps> = ({
   children,
-  userId = 1, // Default userId if not provided
+  userId = 1, 
 }) => {
   const [state, dispatch] = useReducer(travelRequestReducer, initialState);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -317,7 +311,6 @@ export const TravelRequestProvider: React.FC<TravelRequestProviderProps> = ({
   const [successMessage, setSuccessMessage] = useState('');
 
   const validateForm = (): string | null => {
-    // Basic required field validation
     if (!state.source || !state.source.city || !state.source.country) {
       return 'Please select a valid source location (city and country).';
     }
@@ -326,30 +319,25 @@ export const TravelRequestProvider: React.FC<TravelRequestProviderProps> = ({
       return 'Please select a valid destination location (city and country).';
     }
     
-    // Check if source and destination are the same
     if (state.source.value && state.destination.value && state.source.value === state.destination.value) {
       return 'Source and destination cannot be the same location.';
     }
 
-    // Check travel type consistency
     const locationConsistencyError = validateTravelLocationsConsistency(state);
     if (locationConsistencyError) {
       return locationConsistencyError;
     }
 
-    // Date validation
     if (!state.outboundDepartureDate) {
       return 'Please select an outbound departure date.';
     }
     
-    // Check if departure date is in the past
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     if (state.outboundDepartureDate < today) {
       return 'Outbound departure date cannot be in the past.';
     }
 
-    // Round trip validation
     if (state.tripType === 'roundTrip') {
       if (!state.returnDepartureDate) {
         return 'Please select a return departure date for round trip.';
@@ -359,12 +347,10 @@ export const TravelRequestProvider: React.FC<TravelRequestProviderProps> = ({
       }
     }
 
-    // Transport mode validation
     if (!state.transportMode) {
       return 'Please select a mode of transport.';
     }
 
-    // Required text fields
     if (!state.projectCode.trim()) {
       return 'Please enter a project code.';
     }
@@ -373,7 +359,6 @@ export const TravelRequestProvider: React.FC<TravelRequestProviderProps> = ({
       return 'Please enter the purpose of travel.';
     }
 
-    // Pickup/Dropoff validation
     if (state.requiresPickup && !state.pickupLocation.trim()) {
       return 'Please specify a pickup location when "Requires Pickup" is selected.';
     }
@@ -382,19 +367,17 @@ export const TravelRequestProvider: React.FC<TravelRequestProviderProps> = ({
       return 'Please specify a drop-off location when "Requires Drop-off" is selected.';
     }
 
-    // Food preference validation
     if (state.requiresFoodPreference && !state.foodPreference) {
       return 'Please select a food preference.';
     }
 
-    return null; // Form is valid
+    return null; 
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitError(null);
 
-    // Validate form before submission
     const validationError = validateForm();
     if (validationError) {
       setSubmitError(validationError);
@@ -412,7 +395,6 @@ export const TravelRequestProvider: React.FC<TravelRequestProviderProps> = ({
         console.log('Submission successful:', result);
         setSuccessMessage(result.message || 'Travel request submitted successfully!');
         setShowSuccessPopup(true);
-        // Reset form after a short delay
         setTimeout(() => {
           dispatch({ type: 'RESET_FORM' });
         }, 1500);
