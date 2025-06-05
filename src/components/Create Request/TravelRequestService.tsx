@@ -1,6 +1,5 @@
 import axios, { AxiosError } from 'axios';
 
-// Location interface - ensure this matches your LocationSearch component
 export interface Location {
   country: string;
   city: string;
@@ -9,7 +8,7 @@ export interface Location {
   value: string;
 }
 
-// Frontend state interface - matches TravelRequestContext
+
 export interface TravelRequestState {
   travelType: 'domestic' | 'international';
   tripType: 'oneWay' | 'roundTrip';
@@ -30,18 +29,18 @@ export interface TravelRequestState {
   pickupLocation: string;
   dropoffLocation: string;
   projectCode: string;
-  reason: string; // Maps to purposeOfTravel
+  reason: string; 
   comments: string;
   requiresFoodPreference: boolean;
   foodPreference: 'veg' | 'non-veg';
   foodPreferenceComment: string | null;
   attendedCct: boolean;
-  // Legacy fields for backward compatibility
+
   departureDate: Date | null;
   returnDate: Date | null;
 }
 
-// Backend DTO structure - Updated to match your new DTO
+
 interface TravelRequestCreateDTO {
   userId: number;
   travelModeId: number;
@@ -52,21 +51,21 @@ interface TravelRequestCreateDTO {
   sourceCountry: string;
   destinationPlace: string;
   destinationCountry: string;
-  outboundDepartureDate: string; // ISO string (UTC)
-  outboundArrivalDate: string;   // ISO string (UTC)
-  returnDepartureDate?: string;  // ISO string (UTC), nullable
-  returnArrivalDate?: string;    // ISO string (UTC), nullable
+  outboundDepartureDate: string; 
+  outboundArrivalDate: string;   
+  returnDepartureDate?: string;  
+  returnArrivalDate?: string;    
   isAccommodationRequired: boolean;
   isDropOffRequired: boolean;
-  dropOffPlace?: string;         // NEW FIELD
+  dropOffPlace?: string;         
   isPickUpRequired: boolean;
-  pickUpPlace?: string;          // NEW FIELD
+  pickUpPlace?: string;          
   comments?: string;
   purposeOfTravel: string;
   isVegetarian: boolean;
   foodComment?: string;
   attendedCCT: boolean;
-  ldCertificatePath?: string; // Optional file path for L/D certificate
+  ldCertificatePath?: string; 
 }
 
 interface ApiResponse {
@@ -83,19 +82,19 @@ const getTravelModeId = (transportMode: string): number => {
     'bus': 3,
     'cab': 4,
   };
-  return modeMap[transportMode.toLowerCase()] || 1; // Default to flight
+  return modeMap[transportMode.toLowerCase()] || 1; 
 };
 
-// Helper function to combine date and time into UTC DateTime
+
 const combineDateAndTime = (date: Date, timeString: string): Date => {
   if (!date) throw new Error('Date is required');
   
-  // If no time provided, use current time or default to start of day
+  
   if (!timeString || timeString.trim() === '') {
     return new Date(date.getFullYear(), date.getMonth(), date.getDate());
   }
   
-  // Parse time string (assuming format like "14:30" or "2:30 PM")
+  
   const [hours, minutes] = timeString.split(':').map(num => parseInt(num));
   const combinedDate = new Date(date);
   combinedDate.setHours(hours || 0, minutes || 0, 0, 0);
@@ -125,13 +124,13 @@ class TravelRequestService {
       throw new Error("Outbound departure date is required.");
     }
 
-    // Combine dates and times for UTC conversion
+    
     const outboundDeparture = combineDateAndTime(state.outboundDepartureDate, state.outboundDepartureTime);
     
-    // For arrival date, use departure date if arrival date is not specified
+    
     const outboundArrival = state.outboundArrivalDate 
       ? combineDateAndTime(state.outboundArrivalDate, state.outboundArrivalTime)
-      : outboundDeparture; // Default to same as departure if not specified
+      : outboundDeparture; 
 
     let returnDeparture: Date | undefined;
     let returnArrival: Date | undefined;
@@ -143,16 +142,16 @@ class TravelRequestService {
       returnDeparture = combineDateAndTime(state.returnDepartureDate, state.returnDepartureTime);
       returnArrival = state.returnArrivalDate 
         ? combineDateAndTime(state.returnArrivalDate, state.returnArrivalTime)
-        : returnDeparture; // Default to same as return departure if not specified
+        : returnDeparture;
     }
 
-    // Map food preference
+    
     const isVegetarian = state.requiresFoodPreference ? state.foodPreference === 'veg' : false;
     const foodComment = state.requiresFoodPreference && state.foodPreferenceComment 
       ? state.foodPreferenceComment 
       : undefined;
 
-    // Map pickup and dropoff locations
+    
     const pickUpPlace = state.requiresPickup && state.pickupLocation.trim() 
       ? state.pickupLocation.trim() 
       : undefined;
@@ -177,15 +176,15 @@ class TravelRequestService {
       returnArrivalDate: returnArrival?.toISOString(),
       isAccommodationRequired: state.requiresAccommodation,
       isDropOffRequired: state.requiresDropoff,
-      dropOffPlace: dropOffPlace,               // NEW FIELD MAPPING
+      dropOffPlace: dropOffPlace,               
       isPickUpRequired: state.requiresPickup,
-      pickUpPlace: pickUpPlace,                 // NEW FIELD MAPPING
+      pickUpPlace: pickUpPlace,                 
       comments: state.comments.trim() || undefined,
       purposeOfTravel: state.reason.trim(),
       isVegetarian: isVegetarian,
       foodComment: foodComment,
       attendedCCT: state.attendedCct,
-      // ldCertificatePath will be handled separately when file upload is implemented
+
     };
 
     return dto;
@@ -212,8 +211,7 @@ class TravelRequestService {
       const response = await axios.post<any>(`${this.baseUrl}/TravelRequest`, dto, {
         headers: {
           'Content-Type': 'application/json',
-          // Add Authorization header if needed
-          // 'Authorization': `Bearer ${authToken}`
+
         },
         timeout: this.timeout,
       });
@@ -332,5 +330,4 @@ class TravelRequestService {
   }
 }
 
-// Create singleton instance with correct base URL
 export const travelRequestService = new TravelRequestService('http://localhost:5030/api', 15000);
