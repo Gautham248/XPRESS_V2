@@ -272,7 +272,7 @@ const TravelRequestDetails: React.FC = () => {
       </div>
 
       <div>
-        <TravelInfoBanner travelRequest={travelRequest} />
+        <TravelInfoBanner requestId={id}/>
       </div>
 
       <div className="flex flex-col lg:flex-row gap-4 items-stretch">
