@@ -8,7 +8,7 @@ const BasicInfoSection: React.FC = () => {
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 mb-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Travel Type Selection */}
+        
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-3">
             Travel Type
@@ -59,7 +59,7 @@ const BasicInfoSection: React.FC = () => {
           </div>
         </div>
 
-        {/* Trip Type Selection */}
+
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-3">
             Trip Type

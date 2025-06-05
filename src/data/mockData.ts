@@ -24,7 +24,7 @@ export interface TravelRequest {
 
 export interface TimelineEvent {
   id: string;
-  type: 'pending' | 'Approved' | 'Rejected' | 'Modified' | 'Completed' | 'Manager Approved' | 'DU Head Approved' | 'Tickets Selected' | 'Tickets Dispatched' | 'In-transit' | 'Returned' | 'Closed';
+  type: 'Pending' | 'Approved' | 'Rejected' | 'Modified' | 'Completed' | 'Manager Approved' | 'DU Head Approved' | 'Tickets Selected' | 'Tickets Dispatched' | 'In-transit' | 'Returned' | 'Closed';
   date: string;
   actor: string;
   description: string;
@@ -107,7 +107,7 @@ export const mockTravelRequests: TravelRequest[] = [
     timeline: [
       {
         id: 'TL-001',
-        type: 'pending',
+        type: 'Pending',
         date: '2025-01-10T09:30:00',
         actor: 'John Smith',
         description: 'Travel request submitted',
@@ -153,7 +153,7 @@ export const mockTravelRequests: TravelRequest[] = [
     timeline: [
       {
         id: 'TL-001',
-        type: 'pending',
+        type: 'Pending',
         date: '2025-02-01T11:20:00',
         actor: 'Emily Johnson',
         description: 'Travel request submitted',
@@ -209,7 +209,7 @@ export const mockTravelRequests: TravelRequest[] = [
     timeline: [
       {
         id: 'TL-001',
-        type: 'pending',
+        type: 'Pending',
         date: '2025-01-15T10:00:00',
         actor: 'Robert Chen',
         description: 'Travel request submitted',
@@ -271,7 +271,7 @@ export const mockTravelRequests: TravelRequest[] = [
     timeline: [
       {
         id: 'TL-001',
-        type: 'pending',
+        type: 'Pending',
         date: '2025-02-10T08:00:00',
         actor: 'Lisa Wong',
         description: 'Travel request submitted',
@@ -325,7 +325,7 @@ export const mockTravelRequests: TravelRequest[] = [
     timeline: [
       {
         id: 'TL-001',
-        type: 'pending',
+        type: 'Pending',
         date: '2025-02-15T09:00:00',
         actor: 'Michael Taylor',
         description: 'Travel request submitted',
@@ -365,7 +365,7 @@ export const mockTravelRequests: TravelRequest[] = [
     timeline: [
       {
         id: 'TL-001',
-        type: 'pending',
+        type: 'Pending',
         date: '2025-01-05T10:00:00',
         actor: 'Samantha Davis',
         description: 'Travel request submitted',
@@ -451,7 +451,7 @@ export const mockTravelRequests: TravelRequest[] = [
     timeline: [
       {
         id: 'TL-001',
-        type: 'pending',
+        type: 'Pending',
         date: '2025-02-20T09:00:00',
         actor: 'David Wilson',
         description: 'Travel request submitted',
@@ -483,7 +483,7 @@ export const mockTravelRequests: TravelRequest[] = [
     timeline: [
       {
         id: 'TL-001',
-        type: 'pending',
+        type: 'Pending',
         date: '2025-02-05T10:00:00',
         actor: 'James Brown',
         description: 'Travel request submitted',
@@ -553,7 +553,7 @@ export const mockTravelRequests: TravelRequest[] = [
     timeline: [
       {
         id: 'TL-001',
-        type: 'pending',
+        type: 'Pending',
         date: '2025-02-25T09:00:00',
         actor: 'Alex Martinez',
         description: 'Travel request submitted',
@@ -601,7 +601,7 @@ export const mockTravelRequests: TravelRequest[] = [
     timeline: [
       {
         id: 'TL-001',
-        type: 'pending',
+        type: 'Pending',
         date: '2025-02-12T09:00:00',
         actor: 'Jennifer Lee',
         description: 'Travel request submitted',
@@ -679,7 +679,7 @@ export const mockTravelRequests: TravelRequest[] = [
     timeline: [
       {
         id: 'TL-001',
-        type: 'pending',
+        type: 'Pending',
         date: '2025-02-28T09:00:00',
         actor: 'Sophie Miller',
         description: 'Travel request submitted',
@@ -711,7 +711,7 @@ export const mockTravelRequests: TravelRequest[] = [
     timeline: [
       {
         id: 'TL-001',
-        type: 'pending',
+        type: 'Pending',
         date: '2025-02-15T09:00:00',
         actor: 'William Jackson',
         description: 'Travel request submitted',
