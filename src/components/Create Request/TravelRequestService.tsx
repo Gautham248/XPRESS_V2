@@ -41,7 +41,7 @@ export interface TravelRequestState {
   returnDate: Date | null;
 }
 
-// Backend DTO structure - matches your TravelRequestCreateDTO
+// Backend DTO structure - Updated to match your new DTO
 interface TravelRequestCreateDTO {
   userId: number;
   travelModeId: number;
@@ -58,7 +58,9 @@ interface TravelRequestCreateDTO {
   returnArrivalDate?: string;    // ISO string (UTC), nullable
   isAccommodationRequired: boolean;
   isDropOffRequired: boolean;
+  dropOffPlace?: string;         // NEW FIELD
   isPickUpRequired: boolean;
+  pickUpPlace?: string;          // NEW FIELD
   comments?: string;
   purposeOfTravel: string;
   isVegetarian: boolean;
@@ -150,6 +152,15 @@ class TravelRequestService {
       ? state.foodPreferenceComment 
       : undefined;
 
+    // Map pickup and dropoff locations
+    const pickUpPlace = state.requiresPickup && state.pickupLocation.trim() 
+      ? state.pickupLocation.trim() 
+      : undefined;
+    
+    const dropOffPlace = state.requiresDropoff && state.dropoffLocation.trim() 
+      ? state.dropoffLocation.trim() 
+      : undefined;
+
     const dto: TravelRequestCreateDTO = {
       userId: userId,
       travelModeId: getTravelModeId(state.transportMode),
@@ -166,7 +177,9 @@ class TravelRequestService {
       returnArrivalDate: returnArrival?.toISOString(),
       isAccommodationRequired: state.requiresAccommodation,
       isDropOffRequired: state.requiresDropoff,
+      dropOffPlace: dropOffPlace,               // NEW FIELD MAPPING
       isPickUpRequired: state.requiresPickup,
+      pickUpPlace: pickUpPlace,                 // NEW FIELD MAPPING
       comments: state.comments.trim() || undefined,
       purposeOfTravel: state.reason.trim(),
       isVegetarian: isVegetarian,
