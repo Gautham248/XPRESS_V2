@@ -173,21 +173,21 @@ const Dashboard: React.FC = () => {
     fetchDashboardStats();
   }, []);
 
-  // Get today's date dynamically
+  // Get today's date in UTC format
   const today = new Date();
-  const todayString = today.toISOString().split('T')[0]; // Format: '2025-06-01'
+  const todayStringUTC = today.toISOString().split('T')[0]; // Format: '2025-06-01' (UTC date)
 
   // Handler for New Requests card click
   const handleNewRequestsClick = () => {
     const params = new URLSearchParams();
-    params.set('date', todayString);
+    params.set('date', todayStringUTC);
     navigate(`/admin/travel-requests?${params.toString()}`);
   };
 
   // Handler for Ticket Actions card click
   const handleTicketActionsClick = () => {
     const params = new URLSearchParams();
-    params.set('date', todayString);
+    params.set('date', todayStringUTC);
     params.set('status', 'Manager Approved,DU Head Approved');
     navigate(`/admin/travel-requests?${params.toString()}`);
   };
@@ -195,7 +195,7 @@ const Dashboard: React.FC = () => {
   // Handler for Rejected card click
   const handleRejectedClick = () => {
     const params = new URLSearchParams();
-    params.set('date', todayString);
+    params.set('date', todayStringUTC);
     params.set('status', 'Rejected');
     navigate(`/admin/travel-requests?${params.toString()}`);
   };
@@ -203,7 +203,7 @@ const Dashboard: React.FC = () => {
   // Handler for SLA Breach card click
   const handleSLABreachClick = () => {
     const params = new URLSearchParams();
-    params.set('date', todayString);
+    params.set('date', todayStringUTC);
     params.set('status', 'Manager Approved,Tickets Dispatched');
     navigate(`/admin/travel-requests?${params.toString()}`);
   };

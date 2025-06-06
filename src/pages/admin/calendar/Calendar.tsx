@@ -47,19 +47,47 @@ interface ApiResponse {
   errorMessages: string[];
 }
 
+// Utility functions for UTC date handling
+const createUTCDate = (year: number, month: number, day: number): Date => {
+  return new Date(Date.UTC(year, month, day, 0, 0, 0, 0));
+};
+
+const getCurrentUTCDate = (): Date => {
+  const now = new Date();
+  return new Date(Date.UTC(
+    now.getUTCFullYear(),
+    now.getUTCMonth(),
+    now.getUTCDate(),
+    0, 0, 0, 0
+  ));
+};
+
+const formatDateForApi = (date: Date): string => {
+  return date.toISOString().split('T')[0];
+};
+
+const parseUTCDateString = (dateString: string): Date => {
+  const date = new Date(dateString);
+  return new Date(Date.UTC(
+    date.getUTCFullYear(),
+    date.getUTCMonth(),
+    date.getUTCDate(),
+    0, 0, 0, 0
+  ));
+};
+
 const Calendar: React.FC = () => {
   const navigate = useNavigate();
 
   const [currentDate, setCurrentDate] = useState<Date>(() => {
-    const now = new Date();
-    console.log("Current Date:", now);
-    return new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+    const utcDate = getCurrentUTCDate();
+    console.log("Current UTC Date:", utcDate);
+    return utcDate;
   });
 
   const [view, setView] = useState<'Month' | 'Week'>('Month');
   const [selectedDate, setSelectedDate] = useState<Date | null>(() => {
-    const now = new Date();
-    return new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+    return getCurrentUTCDate();
   });
   const [selectedEventType, setSelectedEventType] = useState<'OutboundDeparture' | 'ReturnArrival' | null>(null);
   const [travelRequests, setTravelRequests] = useState<TravelRequest[]>([]);
@@ -72,19 +100,17 @@ const Calendar: React.FC = () => {
     let endDateObj: Date;
 
     if (currentView === 'Month') {
-      const firstDayOfMonth = new Date(date.getFullYear(), date.getMonth(), 1);
+      const firstDayOfMonth = createUTCDate(date.getUTCFullYear(), date.getUTCMonth(), 1);
       startDateObj = new Date(firstDayOfMonth);
-      startDateObj.setDate(firstDayOfMonth.getDate() - firstDayOfMonth.getDay());
+      startDateObj.setUTCDate(firstDayOfMonth.getUTCDate() - firstDayOfMonth.getUTCDay());
       endDateObj = new Date(startDateObj);
-      endDateObj.setDate(startDateObj.getDate() + 41); 
+      endDateObj.setUTCDate(startDateObj.getUTCDate() + 41); 
     } else { 
       startDateObj = new Date(date);
-      startDateObj.setDate(date.getDate() - date.getDay()); 
+      startDateObj.setUTCDate(date.getUTCDate() - date.getUTCDay()); 
       endDateObj = new Date(startDateObj);
-      endDateObj.setDate(startDateObj.getDate() + 6); 
+      endDateObj.setUTCDate(startDateObj.getUTCDate() + 6); 
     }
-
-    const formatDateForApi = (d: Date) => d.toISOString().split('T')[0];
 
     return {
       startDate: formatDateForApi(startDateObj),
@@ -135,15 +161,12 @@ const Calendar: React.FC = () => {
     setCachedRanges(prev => new Map(prev.set(cacheKey, data)));
     setTravelRequests(data);
     setLoading(false);
-  }, [currentDate, view, getVisibleDateRange, cachedRanges, fetchTravelRequestsForRange]); // Added fetchTravelRequestsForRange (it's stable due to no deps)
+  }, [currentDate, view, getVisibleDateRange, cachedRanges, fetchTravelRequestsForRange]);
 
   useEffect(() => {
     loadDataForCurrentView();
   }, [loadDataForCurrentView]);
 
-  // Memoize getEventsForDate to prevent unnecessary recalculations if possible,
-  // or ensure its dependencies are stable. Given it relies on travelRequests,
-  // it will re-run when travelRequests changes.
   const getEventsForDate = useCallback((dateForEvents: Date | null): TravelEvent[] => {
     if (!dateForEvents || travelRequests.length === 0) {
       return [];
@@ -151,42 +174,40 @@ const Calendar: React.FC = () => {
   
     const events: TravelEvent[] = [];
     
-    const selectedLocalYear = dateForEvents.getFullYear();
-    const selectedLocalMonth = dateForEvents.getMonth(); // 0-11
-    const selectedLocalDay = dateForEvents.getDate();
+    const selectedUTCYear = dateForEvents.getUTCFullYear();
+    const selectedUTCMonth = dateForEvents.getUTCMonth(); // 0-11
+    const selectedUTCDay = dateForEvents.getUTCDate();
   
     travelRequests.forEach((request: TravelRequest) => {
       if (request.outboundDepartureDate) {
-        const eventDateObj = new Date(request.outboundDepartureDate); // Parses UTC string into a Date object
-        // .getFullYear(), .getMonth(), .getDate() on this object return values in LOCAL timezone
+        const eventDateObj = parseUTCDateString(request.outboundDepartureDate);
         if (
-          eventDateObj.getFullYear() === selectedLocalYear &&
-          eventDateObj.getMonth() === selectedLocalMonth &&
-          eventDateObj.getDate() === selectedLocalDay
+          eventDateObj.getUTCFullYear() === selectedUTCYear &&
+          eventDateObj.getUTCMonth() === selectedUTCMonth &&
+          eventDateObj.getUTCDate() === selectedUTCDay
         ) {
           events.push({ type: 'OutboundDeparture', request });
         }
       }
   
       if (request.returnArrivalDate) {
-        const eventDateObj = new Date(request.returnArrivalDate); // Parses UTC string
+        const eventDateObj = parseUTCDateString(request.returnArrivalDate);
         if (
-          eventDateObj.getFullYear() === selectedLocalYear &&
-          eventDateObj.getMonth() === selectedLocalMonth &&
-          eventDateObj.getDate() === selectedLocalDay
+          eventDateObj.getUTCFullYear() === selectedUTCYear &&
+          eventDateObj.getUTCMonth() === selectedUTCMonth &&
+          eventDateObj.getUTCDate() === selectedUTCDay
         ) {
           events.push({ type: 'ReturnArrival', request });
         }
       }
     });
     return events;
-  }, [travelRequests]); // Depends only on travelRequests
+  }, [travelRequests]);
 
   useEffect(() => {
     if (selectedDate === null) {
-      const today = new Date();
-      const normalizedToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0, 0);
-      setSelectedDate(normalizedToday);
+      const todayUTC = getCurrentUTCDate();
+      setSelectedDate(todayUTC);
     }
 
     if (selectedDate) {
@@ -199,22 +220,26 @@ const Calendar: React.FC = () => {
         setSelectedEventType(null);
       }
     }
-  }, [selectedDate, getEventsForDate, selectedEventType]); // Added getEventsForDate as a dependency
+  }, [selectedDate, getEventsForDate, selectedEventType]);
 
   const getDaysForMonth = (year: number, month: number): DayInfo[] => {
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-    const firstDayOfMonth = new Date(year, month, 1).getDay(); 
-    const daysInPrevMonth = new Date(year, month, 0).getDate();
+    const daysInMonth = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
+    const firstDayOfMonth = createUTCDate(year, month, 1);
+    const firstDayOfWeek = firstDayOfMonth.getUTCDay();
+    const daysInPrevMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
 
-    const prevMonthDays: DayInfo[] = Array.from({ length: firstDayOfMonth }, (_, i) => ({
-        day: daysInPrevMonth - firstDayOfMonth + i + 1,
+    const prevMonthDays: DayInfo[] = Array.from({ length: firstDayOfWeek }, (_, i) => ({
+        day: daysInPrevMonth - firstDayOfWeek + i + 1,
         currentMonth: false,
         month: month === 0 ? 11 : month - 1,
         year: month === 0 ? year - 1 : year,
     }));
 
     const currentMonthDays: DayInfo[] = Array.from({ length: daysInMonth }, (_, i) => ({
-      day: i + 1, currentMonth: true, month: month, year: year,
+      day: i + 1, 
+      currentMonth: true, 
+      month: month, 
+      year: year,
     }));
 
     const totalCells = 42; 
@@ -232,21 +257,27 @@ const Calendar: React.FC = () => {
     setCurrentDate(prevDate => {
       const newDate = new Date(prevDate);
       const monthChange = direction === 'prev' ? -1 : 1;
-      if (view === 'Month') newDate.setMonth(newDate.getMonth() + monthChange, 1);
-      else newDate.setDate(newDate.getDate() + (monthChange * 7));
-      newDate.setHours(0,0,0,0);
+      if (view === 'Month') {
+        newDate.setUTCMonth(newDate.getUTCMonth() + monthChange, 1);
+      } else {
+        newDate.setUTCDate(newDate.getUTCDate() + (monthChange * 7));
+      }
+      // Ensure time is set to UTC midnight
+      newDate.setUTCHours(0, 0, 0, 0);
       return newDate;
     });
+    
     if (selectedDate) {
       setSelectedDate(prevSelected => {
         if (!prevSelected) return null;
         const newSelected = new Date(prevSelected);
         const monthChange = direction === 'prev' ? -1 : 1;
-        if (view === 'Month') newSelected.setMonth(newSelected.getMonth() + monthChange);
-        else newSelected.setDate(newSelected.getDate() + (monthChange * 7));
-        newSelected.setHours(0,0,0,0);
-        // Boundary check: ensure newSelected is within the new currentDate's view range or set to a default like first visible day
-        // For simplicity, we'll let it be, but it might select a day not immediately visible in the new month/week.
+        if (view === 'Month') {
+          newSelected.setUTCMonth(newSelected.getUTCMonth() + monthChange);
+        } else {
+          newSelected.setUTCDate(newSelected.getUTCDate() + (monthChange * 7));
+        }
+        newSelected.setUTCHours(0, 0, 0, 0);
         return newSelected;
       });
     }
@@ -257,19 +288,19 @@ const Calendar: React.FC = () => {
   const handleNext = () => handlePrevNext('next');
 
   const handleDayCellClick = (dayInfo: DayInfo): void => {
-    const clickedDate = new Date(dayInfo.year, dayInfo.month, dayInfo.day, 0, 0, 0, 0);
+    const clickedDate = createUTCDate(dayInfo.year, dayInfo.month, dayInfo.day);
     setSelectedDate(clickedDate);
 
-    if (view === 'Month' && (dayInfo.month !== currentDate.getMonth() || dayInfo.year !== currentDate.getFullYear())) {
-        setCurrentDate(new Date(dayInfo.year, dayInfo.month, 1, 0,0,0,0));
+    if (view === 'Month' && (dayInfo.month !== currentDate.getUTCMonth() || dayInfo.year !== currentDate.getUTCFullYear())) {
+        setCurrentDate(createUTCDate(dayInfo.year, dayInfo.month, 1));
     } else if (view === 'Week') {
         const weekStartForClicked = new Date(clickedDate);
-        weekStartForClicked.setDate(clickedDate.getDate() - clickedDate.getDay());
-        weekStartForClicked.setHours(0,0,0,0);
+        weekStartForClicked.setUTCDate(clickedDate.getUTCDate() - clickedDate.getUTCDay());
+        weekStartForClicked.setUTCHours(0, 0, 0, 0);
         
         const currentViewWeekStart = new Date(currentDate);
-        currentViewWeekStart.setDate(currentDate.getDate() - currentDate.getDay());
-        currentViewWeekStart.setHours(0,0,0,0);
+        currentViewWeekStart.setUTCDate(currentDate.getUTCDate() - currentDate.getUTCDay());
+        currentViewWeekStart.setUTCHours(0, 0, 0, 0);
 
         if(weekStartForClicked.getTime() !== currentViewWeekStart.getTime()){
             setCurrentDate(weekStartForClicked);
@@ -278,13 +309,19 @@ const Calendar: React.FC = () => {
   };
 
   const handleDateSelect = (year: number, month: number, day: number): void => {
-    const selectedFromPicker = new Date(year, month, day, 0, 0, 0, 0);
+    const selectedFromPicker = createUTCDate(year, month, day);
     setSelectedDate(selectedFromPicker);
-    if (view === 'Month') setCurrentDate(new Date(year, month, 1, 0,0,0,0));
-    else {
-        const startOfWeek = new Date(year, month, day);
-        startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
-        setCurrentDate(new Date(startOfWeek.getFullYear(), startOfWeek.getMonth(), startOfWeek.getDate(), 0,0,0,0));
+    
+    if (view === 'Month') {
+      setCurrentDate(createUTCDate(year, month, 1));
+    } else {
+        const startOfWeek = new Date(selectedFromPicker);
+        startOfWeek.setUTCDate(startOfWeek.getUTCDate() - startOfWeek.getUTCDay());
+        setCurrentDate(createUTCDate(
+          startOfWeek.getUTCFullYear(), 
+          startOfWeek.getUTCMonth(), 
+          startOfWeek.getUTCDate()
+        ));
     }
   };
 
@@ -293,24 +330,46 @@ const Calendar: React.FC = () => {
     if (selectedDate) {
       if (newView === 'Week') {
         const startOfWeek = new Date(selectedDate);
-        startOfWeek.setDate(selectedDate.getDate() - selectedDate.getDay());
-        setCurrentDate(new Date(startOfWeek.getFullYear(), startOfWeek.getMonth(), startOfWeek.getDate(), 0,0,0,0));
+        startOfWeek.setUTCDate(selectedDate.getUTCDate() - selectedDate.getUTCDay());
+        setCurrentDate(createUTCDate(
+          startOfWeek.getUTCFullYear(), 
+          startOfWeek.getUTCMonth(), 
+          startOfWeek.getUTCDate()
+        ));
       } else {
-        setCurrentDate(new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1, 0,0,0,0));
+        setCurrentDate(createUTCDate(
+          selectedDate.getUTCFullYear(), 
+          selectedDate.getUTCMonth(), 
+          1
+        ));
       }
     }
   };
 
   const formatWeekRange = (): string => {
     const startOfWeek = new Date(currentDate);
-    startOfWeek.setDate(currentDate.getDate() - currentDate.getDay());
+    startOfWeek.setUTCDate(currentDate.getUTCDate() - currentDate.getUTCDay());
     const endOfWeek = new Date(startOfWeek);
-    endOfWeek.setDate(startOfWeek.getDate() + 6);
-    const options: Intl.DateTimeFormatOptions = { month: 'long', day: 'numeric' };
-    const yearOpt: Intl.DateTimeFormatOptions = { ...options, year: 'numeric' };
-    if (startOfWeek.getFullYear() !== endOfWeek.getFullYear()) return `${startOfWeek.toLocaleDateString('en-US', yearOpt)} - ${endOfWeek.toLocaleDateString('en-US', yearOpt)}`;
-    if (startOfWeek.getMonth() !== endOfWeek.getMonth()) return `${startOfWeek.toLocaleDateString('en-US', options)} - ${endOfWeek.toLocaleDateString('en-US', options)}, ${endOfWeek.getFullYear()}`;
-    return `${startOfWeek.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })} - ${endOfWeek.toLocaleDateString('en-US', { day: 'numeric' })}, ${endOfWeek.getFullYear()}`;
+    endOfWeek.setUTCDate(startOfWeek.getUTCDate() + 6);
+    
+    const options: Intl.DateTimeFormatOptions = { 
+      month: 'long', 
+      day: 'numeric', 
+      timeZone: 'UTC' 
+    };
+    const yearOpt: Intl.DateTimeFormatOptions = { 
+      ...options, 
+      year: 'numeric', 
+      timeZone: 'UTC' 
+    };
+    
+    if (startOfWeek.getUTCFullYear() !== endOfWeek.getUTCFullYear()) {
+      return `${startOfWeek.toLocaleDateString('en-US', yearOpt)} - ${endOfWeek.toLocaleDateString('en-US', yearOpt)}`;
+    }
+    if (startOfWeek.getUTCMonth() !== endOfWeek.getUTCMonth()) {
+      return `${startOfWeek.toLocaleDateString('en-US', options)} - ${endOfWeek.toLocaleDateString('en-US', options)}, ${endOfWeek.getUTCFullYear()}`;
+    }
+    return `${startOfWeek.toLocaleDateString('en-US', { month: 'long', day: 'numeric', timeZone: 'UTC' })} - ${endOfWeek.toLocaleDateString('en-US', { day: 'numeric', timeZone: 'UTC' })}, ${endOfWeek.getUTCFullYear()}`;
   };
 
   return (
@@ -326,20 +385,56 @@ const Calendar: React.FC = () => {
         <div className="flex flex-col lg:flex-row gap-4">
           <div className="lg:flex-[0.65] bg-white rounded-lg shadow-sm p-4">
             <div className="flex flex-col sm:flex-row items-center mb-4 gap-2 sm:gap-0">
-              <DatePicker currentDate={currentDate} view={view} onDateSelect={handleDateSelect} formatWeekRange={formatWeekRange} />
+              <DatePicker 
+                currentDate={currentDate} 
+                view={view} 
+                onDateSelect={handleDateSelect} 
+                formatWeekRange={formatWeekRange} 
+              />
               <div className="flex items-center">
-                <button aria-label="Previous period" className="px-3 py-1 text-gray-600 hover:text-gray-800 hover:bg-gray-200 rounded-md" onClick={handlePrev}> {'<'} </button>
-                <button aria-label="Next period" className="px-3 py-1 text-gray-600 hover:text-gray-800 hover:bg-gray-200 rounded-md" onClick={handleNext}> {'>'} </button>
+                <button 
+                  aria-label="Previous period" 
+                  className="px-3 py-1 text-gray-600 hover:text-gray-800 hover:bg-gray-200 rounded-md" 
+                  onClick={handlePrev}
+                > 
+                  {'<'} 
+                </button>
+                <button 
+                  aria-label="Next period" 
+                  className="px-3 py-1 text-gray-600 hover:text-gray-800 hover:bg-gray-200 rounded-md" 
+                  onClick={handleNext}
+                > 
+                  {'>'} 
+                </button>
               </div>
-              <div className="sm:ml-auto mt-2 sm:mt-0"> <ViewToggle view={view} onViewChange={handleViewChange} /> </div>
+              <div className="sm:ml-auto mt-2 sm:mt-0"> 
+                <ViewToggle view={view} onViewChange={handleViewChange} /> 
+              </div>
             </div>
             {view === 'Month' ? (
-              <MonthView currentDate={currentDate} getDaysForMonth={getDaysForMonth} getEventsForDate={getEventsForDate} selectedDate={selectedDate} onDayCellClick={handleDayCellClick} />
+              <MonthView 
+                currentDate={currentDate} 
+                getDaysForMonth={getDaysForMonth} 
+                getEventsForDate={getEventsForDate} 
+                selectedDate={selectedDate} 
+                onDayCellClick={handleDayCellClick} 
+              />
             ) : (
-              <WeekView currentDate={currentDate} getEventsForDate={getEventsForDate} selectedDate={selectedDate} onDayCellClick={handleDayCellClick} />
+              <WeekView 
+                currentDate={currentDate} 
+                getEventsForDate={getEventsForDate} 
+                selectedDate={selectedDate} 
+                onDayCellClick={handleDayCellClick} 
+              />
             )}
           </div>
-          <EventSidebar selectedDate={selectedDate} selectedEventType={selectedEventType} getEventsForDate={getEventsForDate} navigate={navigate} onEventTypeChange={setSelectedEventType} />
+          <EventSidebar 
+            selectedDate={selectedDate} 
+            selectedEventType={selectedEventType} 
+            getEventsForDate={getEventsForDate} 
+            navigate={navigate} 
+            onEventTypeChange={setSelectedEventType} 
+          />
         </div>
       )}
     </div>
