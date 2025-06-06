@@ -297,7 +297,7 @@ const TravelRequestContext = createContext<TravelRequestContextType | undefined>
 
 interface TravelRequestProviderProps {
   children: ReactNode;
-  userId: number; 
+  userId?: number; 
 }
 // const userString = localStorage.getItem('user');
 //   let userId;
