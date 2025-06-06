@@ -84,7 +84,7 @@ const handleSubmit = async (e: React.FormEvent) => {
 
 
           // Navigate based on role
-          if (role_name === 'Admin') {
+      if (role_name === 'Admin') {
         navigate('/admin/dashboard');
       } else {
         navigate('/manager/dashboard');
