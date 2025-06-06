@@ -30,18 +30,26 @@ interface LocationSearchProps {
   placeholder?: string;
   className?: string;
   maxCustomLength?: number;
+  initialValue?: string;
 }
  
 const LocationSearch: React.FC<LocationSearchProps> = ({
   onSelect,
   placeholder = "Type a city...",
   className = "",
-  maxCustomLength = 100
+  maxCustomLength = 100,
+  initialValue = ""
 }) => {
-  const [query, setQuery] = useState<string>("");
+  const [query, setQuery] = useState<string>(initialValue);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
-  const [noResultsFound, setNoResultsFound] = useState<boolean>(false);
+  const [showCustomOption, setShowCustomOption] = useState<boolean>(false);
+  const [hasSearched, setHasSearched] = useState<boolean>(false);
+
+  
+  useEffect(() => {
+    setQuery(initialValue);
+  }, [initialValue]);
  
   useEffect(() => {
     const delayDebounce = setTimeout(() => {
@@ -49,7 +57,8 @@ const LocationSearch: React.FC<LocationSearchProps> = ({
         fetchSuggestions(query);
       } else {
         setSuggestions([]);
-        setNoResultsFound(false);
+        setShowCustomOption(false);
+        setHasSearched(false);
       }
     }, 500);
  
@@ -58,14 +67,15 @@ const LocationSearch: React.FC<LocationSearchProps> = ({
  
   const fetchSuggestions = async (input: string) => {
     setLoading(true);
-    setNoResultsFound(false);
+    setShowCustomOption(false);
+    setHasSearched(false);
+    
     try {
       const response = await fetch(
         `https://nominatim.openstreetmap.org/search?city=${encodeURIComponent(
           input
         )}&format=json&addressdetails=1&limit=5`,
         {
-   
           headers: {
             "User-Agent": "TravelRequestApp (admin@travelrequestapp.com)",
           },
@@ -79,35 +89,41 @@ const LocationSearch: React.FC<LocationSearchProps> = ({
       );
    
       setSuggestions(filtered);
+      setHasSearched(true);
+      
      
-      // Only show custom option when no results found
-      setNoResultsFound(filtered.length === 0 && query.trim().length > 0);
+      setShowCustomOption(
+        hasSearched && 
+        filtered.length === 0 && 
+        query.trim().length > 0 && 
+        !loading
+      );
+      
     } catch (error) {
       console.error("Fetch error:", error);
-      // If API fails, allow custom entry
-      setNoResultsFound(true);
+      setHasSearched(true);
+      setShowCustomOption(query.trim().length > 0);
     } finally {
       setLoading(false);
     }
   };
+
+  const cleanDisplayName = (suggestion: Suggestion) => {
+    let displayName = suggestion.display_name;
+    if (suggestion.address && suggestion.address.postcode) {
+      
+      displayName = displayName.replace(new RegExp(`(,\\s*)?${suggestion.address.postcode}(,\\s*)?`, 'g'), ', ');
+      displayName = displayName.replace(/,\s*,/g, ',');
+      displayName = displayName.replace(/,\s*$/, '');
+    }
+    return displayName;
+  };
  
   const handleSelect = (suggestion: Suggestion) => {
     const address = suggestion.address;
+    const displayName = cleanDisplayName(suggestion);
    
-    // Get the display name but remove any postal code (postcode)
-    let displayName = suggestion.display_name;
-   
-    // If there's a postcode in the address, remove it from the display name
-    if (address.postcode) {
-      // Replace the postcode and any preceding commas/spaces
-      displayName = displayName.replace(new RegExp(`(,\\s*)?${address.postcode}(,\\s*)?`, 'g'), ', ');
-      // Clean up any double commas that might have been created
-      displayName = displayName.replace(/,\s*,/g, ',');
-      // Trim any trailing commas and spaces
-      displayName = displayName.replace(/,\s*$/, '');
-    }
-   
-    // Prepare location data in format expected by the rest of the application
+    
     const cityPart = address.city || address.town || address.village || "";
     const statePart = address.state || "";
     const countryPart = address.country || "";
@@ -116,21 +132,23 @@ const LocationSearch: React.FC<LocationSearchProps> = ({
       city: cityPart,
       state: statePart,
       country: countryPart,
-      // Generate value and label for react-select
+
       value: `${cityPart}-${statePart}-${countryPart}`.toLowerCase().replace(/\s+/g, '-'),
-      label: displayName, // Use the cleaned display name from the API
-      postcode: address.postcode // Store the postcode but we won't display it
+      label: displayName, 
+      postcode: address.postcode 
     };
    
     onSelect(locationData);
     setQuery(displayName);
     setSuggestions([]);
+    setShowCustomOption(false);
+    setHasSearched(false); 
   };
  
   const handleCustomSelect = () => {
-    if (!noResultsFound || query.trim().length === 0) return;
+    if (!showCustomOption || query.trim().length === 0) return;
    
-    // Try to parse the custom entry for city, state, country format
+    
     const parts = query.split(',').map(part => part.trim());
    
     let cityPart = "";
@@ -138,22 +156,22 @@ const LocationSearch: React.FC<LocationSearchProps> = ({
     let countryPart = "";
    
     if (parts.length === 1) {
-      // Only city provided
+      
       cityPart = parts[0];
     } else if (parts.length === 2) {
-      // City and Country
+      
       cityPart = parts[0];
-      countryPart = parts[1]; // Last element is country
+      countryPart = parts[1]; 
     } else if (parts.length === 3) {
-      // City, State, Country
+      
       cityPart = parts[0];
       statePart = parts[1];
-      countryPart = parts[2]; // Last element is country
+      countryPart = parts[2]; 
     } else if (parts.length >= 4) {
-      // City, District/Area, State, Country (like Kochi, Ernakulam, Kerala, India)
+      
       cityPart = parts[0];
-      statePart = parts[parts.length - 2]; // Second to last is state
-      countryPart = parts[parts.length - 1]; // Last element is country
+      statePart = parts[parts.length - 2]; 
+      countryPart = parts[parts.length - 1]; 
     }
    
     const locationData: Address = {
@@ -161,17 +179,18 @@ const LocationSearch: React.FC<LocationSearchProps> = ({
       state: statePart,
       country: countryPart,
       value: `${cityPart}-${statePart}-${countryPart}`.toLowerCase().replace(/\s+/g, '-'),
-      label: query, // For custom entries, use the input as is
+      label: query, 
       custom: true
     };
    
     onSelect(locationData);
     setSuggestions([]);
-    setNoResultsFound(false);
+    setShowCustomOption(false);
+    setHasSearched(false); 
   };
  
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && noResultsFound) {
+    if (e.key === 'Enter' && showCustomOption) {
       e.preventDefault();
       handleCustomSelect();
     }
@@ -183,7 +202,6 @@ const LocationSearch: React.FC<LocationSearchProps> = ({
         type="text"
         value={query}
         onChange={(e) => {
-          // Limit the length for custom entries
           if (e.target.value.length <= maxCustomLength) {
             setQuery(e.target.value);
           }
@@ -204,14 +222,7 @@ const LocationSearch: React.FC<LocationSearchProps> = ({
           className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
         >
           {suggestions.map((suggestion, index) => {
-            // Clean the display name for the suggestion list
-            let displayName = suggestion.display_name;
-            if (suggestion.address && suggestion.address.postcode) {
-              // Remove postal code from display name
-              displayName = displayName.replace(new RegExp(`(,\\s*)?${suggestion.address.postcode}(,\\s*)?`, 'g'), ', ');
-              displayName = displayName.replace(/,\s*,/g, ',');
-              displayName = displayName.replace(/,\s*$/, '');
-            }
+            const displayName = cleanDisplayName(suggestion);
            
             return (
               <li
@@ -226,7 +237,7 @@ const LocationSearch: React.FC<LocationSearchProps> = ({
         </ul>
       )}
      
-      {noResultsFound && (
+      {showCustomOption && (
         <ul
           className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
         >
@@ -240,7 +251,6 @@ const LocationSearch: React.FC<LocationSearchProps> = ({
         </ul>
       )}
      
-      {/* Display character count if near limit */}
       {query.length > maxCustomLength * 0.8 && (
         <div className="text-xs text-gray-500 mt-1 text-right">
           {query.length}/{maxCustomLength}

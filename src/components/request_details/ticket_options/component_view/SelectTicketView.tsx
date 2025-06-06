@@ -1,29 +1,26 @@
 import React from 'react';
-import { TicketOption } from '../../../data/mockData';
+import { TicketOption } from '../../../../data/mockData';
 import { Upload, Ticket } from 'lucide-react';
 
 interface Props {
   ticketOptions: TicketOption[];
   onSelectOption: (id: string) => void;
-  onEditOption: (option: TicketOption) => void;
-  onDeleteOption: (id: string) => void;
   onUploadOptions: () => void;
 }
 
-const ManagerTicketOptionsView: React.FC<Props> = ({
+const SelectTicketView: React.FC<Props> = ({
   ticketOptions,
   onSelectOption,
-  onUploadOptions
+  onUploadOptions,
 }) => {
   const selectedOptions = ticketOptions.filter(option => option.selected);
-  
+
   return (
     <div className="flex flex-col h-full">
-      {/* Main content area */}
       <div className="flex-1 overflow-y-auto pb-6">
         <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <h4 className="text-xl font-bold text-gray-800">Manage Ticket Options</h4>
+            <h4 className="text-l font-bold text-gray-800">Select Ticket Options</h4>
             <span className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
               {ticketOptions.length} option{ticketOptions.length !== 1 ? 's' : ''}
             </span>
@@ -49,33 +46,36 @@ const ManagerTicketOptionsView: React.FC<Props> = ({
                   {option.selected && (
                     <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500 rounded-l-xl"></div>
                   )}
-
                   <div className="flex items-center justify-between">
-                    <label className="flex items-center gap-4 cursor-pointer flex-1 pr-24"
-                           onClick={() => onSelectOption(option.id)}>
+                    <label
+                      className="flex items-center gap-4 cursor-pointer flex-1 pr-24"
+                      onClick={() => onSelectOption(option.id)}
+                    >
                       <div className="relative">
-                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
-                          option.selected 
-                            ? 'border-blue-600 bg-blue-600' 
-                            : 'border-gray-300 bg-white hover:border-gray-400'
-                        }`}>
+                        <div
+                          className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+                            option.selected
+                              ? 'border-blue-600 bg-blue-600'
+                              : 'border-gray-300 bg-white hover:border-gray-400'
+                          }`}
+                        >
                           {option.selected && (
                             <div className="w-2 h-2 bg-white rounded-full"></div>
                           )}
                         </div>
                       </div>
-                      
                       <div className="flex-1">
-                        <span className={`text-base ${
-                          option.selected 
-                            ? 'font-semibold text-gray-800' 
-                            : 'text-gray-700 group-hover:text-gray-900'
-                        }`}>
+                        <span
+                          className={`text-base ${
+                            option.selected
+                              ? 'font-semibold text-gray-800'
+                              : 'text-gray-700 group-hover:text-gray-900'
+                          }`}
+                        >
                           {option.description}
                         </span>
                       </div>
                     </label>
-
                   </div>
                 </div>
               ))}
@@ -83,19 +83,17 @@ const ManagerTicketOptionsView: React.FC<Props> = ({
           )}
         </div>
       </div>
-
-      {/* Fixed upload button at bottom */}
       {selectedOptions.length > 0 && (
         <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 border-t border-blue-200 mt-auto">
           <div className="flex items-center justify-between">
             <div>
               <h5 className="font-semibold text-gray-800 mb-1">Ready to Upload</h5>
               <p className="text-sm text-gray-600">
-                1 option ready for upload
+                {selectedOptions.length} option{selectedOptions.length !== 1 ? 's' : ''} ready for upload
               </p>
             </div>
             <button
-              className="flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl font-medium hover:from-blue-600 hover:to-indigo-700 shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200"
+              className="flex items-center gap-2 px-4 py-3 bg-indigo-500 text-white rounded-xl font-medium hover:bg-indigo-700 shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200"
               onClick={onUploadOptions}
             >
               <Upload size={18} />
@@ -108,4 +106,4 @@ const ManagerTicketOptionsView: React.FC<Props> = ({
   );
 };
 
-export default ManagerTicketOptionsView;
+export default SelectTicketView;

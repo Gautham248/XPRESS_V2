@@ -20,6 +20,7 @@ interface Header {
   key: string;
   displayName: string;
   sortable?: boolean;
+  filterable?: boolean;
 }
 
 interface DataTableProps<T> {
@@ -55,242 +56,255 @@ const DataTable = <T extends Record<string, any>>({
 }: DataTableProps<T>) => {
   const navigate = useNavigate();
   const location = useLocation();
+
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [sortBy, setSortBy] = useState<string>(headers[0]?.key || '');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-  const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
+  const [statusFilter, setStatusFilter] = useState<Set<string>>(new Set());
   const [typeFilter, setTypeFilter] = useState<string>('All');
+  const [startDate, setStartDate] = useState<Date | null>(null);
+  const [endDate, setEndDate] = useState<Date | null>(null);
+  const [columnFilters, setColumnFilters] = useState<{ [key: string]: string }>({});
+  const [dateFilterType, setDateFilterType] = useState<'requestDate' | 'travelDates'>('requestDate');
+
   const [visibleColumns, setVisibleColumns] = useState<string[]>(() => {
     const savedColumns = localStorage.getItem(`${title}TableColumns`);
-    return savedColumns ? JSON.parse(savedColumns) : headers.map(h => h.key).concat(renderActions ? ['actions'] : []);
+    const defaultCols = headers.map(h => h.key);
+    if (renderActions) defaultCols.push('actions');
+    return savedColumns ? JSON.parse(savedColumns) : defaultCols;
   });
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
   const [showTypeDropdown, setShowTypeDropdown] = useState(false);
   const [showColumnsDropdown, setShowColumnsDropdown] = useState(false);
-  const [startDate, setStartDate] = useState<Date | null>(null);
-  const [endDate, setEndDate] = useState<Date | null>(null);
+  const [activeColumnFilterKey, setActiveColumnFilterKey] = useState<string | null>(null);
 
-  // Refs for dropdown outside click detection
   const statusDropdownRef = useRef<HTMLDivElement>(null);
   const typeDropdownRef = useRef<HTMLDivElement>(null);
   const columnsDropdownRef = useRef<HTMLDivElement>(null);
+  const activeColumnFilterPopoverRef = useRef<HTMLDivElement>(null);
 
-  // Handle URL parameters for filtering
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search);
     const statusParam = urlParams.get('status');
     const dateParam = urlParams.get('date');
 
-    // Handle status filtering
     if (statusParam && statusOptions.length > 0) {
-      const statusArray = statusParam.split(',').map(s => s.trim());
-      const validStatuses = statusArray.filter(status => statusOptions.includes(status));
-      if (validStatuses.length > 0) {
-        setSelectedStatuses(validStatuses);
-      }
+      const statusArray = statusParam.split(',').map(s => s.trim()).filter(status => statusOptions.includes(status));
+      setStatusFilter(new Set(statusArray));
     } else {
-      setSelectedStatuses([]);
+      setStatusFilter(new Set());
     }
 
-    // Handle date filtering only if not coming from Ticket Actions
-    if (dateParam && dateFilterKey && !statusParam?.includes('Manager Approved')) {
-      const filterDate = new Date(dateParam);
-      setStartDate(filterDate);
-      setEndDate(filterDate);
+    if (dateParam && dateFilterKey) {
+      try {
+        const filterDate = new Date(dateParam);
+        if (!isNaN(filterDate.getTime())) {
+          setStartDate(filterDate);
+          setEndDate(filterDate);
+        } else {
+          setStartDate(null);
+          setEndDate(null);
+        }
+      } catch (e) {
+        console.error("Error parsing date from URL:", e);
+        setStartDate(null);
+        setEndDate(null);
+      }
     } else {
       setStartDate(null);
       setEndDate(null);
     }
   }, [location.search, dateFilterKey, statusOptions]);
 
-  // Persist visibleColumns to localStorage
   useEffect(() => {
     localStorage.setItem(`${title}TableColumns`, JSON.stringify(visibleColumns));
   }, [visibleColumns, title]);
 
-  // Handle outside clicks for dropdowns
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (statusDropdownRef.current && !statusDropdownRef.current.contains(event.target as Node)) {
-        setShowStatusDropdown(false);
-      }
-      if (typeDropdownRef.current && !typeDropdownRef.current.contains(event.target as Node)) {
-        setShowTypeDropdown(false);
-      }
-      if (columnsDropdownRef.current && !columnsDropdownRef.current.contains(event.target as Node)) {
-        setShowColumnsDropdown(false);
+      if (statusDropdownRef.current && !statusDropdownRef.current.contains(event.target as Node)) setShowStatusDropdown(false);
+      if (typeDropdownRef.current && !typeDropdownRef.current.contains(event.target as Node)) setShowTypeDropdown(false);
+      if (columnsDropdownRef.current && !columnsDropdownRef.current.contains(event.target as Node)) setShowColumnsDropdown(false);
+      if (activeColumnFilterKey && activeColumnFilterPopoverRef.current && !activeColumnFilterPopoverRef.current.contains(event.target as Node)) {
+        const clickedOnAColumnFilterTrigger = Array.from(document.querySelectorAll('.column-filter-trigger-button'))
+                                                 .some(btn => btn.contains(event.target as Node));
+        if (!clickedOnAColumnFilterTrigger) setActiveColumnFilterKey(null);
       }
     };
-
     document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [activeColumnFilterKey]);
 
   const handleColumnToggle = (column: string) => {
-    if (visibleColumns.includes(column)) {
-      setVisibleColumns(visibleColumns.filter(col => col !== column));
-    } else {
-      setVisibleColumns([...visibleColumns, column]);
-    }
+    setVisibleColumns(prev => 
+      prev.includes(column) ? prev.filter(col => col !== column) : [...prev, column]
+    );
   };
 
-  // Check if any filters are active
   const hasActiveFilters = () => {
     return searchTerm !== '' || 
-           selectedStatuses.length > 0 || 
+           statusFilter.size > 0 || 
            typeFilter !== 'All' || 
            startDate !== null || 
-           endDate !== null;
+           endDate !== null ||
+           Object.values(columnFilters).some(val => val && val.trim() !== '');
   };
 
-  // Clear all filters function
   const clearAllFilters = () => {
     setSearchTerm('');
-    setSelectedStatuses([]);
+    setStatusFilter(new Set());
     setTypeFilter('All');
     setStartDate(null);
     setEndDate(null);
+    setColumnFilters({});
+    setActiveColumnFilterKey(null);
     setCurrentPage(1);
-    
-    // Clear URL parameters
-    if (location.search) {
-      navigate(location.pathname, { replace: true });
-    }
+    if (location.search) navigate(location.pathname, { replace: true });
   };
 
-  // Filter data
+  const handleStatusToggle = (status: string) => {
+    setStatusFilter(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(status)) {
+        newSet.delete(status);
+      } else {
+        newSet.add(status);
+      }
+      return newSet;
+    });
+    setCurrentPage(1);
+  };
+
   const filteredData = data.filter(item => {
     const matchesSearch = searchableFields.length === 0 || searchableFields.some(field => 
-      String(item[field]).toLowerCase().includes(searchTerm.toLowerCase())
+      String(item[field] ?? '').toLowerCase().includes(searchTerm.toLowerCase())
     );
-    const matchesStatus = statusOptions.length === 0 || selectedStatuses.length === 0 || selectedStatuses.includes(item.status);
+    const matchesStatus = statusOptions.length === 0 || statusFilter.size === 0 || statusFilter.has(item.status);
     const matchesType = typeOptions.length === 0 || typeFilter === 'All' || item.travelType === typeFilter;
-    return matchesSearch && matchesStatus && matchesType;
-  });
 
-  // Filter by date range
-  const dateFilteredData = filteredData.filter(item => {
-    if (!dateFilterKey || (!startDate && !endDate)) return true;
-    const dateValue = new Date(item[dateFilterKey]);
-    
-    // Ensure valid date
-    if (isNaN(dateValue.getTime())) return false;
+    if (!(matchesSearch && matchesStatus && matchesType)) return false;
 
-    if (startDate && endDate) {
-      // Normalize dates to start and end of day for accurate comparison
-      const start = new Date(startDate);
-      start.setHours(0, 0, 0, 0);
-      const end = new Date(endDate);
-      end.setHours(23, 59, 59, 999);
-      
-      // Handle same day filtering
-      if (start.getTime() === end.getTime()) {
-        const itemDate = new Date(dateValue);
-        itemDate.setHours(0, 0, 0, 0);
-        return itemDate.getTime() === start.getTime();
+    for (const key in columnFilters) {
+      const filterValue = columnFilters[key];
+      if (filterValue && filterValue.trim() !== '') {
+        if (!String(item[key] ?? '').toLowerCase().includes(filterValue.toLowerCase())) return false;
       }
-      
-      return dateValue >= start && dateValue <= end;
-    } else if (startDate) {
-      const start = new Date(startDate);
-      start.setHours(0, 0, 0, 0);
-      return dateValue >= start;
-    } else if (endDate) {
-      const end = new Date(endDate);
-      end.setHours(23, 59, 59, 999);
-      return dateValue <= end;
     }
     return true;
   });
 
-  // Sort data
-  const sortedData = [...dateFilteredData].sort((a, b) => {
-    const aSortValue = a[sortBy];
-    const bSortValue = b[sortBy];
-    
-    if (sortOrder === 'asc') {
-      if (typeof aSortValue === 'string' && typeof bSortValue === 'string') {
-        return aSortValue.localeCompare(bSortValue);
+  const dateFilteredData = filteredData.filter(item => {
+    if (!dateFilterKey || (!startDate && !endDate)) return true;
+
+    if (dateFilterType === 'requestDate') {
+      const itemDateValue = item[dateFilterKey];
+      if (!itemDateValue) return false; 
+      const dateValue = new Date(itemDateValue);
+      if (isNaN(dateValue.getTime())) return false;
+
+      const sDate = startDate ? new Date(new Date(startDate).setHours(0,0,0,0)) : null;
+      const eDate = endDate ? new Date(new Date(endDate).setHours(23,59,59,999)) : null;
+      
+      if (sDate && eDate && sDate.getTime() === new Date(new Date(eDate).setHours(0,0,0,0)).getTime()) {
+        const itemDay = new Date(new Date(dateValue).setHours(0,0,0,0));
+        return itemDay.getTime() === sDate.getTime();
       }
-      return Number(aSortValue) - Number(bSortValue);
+      if (sDate && eDate) return dateValue >= sDate && dateValue <= eDate;
+      if (sDate) return dateValue >= sDate;
+      if (eDate) return dateValue <= eDate;
+      return true;
     } else {
-      if (typeof aSortValue === 'string' && typeof bSortValue === 'string') {
-        return bSortValue.localeCompare(aSortValue);
+      const departureDate = item.departureDate ? new Date(item.departureDate) : null;
+      const returnDate = item.returnDate ? new Date(item.returnDate) : null;
+      if (!departureDate || !returnDate || isNaN(departureDate.getTime()) || isNaN(returnDate.getTime())) return false;
+
+      const sDate = startDate ? new Date(new Date(startDate).setHours(0,0,0,0)) : null;
+      const eDate = endDate ? new Date(new Date(endDate).setHours(23,59,59,999)) : null;
+
+      if (sDate && eDate) {
+        return departureDate <= eDate && returnDate >= sDate;
       }
-      return Number(bSortValue) - Number(aSortValue);
+      if (sDate) return returnDate >= sDate;
+      if (eDate) return departureDate <= eDate;
+      return true;
     }
   });
 
-  // Pagination
-  const totalPages = Math.ceil(sortedData.length / itemsPerPage);
+  const sortedData = [...dateFilteredData].sort((a, b) => {
+    const aSortValue = a[sortBy];
+    const bSortValue = b[sortBy];
+    if (sortOrder === 'asc') {
+      if (typeof aSortValue === 'string' && typeof bSortValue === 'string') return aSortValue.localeCompare(bSortValue);
+      if (typeof aSortValue === 'number' && typeof bSortValue === 'number') return aSortValue - bSortValue;
+      return String(aSortValue).localeCompare(String(bSortValue));
+    } else { 
+      if (typeof aSortValue === 'string' && typeof bSortValue === 'string') return bSortValue.localeCompare(aSortValue);
+      if (typeof aSortValue === 'number' && typeof bSortValue === 'number') return bSortValue - bSortValue;
+      return String(bSortValue).localeCompare(String(aSortValue));
+    }
+  });
+
+  const totalPages = Math.max(1, Math.ceil(sortedData.length / itemsPerPage));
   const startIndex = (currentPage - 1) * itemsPerPage;
   const paginatedData = sortedData.slice(startIndex, startIndex + itemsPerPage);
 
   const handleSort = (column: string) => {
-    if (sortBy === column) {
-      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortBy(column);
-      setSortOrder('asc');
-    }
+    if (sortBy === column) setSortOrder(prevOrder => (prevOrder === 'asc' ? 'desc' : 'asc'));
+    else { setSortBy(column); setSortOrder('asc'); }
   };
 
   const getSortIcon = (column: string) => {
-    if (sortBy !== column) {
-      return <ChevronDown className="h-4 w-4 opacity-50" />;
-    }
-    return sortOrder === 'asc' ? 
-      <ChevronDown className="h-4 w-4" /> : 
-      <ChevronDown className="h-4 w-4 transform rotate-180" />;
+    if (sortBy !== column) return <ChevronDown className="h-4 w-4 opacity-50" />;
+    return sortOrder === 'asc' ? <ChevronDown className="h-4 w-4 transform rotate-180" /> : <ChevronDown className="h-4 w-4" />;
   };
 
-  const formatDate = (date: string) => {
-    return format(new Date(date), 'dd-MM-yyyy');
+  const formatDateForDisplay = (dateInput: string | Date): string => {
+    try { return format(new Date(dateInput), 'dd-MM-yyyy'); } 
+    catch (e) { return String(dateInput); }
   };
 
-  // Export to Excel function
   const exportToExcel = () => {
     const exportData = sortedData.map(item => {
       const exportItem: any = {};
       headers.forEach(header => {
         if (visibleColumns.includes(header.key)) {
-          if (header.key === 'travelDates' && item.departureDate && item.returnDate) {
-            exportItem[header.displayName] = `${formatDate(item.departureDate)} - ${formatDate(item.returnDate)}`;
-          } else {
-            exportItem[header.displayName] = item[header.key];
-          }
+          if (header.key === 'travelDates' && item.departureDate && item.returnDate) { 
+            exportItem[header.displayName] = `${formatDateForDisplay(item.departureDate)} - ${formatDateForDisplay(item.returnDate)}`;
+          } else exportItem[header.displayName] = item[header.key];
         }
       });
       return exportItem;
     });
-
     const workbook = XLSX.utils.book_new();
-    const worksheet = XLSX.utils.json_to_sheet(exportData);
-    const colWidths = Object.keys(exportData[0] || {}).map(key => ({
-      wch: Math.max(key.length, ...exportData.map(row => String(row[key] || '').length))
-    }));
-    worksheet['!cols'] = colWidths;
+    const worksheet = XLSX.utils.json_to_sheet(exportData.length > 0 ? exportData : [{}]); 
+    if (exportData.length > 0 && exportData[0]) {
+      const colWidths = Object.keys(exportData[0]).map(key => ({
+        wch: Math.max(String(key).length, ...exportData.map(row => String(row[key] || '').length))
+      }));
+      worksheet['!cols'] = colWidths;
+    }
     XLSX.utils.book_append_sheet(workbook, worksheet, title);
     const currentDate = new Date().toISOString().split('T')[0];
-    const filename = `${title.replace(/\s+/g, '_')}_${currentDate}.xlsx`;
-    XLSX.writeFile(workbook, filename);
+    XLSX.writeFile(workbook, `${title.replace(/\s+/g, '_')}_${currentDate}.xlsx`);
   };
+
+  useEffect(() => {
+    const newTotalPages = Math.max(1, Math.ceil(sortedData.length / itemsPerPage));
+    if (currentPage > newTotalPages) setCurrentPage(newTotalPages);
+  }, [sortedData.length, itemsPerPage, currentPage]);
+  
+  const stickyHeaderBg = 'bg-gray-50';
+  const stickyCellBg = 'bg-gray-50';
 
   return (
     <div className="space-y-6 animate-fadeIn">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <h2 className="text-2xl font-semibold">{title}</h2>
         {newButtonLabel && newButtonPath && (
-          <button 
-            className="btn-primary flex items-center"
-            onClick={() => navigate(newButtonPath)}
-          >
-            <PlusCircle className="h-4 w-4 mr-2" />
-            {newButtonLabel}
+          <button className="btn-primary flex items-center" onClick={() => navigate(newButtonPath)}>
+            <PlusCircle className="h-4 w-4 mr-2" />{newButtonLabel}
           </button>
         )}
       </div>
@@ -301,51 +315,34 @@ const DataTable = <T extends Record<string, any>>({
             <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
               <Search className="h-4 w-4 text-muted-foreground" />
             </div>
-            <input
-              type="text"
-              placeholder={`Search by ${searchableFields.map(f => f).join(', ') || 'fields'}...`}
+            <input type="text" placeholder={`Search by ${searchableFields.join(', ') || 'fields'}...`}
               className="pl-10 pr-4 py-2 w-full rounded-md bg-muted focus:outline-none focus:ring-1 focus:ring-primary"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              value={searchTerm} onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
             />
           </div>
-          
           <div className="flex items-center gap-3">
             {statusOptions.length > 0 && (
               <div className="relative" ref={statusDropdownRef}>
-                <button 
-                  className="flex items-center justify-between px-3 py-2 bg-muted rounded-md min-w-28"
-                  onClick={() => setShowStatusDropdown(!showStatusDropdown)}
-                >
+                <button className="flex items-center justify-between px-3 py-2 bg-muted rounded-md min-w-28 text-sm"
+                  onClick={() => setShowStatusDropdown(!showStatusDropdown)}>
                   <div className="flex items-center">
                     <Filter className="h-4 w-4 mr-2 text-muted-foreground" />
-                    <span className="text-sm">
-                      Status: {selectedStatuses.length > 0 ? selectedStatuses.join(', ') : 'None'}
-                    </span>
+                    <span>Status: {statusFilter.size === 0 ? 'All' : `${statusFilter.size} selected`}</span>
                   </div>
                   <ChevronDown className="h-4 w-4 ml-2 text-muted-foreground" />
                 </button>
                 {showStatusDropdown && (
-                  <div className="absolute z-10 right-0 mt-1 w-48 bg-card border rounded-md shadow-elevation-3">
+                  <div className="absolute z-20 right-0 mt-1 w-48 bg-card border rounded-md shadow-elevation-3">
                     <div className="py-1">
-                      {statusOptions.map(status => (
-                        <label
-                          key={status}
-                          className="flex items-center w-full text-left px-4 py-2 text-sm hover:bg-muted/50"
-                        >
+                      {statusOptions.map(opt => (
+                        <label key={opt} className="w-full text-left px-4 py-2 text-sm hover:bg-muted/50 flex items-center">
                           <input
                             type="checkbox"
-                            checked={selectedStatuses.includes(status)}
-                            onChange={() => {
-                              if (selectedStatuses.includes(status)) {
-                                setSelectedStatuses(selectedStatuses.filter(s => s !== status));
-                              } else {
-                                setSelectedStatuses([...selectedStatuses, status]);
-                              }
-                            }}
+                            checked={statusFilter.has(opt)}
+                            onChange={() => handleStatusToggle(opt)}
                             className="mr-2"
                           />
-                          {status}
+                          {opt}
                         </label>
                       ))}
                     </div>
@@ -353,146 +350,90 @@ const DataTable = <T extends Record<string, any>>({
                 )}
               </div>
             )}
-            
             {typeOptions.length > 0 && (
               <div className="relative" ref={typeDropdownRef}>
-                <button 
-                  className="flex items-center justify-between px-3 py-2 bg-muted rounded-md min-w-28"
-                  onClick={() => setShowTypeDropdown(!showTypeDropdown)}
-                >
-                  <div className="flex items-center">
-                    <Filter className="h-4 w-4 mr-2 text-muted-foreground" />
-                    <span className="text-sm">Type: {typeFilter}</span>
-                  </div>
+                <button className="flex items-center justify-between px-3 py-2 bg-muted rounded-md min-w-28 text-sm"
+                  onClick={() => setShowTypeDropdown(!showTypeDropdown)}>
+                  <div className="flex items-center"><Filter className="h-4 w-4 mr-2 text-muted-foreground" /><span>Type: {typeFilter}</span></div>
                   <ChevronDown className="h-4 w-4 ml-2 text-muted-foreground" />
                 </button>
                 {showTypeDropdown && (
-                  <div className="absolute z-10 right-0 mt-1 w-40 bg-card border rounded-md shadow-elevation-3">
+                  <div className="absolute z-20 right-0 mt-1 w-40 bg-card border rounded-md shadow-elevation-3">
                     <div className="py-1">
-                      {['All', ...typeOptions].map(type => (
-                        <button
-                          key={type}
-                          className="w-full text-left px-4 py-2 text-sm hover:bg-muted/50"
-                          onClick={() => {
-                            setTypeFilter(type);
-                            setShowTypeDropdown(false);
-                          }}
-                        >
-                          {type}
-                        </button>
+                      {['All', ...typeOptions].map(opt => (
+                        <button key={opt} className={`w-full text-left px-4 py-2 text-sm hover:bg-muted/50 ${typeFilter === opt ? 'bg-muted/70 font-semibold' : ''}`}
+                          onClick={() => { setTypeFilter(opt); setShowTypeDropdown(false); setCurrentPage(1); }}>{opt}</button>
                       ))}
                     </div>
                   </div>
                 )}
               </div>
             )}
-            
-            <button 
-              className="flex items-center justify-center p-2 bg-muted rounded-md hover:bg-muted/70 transition-colors"
-              onClick={exportToExcel}
-              title="Export to Excel"
-            >
+            <button className="flex items-center justify-center p-2 bg-muted rounded-md hover:bg-muted/70 transition-colors"
+              onClick={exportToExcel} title="Export to Excel">
               <Download className="h-4 w-4 text-muted-foreground" />
             </button>
           </div>
         </div>
 
-        {/* Additional Filters */}
         <div className="flex flex-wrap items-center gap-3 mb-4">
           {dateFilterKey && (
             <div className="flex items-center gap-2">
-              <div className="relative">
-                <DatePicker
-                  selected={startDate}
-                  onChange={(date: Date | null) => setStartDate(date)}
-                  placeholderText="Start date"
-                  className="px-2.5 py-1.5 bg-gray-100 rounded-md text-sm w-32 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  dateFormat="dd/MM/yyyy"
-                  isClearable
-                />
-              </div>
+              <select
+                value={dateFilterType}
+                onChange={(e) => { setDateFilterType(e.target.value as 'requestDate' | 'travelDates'); setCurrentPage(1); }}
+                className="px-2.5 py-1.5 bg-gray-100 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+              >
+                <option value="requestDate">Request Date</option>
+                <option value="travelDates">Travel Dates</option>
+              </select>
+              <DatePicker
+                selected={startDate}
+                onChange={(date) => { setStartDate(date); setCurrentPage(1); }}
+                placeholderText="Start date"
+                className="px-2.5 py-1.5 bg-gray-100 rounded-md text-sm w-32 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                dateFormat="dd/MM/yyyy"
+                isClearable
+              />
               <span className="text-sm text-gray-500">to</span>
-              <div className="relative">
-                <DatePicker
-                  selected={endDate}
-                  onChange={(date: Date | null) => setEndDate(date)}
-                  placeholderText="End date"
-                  className="px-2.5 py-1.5 bg-gray-100 rounded-md text-sm w-32 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  dateFormat="dd/MM/yyyy"
-                  minDate={startDate ?? undefined}
-                  isClearable
-                />
-              </div>
-              {(startDate || endDate) && (
-                <button
-                  onClick={() => {
-                    setStartDate(null);
-                    setEndDate(null);
-                  }}
-                  className="px-2 py-1 text-xs bg-gray-200 hover:bg-gray-300 rounded text-gray-600"
-                >
-                  Clear
-                </button>
-              )}
+              <DatePicker
+                selected={endDate}
+                onChange={(date) => { setEndDate(date); setCurrentPage(1); }}
+                placeholderText="End date"
+                className="px-2.5 py-1.5 bg-gray-100 rounded-md text-sm w-32 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                dateFormat="dd/MM/yyyy"
+                minDate={startDate ?? undefined}
+                isClearable
+              />
             </div>
           )}
-
           <div className="relative" ref={columnsDropdownRef}>
-            <button
-              className="flex items-center justify-between px-2.5 py-1.5 bg-gray-100 rounded-md min-w-[120px] text-sm hover:bg-gray-200 transition-colors"
-              onClick={() => setShowColumnsDropdown(!showColumnsDropdown)}
-            >
-              <div className="flex items-center">
-                <Filter className="h-4 w-4 mr-1.5 text-gray-500" />
-                <span>Columns</span>
-              </div>
+            <button className="flex items-center justify-between px-2.5 py-1.5 bg-gray-100 rounded-md min-w-[120px] text-sm hover:bg-gray-200 transition-colors"
+              onClick={() => setShowColumnsDropdown(!showColumnsDropdown)}>
+              <div className="flex items-center"><Filter className="h-4 w-4 mr-1.5 text-gray-500" /><span>Columns</span></div>
               <ChevronDown className="h-4 w-4 ml-1.5 text-gray-500" />
             </button>
             {showColumnsDropdown && (
-              <div className="absolute z-10 right-0 mt-1 w-48 bg-white border border-gray-200 rounded-md shadow-lg">
+              <div className="absolute z-20 right-0 mt-1 w-48 bg-white border border-gray-200 rounded-md shadow-lg">
                 <div className="py-1">
-                  {headers.map(header => (
-                    <button
-                      key={header.key}
-                      className="w-full text-left px-3 py-1.5 text-sm hover:bg-gray-100 flex items-center"
-                      onClick={() => handleColumnToggle(header.key)}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={visibleColumns.includes(header.key)}
-                        onChange={() => {}}
-                        className="mr-2"
-                      />
-                      {header.displayName}
+                  {headers.map(h => (
+                    <button key={h.key} className="w-full text-left px-3 py-1.5 text-sm hover:bg-gray-100 flex items-center" onClick={() => handleColumnToggle(h.key)}>
+                      <input type="checkbox" checked={visibleColumns.includes(h.key)} readOnly className="mr-2 pointer-events-none" />{h.displayName}
                     </button>
                   ))}
                   {renderActions && (
-                    <button
-                      className="w-full text-left px-3 py-1.5 text-sm hover:bg-gray-100 flex items-center"
-                      onClick={() => handleColumnToggle('actions')}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={visibleColumns.includes('actions')}
-                        onChange={() => {}}
-                        className="mr-2"
-                      />
-                      Actions
+                    <button className="w-full text-left px-3 py-1.5 text-sm hover:bg-gray-100 flex items-center" onClick={() => handleColumnToggle('actions')}>
+                      <input type="checkbox" checked={visibleColumns.includes('actions')} readOnly className="mr-2 pointer-events-none" />Actions
                     </button>
                   )}
                 </div>
               </div>
             )}
           </div>
-
           {hasActiveFilters() && (
-            <button
-              onClick={clearAllFilters}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 bg-red-100 hover:bg-red-200 text-red-700 rounded-md text-sm transition-colors"
-              title="Clear all filters"
-            >
-              <X className="h-4 w-4" />
-              <span>Clear All Filters</span>
+            <button onClick={clearAllFilters} title="Clear all filters"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 bg-red-100 hover:bg-red-200 text-red-700 rounded-md text-sm transition-colors">
+              <X className="h-4 w-4" /><span>Clear All Filters</span>
             </button>
           )}
         </div>
@@ -502,19 +443,36 @@ const DataTable = <T extends Record<string, any>>({
             <thead>
               <tr className="border-b">
                 {headers.map(header => visibleColumns.includes(header.key) && (
-                  <th 
-                    key={header.key}
-                    className="text-left py-3 px-4 font-medium text-muted-foreground cursor-pointer hover:text-foreground whitespace-nowrap"
-                    onClick={() => header.sortable !== false && handleSort(header.key)}
-                  >
-                    <div className="flex items-center">
-                      <span>{header.displayName}</span>
-                      {header.sortable !== false && getSortIcon(header.key)}
+                  <th key={header.key} className="text-left py-3 px-4 font-medium text-muted-foreground whitespace-nowrap relative group">
+                    <div className="flex items-center justify-between w-full">
+                      <div onClick={() => { if (header.sortable !== false) handleSort(header.key); }}
+                        className={`flex items-center ${header.sortable !== false ? 'cursor-pointer hover:text-foreground' : ''}`}>
+                        <span>{header.displayName}</span>{header.sortable !== false && getSortIcon(header.key)}
+                      </div>
+                      {header.filterable !== false && header.key !== 'status' && header.key !== 'travelType' && header.key !== 'travelDates' && (
+                        <button title={`Filter by ${header.displayName}`}
+                          onClick={(e) => { e.stopPropagation(); setActiveColumnFilterKey(k => k === header.key ? null : header
+
+.key);}}
+                          className={`column-filter-trigger-button ml-2 p-0.5 rounded hover:bg-muted/50 ${columnFilters[header.key]?.trim() ? 'text-primary' : 'text-gray-400 group-hover:opacity-100 opacity-0 transition-opacity'}`}>
+                          <Filter className="h-3.5 w-3.5" />
+                        </button>
+                      )}
                     </div>
+                    {activeColumnFilterKey === header.key && (
+                      <div ref={activeColumnFilterPopoverRef} onClick={(e) => e.stopPropagation()}
+                        className="absolute z-20 top-full left-0 mt-1 p-3 bg-white border border-gray-200 rounded-md shadow-lg w-56">
+                        <p className="text-xs font-semibold text-gray-600 mb-1.5">Filter: {header.displayName}</p>
+                        <input type="text" placeholder="Enter filter..." autoFocus
+                          className="w-full px-2 py-1.5 border border-gray-300 rounded-md text-sm bg-white text-gray-900 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
+                          value={columnFilters[header.key] || ''}
+                          onChange={(e) => { setColumnFilters(f => ({ ...f, [header.key]: e.target.value })); setCurrentPage(1); }} />
+                      </div>
+                    )}
                   </th>
                 ))}
                 {renderActions && visibleColumns.includes('actions') && (
-                  <th className="text-right py-3 px-4 font-medium text-muted-foreground whitespace-nowrap">
+                  <th className={`text-right py-3 px-4 font-medium text-muted-foreground whitespace-nowrap sticky right-0 z-10 border-l border-gray-300 ${stickyHeaderBg}`}>
                     Actions
                   </th>
                 )}
@@ -522,39 +480,28 @@ const DataTable = <T extends Record<string, any>>({
             </thead>
             <tbody>
               {paginatedData.map((item, index) => (
-                <tr 
-                  key={index}
-                  className="border-b last:border-0 hover:bg-muted/50 transition-colors cursor-pointer"
-                  onClick={() => onRowClick?.(item)}
-                >
+                <tr key={item.id || index} onClick={() => onRowClick?.(item)}
+                  className="border-b last:border-0 hover:bg-muted/50 transition-colors"
+                  style={onRowClick ? { cursor: 'pointer' } : {}}>
                   {headers.map(header => visibleColumns.includes(header.key) && (
-                    <td key={header.key} className="py-3 px-4 whitespace-nowrap">
+                    <td key={header.key} className="py-3 px-4 whitespace-nowrap text-sm">
                       {header.key === 'travelDates' && item.departureDate && item.returnDate ? (
-                        <div className="flex items-center">
-                          <Calendar className="h-3 w-3 mr-1 text-muted-foreground" />
-                          <span>
-                            {formatDate(item.departureDate)} - {formatDate(item.returnDate)}
-                          </span>
+                        <div className="flex items-center"><Calendar className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
+                          <span>{formatDateForDisplay(item.departureDate)} - {formatDateForDisplay(item.returnDate)}</span>
                         </div>
                       ) : header.key === 'status' && getStatusColor ? (
-                        <span 
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(item[header.key])}`}
-                        >
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(item[header.key])}`}>
                           {item[header.key]}
                         </span>
                       ) : header.key === 'travelType' && getTypeColor ? (
-                        <span 
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getTypeColor(item[header.key])}`}
-                        >
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getTypeColor(item[header.key])}`}>
                           {item[header.key]}
                         </span>
-                      ) : (
-                        item[header.key]
-                      )}
+                      ) : ( String(item[header.key] ?? '') )}
                     </td>
                   ))}
                   {renderActions && visibleColumns.includes('actions') && (
-                    <td className="py-3 px-4 text-right space-x-2 whitespace-nowrap">
+                    <td className={`py-3 px-4 text-right space-x-2 whitespace-nowrap sticky right-0 z-10 border-l border-gray-300 ${stickyCellBg}`}>
                       {renderActions(item)}
                     </td>
                   )}
@@ -565,92 +512,48 @@ const DataTable = <T extends Record<string, any>>({
         </div>
         
         {paginatedData.length === 0 && (
-          <div className="py-8 text-center">
-            <p className="text-muted-foreground">No data found.</p>
-          </div>
+          <div className="py-8 text-center"><p className="text-muted-foreground">No data found matching your criteria.</p></div>
         )}
         
         <div className="flex flex-col md:flex-row items-center justify-between mt-6 gap-4">
           <div className="text-sm text-muted-foreground">
-            Showing {startIndex + 1} to {Math.min(startIndex + itemsPerPage, sortedData.length)} of {sortedData.length} entries
+            Showing {sortedData.length > 0 ? startIndex + 1 : 0} to {Math.min(startIndex + itemsPerPage, sortedData.length)} of {sortedData.length} entries
           </div>
-          
           <div className="flex items-center space-x-2">
-            <button 
-              className="flex items-center justify-center p-2 rounded-md bg-muted hover:bg-muted/70 disabled:opacity-50 disabled:pointer-events-none"
-              disabled={currentPage === 1}
-              onClick={() => setCurrentPage(1)}
-            >
-              <ChevronLeft className="h-4 w-4 mr-1" />
+            <button title="First page" onClick={() => setCurrentPage(1)} disabled={currentPage === 1}
+              className="flex items-center justify-center p-2 rounded-md bg-muted hover:bg-muted/70 disabled:opacity-50 disabled:pointer-events-none">
+              <ChevronLeft className="h-4 w-4 mr-px" /><ChevronLeft className="h-4 w-4 -ml-1.5" />
+            </button>
+            <button title="Previous page" onClick={() => setCurrentPage(p => Math.max(p - 1, 1))} disabled={currentPage === 1}
+              className="flex items-center justify-center p-2 rounded-md bg-muted hover:bg-muted/70 disabled:opacity-50 disabled:pointer-events-none">
               <ChevronLeft className="h-4 w-4" />
             </button>
-            <button 
-              className="flex items-center justify-center p-2 rounded-md bg-muted hover:bg-muted/70 disabled:opacity-50 disabled:pointer-events-none"
-              disabled={currentPage === 1}
-              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </button>
-            
             <div className="flex items-center space-x-1">
               {[...Array(Math.min(totalPages, 5))].map((_, i) => {
-                let pageNum;
-                if (totalPages <= 5) {
-                  pageNum = i + 1;
-                } else if (currentPage <= 3) {
-                  pageNum = i + 1;
-                } else if (currentPage >= totalPages - 2) {
-                  pageNum = totalPages - 4 + i;
-                } else {
-                  pageNum = currentPage - 2 + i;
-                }
+                let pageNum = (totalPages <= 5 || currentPage <= 3) ? i + 1 : (currentPage >= totalPages - 2) ? totalPages - 4 + i : currentPage - 2 + i;
+                if (pageNum > totalPages || pageNum < 1) return null; 
                 return (
-                  <button 
-                    key={i}
-                    className={`w-8 h-8 flex items-center justify-center rounded-md text-sm ${
-                      currentPage === pageNum 
-                        ? 'bg-primary text-white' 
-                        : 'bg-muted hover:bg-muted/70'
-                    }`}
-                    onClick={() => setCurrentPage(pageNum)}
-                  >
+                  <button key={pageNum} onClick={() => setCurrentPage(pageNum)}
+                    className={`w-8 h-8 flex items-center justify-center rounded-md text-sm ${currentPage === pageNum ? 'bg-primary text-white' : 'bg-muted hover:bg-muted/70'}`}>
                     {pageNum}
                   </button>
                 );
               })}
             </div>
-            
-            <button 
-              className="flex items-center justify-center p-2 rounded-md bg-muted hover:bg-muted/70 disabled:opacity-50 disabled:pointer-events-none"
-              disabled={currentPage === totalPages}
-              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-            >
+            <button title="Next page" onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))} disabled={currentPage === totalPages || totalPages === 0}
+              className="flex items-center justify-center p-2 rounded-md bg-muted hover:bg-muted/70 disabled:opacity-50 disabled:pointer-events-none">
               <ChevronRight className="h-4 w-4" />
             </button>
-            <button 
-              className="flex items-center justify-center p-2 rounded-md bg-muted hover:bg-muted/70 disabled:opacity-50 disabled:pointer-events-none"
-              disabled={currentPage === totalPages}
-              onClick={() => setCurrentPage(totalPages)}
-            >
-              <ChevronRight className="h-4 w-4 mr-1" />
-              <ChevronRight className="h-4 w-4" />
+            <button title="Last page" onClick={() => setCurrentPage(totalPages)} disabled={currentPage === totalPages || totalPages === 0}
+              className="flex items-center justify-center p-2 rounded-md bg-muted hover:bg-muted/70 disabled:opacity-50 disabled:pointer-events-none">
+              <ChevronRight className="h-4 w-4 -mr-1.5" /><ChevronRight className="h-4 w-4 ml-px" />
             </button>
           </div>
-          
           <div className="flex items-center space-x-2">
             <span className="text-sm text-muted-foreground">Show</span>
-            <select 
-              className="bg-muted rounded-md border-input px-2 py-1 text-sm"
-              value={itemsPerPage}
-              onChange={(e) => {
-                setItemsPerPage(Number(e.target.value));
-                setCurrentPage(1);
-              }}
-            >
-              <option value={5}>5</option>
-              <option value={10}>10</option>
-              <option value={25}>25</option>
-              <option value={50}>50</option>
+            <select value={itemsPerPage} onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}
+              className="bg-muted rounded-md border-input px-2 py-1 text-sm">
+              {[5, 10, 25, 50].map(val => <option key={val} value={val}>{val}</option>)}
             </select>
             <span className="text-sm text-muted-foreground">entries</span>
           </div>

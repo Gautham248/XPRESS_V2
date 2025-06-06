@@ -1,7 +1,6 @@
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 
-// Types for the service
-interface Location {
+export interface Location {
   country: string;
   city: string;
   state?: string;
@@ -9,52 +8,64 @@ interface Location {
   value: string;
 }
 
-interface TravelRequestState {
+
+export interface TravelRequestState {
   travelType: 'domestic' | 'international';
   tripType: 'oneWay' | 'roundTrip';
   source: Location | null;
   destination: Location | null;
-  departureDate: Date | null;
-  returnDate: Date | null;
+  outboundDepartureDate: Date | null;
+  outboundDepartureTime: string;
+  outboundArrivalDate: Date | null;
+  outboundArrivalTime: string;
+  returnDepartureDate: Date | null;
+  returnDepartureTime: string;
+  returnArrivalDate: Date | null;
+  returnArrivalTime: string;
   transportMode: string;
   requiresAccommodation: boolean;
   requiresPickup: boolean;
   requiresDropoff: boolean;
   pickupLocation: string;
   dropoffLocation: string;
-  pickupTime: Date | null;
-  dropoffTime: Date | null;
-  requestCode: string;
   projectCode: string;
-  reason: string;
+  reason: string; 
   comments: string;
   requiresFoodPreference: boolean;
   foodPreference: 'veg' | 'non-veg';
+  foodPreferenceComment: string | null;
   attendedCct: boolean;
+
+  departureDate: Date | null;
+  returnDate: Date | null;
 }
 
-interface ApiTravelRequest {
-  requestId: number;
-  employeeId: number;
-  travelTypeId: number;
-  tripTypeId: number;
+
+interface TravelRequestCreateDTO {
+  userId: number;
+  travelModeId: number;
+  isInternational: boolean;
+  isRoundTrip: boolean;
   projectCode: string;
   sourcePlace: string;
   sourceCountry: string;
   destinationPlace: string;
   destinationCountry: string;
-  departureDate: string;
-  returnDate: string;
-  travelModeId: number;
+  outboundDepartureDate: string; 
+  outboundArrivalDate: string;   
+  returnDepartureDate?: string;  
+  returnArrivalDate?: string;    
   isAccommodationRequired: boolean;
-  isPickupRequired: boolean;
-  isDropoffRequired: boolean;
-  pickupLocation: string;
-  dropoffLocation: string;
-  comments: string;
+  isDropOffRequired: boolean;
+  dropOffPlace?: string;         
+  isPickUpRequired: boolean;
+  pickUpPlace?: string;          
+  comments?: string;
   purposeOfTravel: string;
-  foodPreference: string | null;
-  attendedCct: boolean;
+  isVegetarian: boolean;
+  foodComment?: string;
+  attendedCCT: boolean;
+  ldCertificatePath?: string; 
 }
 
 interface ApiResponse {
@@ -63,171 +74,260 @@ interface ApiResponse {
   data?: any;
 }
 
-// Mapping functions
-const getTravelTypeId = (travelType: string): number => {
-  return travelType === 'domestic' ? 1 : 2;
-};
-
-const getTripTypeId = (tripType: string): number => {
-  return tripType === 'oneWay' ? 1 : 2;
-};
-
+// Travel mode mapping
 const getTravelModeId = (transportMode: string): number => {
   const modeMap: { [key: string]: number } = {
     'flight': 1,
     'train': 2,
     'bus': 3,
-    'cab': 4
+    'cab': 4,
   };
-  return modeMap[transportMode] || 1;
+  return modeMap[transportMode.toLowerCase()] || 1; 
 };
 
-// Service class
+
+const combineDateAndTime = (date: Date, timeString: string): Date => {
+  if (!date) throw new Error('Date is required');
+  
+  
+  if (!timeString || timeString.trim() === '') {
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  }
+  
+  
+  const [hours, minutes] = timeString.split(':').map(num => parseInt(num));
+  const combinedDate = new Date(date);
+  combinedDate.setHours(hours || 0, minutes || 0, 0, 0);
+  
+  return combinedDate;
+};
+
 class TravelRequestService {
   private baseUrl: string;
   private timeout: number;
 
-  constructor(baseUrl: string = 'https://localhost:7152/api', timeout: number = 10000) {
+  constructor(baseUrl: string = 'http://localhost:5030/api', timeout: number = 15000) {
     this.baseUrl = baseUrl;
     this.timeout = timeout;
+    console.log(`TravelRequestService initialized with baseUrl: ${this.baseUrl}`);
   }
 
-  /**
-   * Convert form state to API payload format
-   */
-  private mapFormStateToApiPayload(state: TravelRequestState, employeeId: number = 1): ApiTravelRequest {
-    return {
-      requestId: 1,
-      employeeId: employeeId,
-      travelTypeId: getTravelTypeId(state.travelType),
-      tripTypeId: getTripTypeId(state.tripType),
-      projectCode: state.projectCode,
-      sourcePlace: state.source?.city || '',
-      sourceCountry: state.source?.country || '',
-      destinationPlace: state.destination?.city || '',
-      destinationCountry: state.destination?.country || '',
-      departureDate: state.departureDate?.toISOString() || new Date().toISOString(),
-      returnDate: state.returnDate?.toISOString() || new Date().toISOString(),
+  private mapFormStateToCreateDTO(state: TravelRequestState, userId: number): TravelRequestCreateDTO {
+    // Validation
+    if (!state.source?.city || !state.source?.country) {
+      throw new Error("Source location (city and country) is required.");
+    }
+    if (!state.destination?.city || !state.destination?.country) {
+      throw new Error("Destination location (city and country) is required.");
+    }
+    if (!state.outboundDepartureDate) {
+      throw new Error("Outbound departure date is required.");
+    }
+
+    
+    const outboundDeparture = combineDateAndTime(state.outboundDepartureDate, state.outboundDepartureTime);
+    
+    
+    const outboundArrival = state.outboundArrivalDate 
+      ? combineDateAndTime(state.outboundArrivalDate, state.outboundArrivalTime)
+      : outboundDeparture; 
+
+    let returnDeparture: Date | undefined;
+    let returnArrival: Date | undefined;
+
+    if (state.tripType === 'roundTrip') {
+      if (!state.returnDepartureDate) {
+        throw new Error("Return departure date is required for round trips.");
+      }
+      returnDeparture = combineDateAndTime(state.returnDepartureDate, state.returnDepartureTime);
+      returnArrival = state.returnArrivalDate 
+        ? combineDateAndTime(state.returnArrivalDate, state.returnArrivalTime)
+        : returnDeparture;
+    }
+
+    
+    const isVegetarian = state.requiresFoodPreference ? state.foodPreference === 'veg' : false;
+    const foodComment = state.requiresFoodPreference && state.foodPreferenceComment 
+      ? state.foodPreferenceComment 
+      : undefined;
+
+    
+    const pickUpPlace = state.requiresPickup && state.pickupLocation.trim() 
+      ? state.pickupLocation.trim() 
+      : undefined;
+    
+    const dropOffPlace = state.requiresDropoff && state.dropoffLocation.trim() 
+      ? state.dropoffLocation.trim() 
+      : undefined;
+
+    const dto: TravelRequestCreateDTO = {
+      userId: userId,
       travelModeId: getTravelModeId(state.transportMode),
+      isInternational: state.travelType === 'international',
+      isRoundTrip: state.tripType === 'roundTrip',
+      projectCode: state.projectCode.trim(),
+      sourcePlace: state.source.city,
+      sourceCountry: state.source.country,
+      destinationPlace: state.destination.city,
+      destinationCountry: state.destination.country,
+      outboundDepartureDate: outboundDeparture.toISOString(),
+      outboundArrivalDate: outboundArrival.toISOString(),
+      returnDepartureDate: returnDeparture?.toISOString(),
+      returnArrivalDate: returnArrival?.toISOString(),
       isAccommodationRequired: state.requiresAccommodation,
-      isPickupRequired: state.requiresPickup,
-      isDropoffRequired: state.requiresDropoff,
-      pickupLocation: state.pickupLocation,
-      dropoffLocation: state.dropoffLocation,
-      comments: state.comments,
-      purposeOfTravel: state.reason,
-      foodPreference: state.requiresFoodPreference ? state.foodPreference : null,
-      attendedCct: state.attendedCct
+      isDropOffRequired: state.requiresDropoff,
+      dropOffPlace: dropOffPlace,               
+      isPickUpRequired: state.requiresPickup,
+      pickUpPlace: pickUpPlace,                 
+      comments: state.comments.trim() || undefined,
+      purposeOfTravel: state.reason.trim(),
+      isVegetarian: isVegetarian,
+      foodComment: foodComment,
+      attendedCCT: state.attendedCct,
+
     };
+
+    return dto;
   }
 
-  /**
-   * Submit travel request to API
-   */
-  async submitTravelRequest(state: TravelRequestState, employeeId?: number): Promise<ApiResponse> {
+  async submitTravelRequest(state: TravelRequestState, userId: number): Promise<ApiResponse> {
+    let dto: TravelRequestCreateDTO;
+    
     try {
-      const apiPayload = this.mapFormStateToApiPayload(state, employeeId);
-      
-      // Log the payload for debugging
-      console.log('=== FORM SUBMISSION DATA ===');
-      console.log('Raw Form State:', state);
-      console.log('\n=== API PAYLOAD ===');
-      console.log(JSON.stringify(apiPayload, null, 2));
-      console.log('\n=== API ENDPOINT ===');
-      console.log(`POST ${this.baseUrl}/TravelRequest`);
+      dto = this.mapFormStateToCreateDTO(state, userId);
+    } catch (mappingError: any) {
+      console.error('Error mapping form state to DTO:', mappingError);
+      return {
+        success: false,
+        message: mappingError.message || 'Internal error: Could not prepare data for submission.',
+      };
+    }
 
-      const response = await axios.post(`${this.baseUrl}/TravelRequest`, apiPayload, {
+    console.log('=== SUBMITTING TRAVEL REQUEST ===');
+    console.log('API Endpoint:', `${this.baseUrl}/TravelRequest`);
+    console.log('Request DTO:', JSON.stringify(dto, null, 2));
+
+    try {
+      const response = await axios.post<any>(`${this.baseUrl}/TravelRequest`, dto, {
         headers: {
           'Content-Type': 'application/json',
-          // Add authorization header if needed
-          // 'Authorization': `Bearer ${token}`,
+
         },
         timeout: this.timeout,
       });
 
-      console.log('\n=== API SUCCESS RESPONSE ===');
+      console.log('=== API SUCCESS RESPONSE ===');
       console.log('Status:', response.status);
       console.log('Data:', response.data);
 
-      return {
-        success: true,
-        message: 'Travel request submitted successfully!',
-        data: response.data
-      };
+      if (response.status === 200 || response.status === 201) {
+        return {
+          success: true,
+          message: response.data?.message || 'Travel request submitted successfully!',
+          data: response.data,
+        };
+      } else {
+        return {
+          success: false,
+          message: response.data?.message || `Submission failed with status: ${response.status}`,
+          data: response.data,
+        };
+      }
 
     } catch (error) {
-      console.error('\n=== API ERROR ===');
+      console.error('=== API SUBMISSION ERROR ===');
       
       if (axios.isAxiosError(error)) {
-        if (error.response) {
-          console.error('Response Status:', error.response.status);
-          console.error('Response Data:', error.response.data);
-          console.error('Response Headers:', error.response.headers);
+        const axiosError = error as AxiosError<any>;
+        console.error('Axios Error Details:', {
+          message: axiosError.message,
+          code: axiosError.code,
+          response: axiosError.response ? {
+            status: axiosError.response.status,
+            data: axiosError.response.data,
+          } : 'No response object',
+        });
+
+        if (axiosError.response) {
+          let errorMessage = `Server Error (${axiosError.response.status}): `;
+          
+          if (axiosError.response.data?.message) {
+            errorMessage += axiosError.response.data.message;
+          } else if (axiosError.response.data?.errors) {
+            // Handle validation errors if your API returns them
+            const validationErrors = Object.values(axiosError.response.data.errors).flat();
+            errorMessage += validationErrors.join(', ');
+          } else if (typeof axiosError.response.data === 'string') {
+            errorMessage += axiosError.response.data;
+          } else {
+            errorMessage += 'Please check server logs for details.';
+          }
           
           return {
             success: false,
-            message: error.response.data?.message || 'Failed to submit travel request',
-            data: error.response.data
+            message: errorMessage,
+            data: axiosError.response.data,
           };
-        } else if (error.request) {
-          console.error('Network Error:', error.request);
+        } else if (axiosError.request) {
           return {
             success: false,
-            message: 'Network error: Please check your connection and try again.'
+            message: 'Network error: Unable to reach server. Please check your connection and server status.',
           };
         } else {
-          console.error('Error:', error.message);
           return {
             success: false,
-            message: 'An unexpected error occurred. Please try again.'
+            message: 'Request setup error: ' + axiosError.message,
           };
         }
       } else {
         console.error('Unknown Error:', error);
         return {
           success: false,
-          message: 'An unexpected error occurred. Please try again.'
+          message: 'An unexpected error occurred. Please try again.',
         };
       }
     }
   }
 
-  async getTravelRequests(employeeId?: number): Promise<ApiResponse> {
-    try {
-      const url = employeeId 
-        ? `${this.baseUrl}/TravelRequest/employee/${employeeId}`
-        : `${this.baseUrl}/TravelRequest`;
+  async getTravelRequests(userId?: number): Promise<ApiResponse> {
+    const url = userId
+      ? `${this.baseUrl}/TravelRequests/user/${userId}`
+      : `${this.baseUrl}/TravelRequest`;
 
+    console.log(`Fetching travel requests from: ${url}`);
+
+    try {
       const response = await axios.get(url, {
-        headers: {
-          'Content-Type': 'application/json',
-          
-        },
+        headers: { 'Content-Type': 'application/json' },
         timeout: this.timeout,
       });
-
-      return {
-        success: true,
-        data: response.data
-      };
-
+      
+      console.log('Successfully fetched travel requests:', response.data);
+      return { success: true, data: response.data };
     } catch (error) {
       console.error('Error fetching travel requests:', error);
-      return {
-        success: false,
-        message: 'Failed to fetch travel requests'
-      };
+      
+      if (axios.isAxiosError(error)) {
+        const axiosError = error as AxiosError<any>;
+        return { 
+          success: false, 
+          message: axiosError.response?.data?.message || axiosError.message || 'Failed to fetch travel requests'
+        };
+      }
+      return { success: false, message: 'Failed to fetch travel requests due to an unknown error.' };
     }
   }
 
-
   updateConfig(baseUrl?: string, timeout?: number) {
-    if (baseUrl) this.baseUrl = baseUrl;
-    if (timeout) this.timeout = timeout;
+    if (baseUrl) {
+      this.baseUrl = baseUrl;
+      console.log(`TravelRequestService baseUrl updated to: ${this.baseUrl}`);
+    }
+    if (timeout) {
+      this.timeout = timeout;
+      console.log(`TravelRequestService timeout updated to: ${this.timeout}`);
+    }
   }
 }
 
-// Export singleton instance
-export const travelRequestService = new TravelRequestService();
-export { TravelRequestService };
-export type { TravelRequestState, ApiTravelRequest, ApiResponse, Location };
+export const travelRequestService = new TravelRequestService('http://localhost:5030/api', 15000);

@@ -16,26 +16,16 @@ import TicketComponent from './ticket_options/TicketOptionsComponent';
 import TravelInfoBanner from './TravelInfoBanner';
 import { useModal } from './confirmation_modal/hooks/useModal';
 import ConfirmationModal from './confirmation_modal/ConfirmationModal';
-import CloseRequestModalContent from './CloseRequestModalContent';
 
 const TravelRequestDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { isOpen, title, content, buttons, openModal, closeModal } = useModal();
   const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
-  const [approveComment, setApproveComment] = useState('');
-  const [rejectComment, setRejectComment] = useState('');
+  const [, setApproveComment] = useState('');
+  const [, setRejectComment] = useState('');
   const [actionTaken, setActionTaken] = useState(false);
-
-  const [closeRequestData, setCloseRequestData] = useState({
-    travelAgency: '',
-    sameAirlines: true,
-    departureAirline: '',
-    departureCost: '',
-    returnAirline: '',
-    returnCost: '',
-    totalExpenses: ''
-  });
+  const [requestClosed, setRequestClosed] = useState(false);
 
   const userString = localStorage.getItem('user');
   let role = ''
@@ -81,16 +71,19 @@ const TravelRequestDetails: React.FC = () => {
   };
 
   const handleFeedbackSubmit = () => {
+    let feedbackText = '';
+
     openModal(
       <div className="space-y-4">
         <textarea
           className="w-full p-2 border rounded"
           placeholder="Enter your feedback..."
           rows={4}
+          onChange={(e) => feedbackText = e.target.value}
         />
       </div>,
       () => {
-        console.log('Feedback submitted');
+        console.log('Feedback submitted:', feedbackText);
         setFeedbackSubmitted(true);
       },
       'Submit Feedback',
@@ -98,89 +91,71 @@ const TravelRequestDetails: React.FC = () => {
     );
   };
 
-  const resetCloseRequestData = () => {
-    setCloseRequestData({
-      travelAgency: '',
-      sameAirlines: true,
-      departureAirline: '',
-      departureCost: '',
-      returnAirline: '',
-      returnCost: '',
-      totalExpenses: ''
-    });
-  };
+  const handleCloseRequest = () => {
+    let closingRemarks = '';
 
-  const handleCloseRequestInputChange = (field: string, value: string | boolean) => {
-    setCloseRequestData(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
-
-  const validateCloseRequestData = () => {
-    const { travelAgency, departureAirline, departureCost, returnAirline, returnCost, totalExpenses, sameAirlines } = closeRequestData;
-    if (!travelAgency.trim()) return 'Travel agency name is required';
-    if (!departureAirline.trim()) return 'Departure airline is required';
-    if (!departureCost.trim()) return 'Departure cost is required';
-    if (!sameAirlines && !returnAirline.trim()) return 'Return airline is required';
-    if (!sameAirlines && !returnCost.trim()) return 'Return cost is required';
-    if (!totalExpenses.trim()) return 'Total expenses is required';
-    return null;
-  };
-
-  const handleCloseRequestSubmit = () => {
-    const validationError = validateCloseRequestData();
-    if (validationError) {
-      alert(validationError);
-      return;
-    }
     openModal(
       <div className="space-y-4">
-        <p className="text-lg font-medium">Are you sure you want to finalize this travel request?</p>
-        <div className="bg-gray-50 p-4 rounded-lg space-y-2 text-sm">
-          <div><strong>Travel Agency:</strong> {closeRequestData.travelAgency}</div>
-          <div><strong>Departure Airline:</strong> {closeRequestData.departureAirline} (${closeRequestData.departureCost})</div>
-          {!closeRequestData.sameAirlines && (
-            <div><strong>Return Airline:</strong> {closeRequestData.returnAirline} (${closeRequestData.returnCost})</div>
-          )}
-          <div><strong>Total Expenses:</strong> ${closeRequestData.totalExpenses}</div>
-        </div>
-        <p className="text-red-600 text-sm">This action cannot be undone.</p>
+        <p className="text-red-600 mb-3 italic">
+          This will mark the travel request as closed and finalized. This action cannot be undone.
+        </p>
+        <textarea
+          className="w-full p-2 border rounded"
+          placeholder="Closing remarks (optional)..."
+          rows={4}
+          onChange={(e) => closingRemarks = e.target.value}
+        />
       </div>,
       () => {
-        console.log('Request finalized with data:', closeRequestData);
-        resetCloseRequestData();
+        console.log('Request Closed with remarks:', closingRemarks);
+        setRequestClosed(true);
+        travelRequest.status = 'Closed';
       },
-      'Confirm Finalization',
-      'Finalize Request'
-    );
-  };
-
-  const handleCloseRequest = () => {
-    openModal(
-      <CloseRequestModalContent
-        closeRequestData={closeRequestData}
-        handleCloseRequestInputChange={handleCloseRequestInputChange}
-      />,
-      handleCloseRequestSubmit,
-      'Finalize Travel Request',
-      'Continue'
+      'Finalize request',
+      'Confirm',
     );
   };
 
   const handleApproveSubmit = () => {
+    let comment = '';
+
     openModal(
       <div className="space-y-4">
         <textarea
           className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           placeholder="Add approval comments (optional)"
           rows={4}
+          onChange={(e) => comment = e.target.value}
         />
       </div>,
       () => {
-        console.log('Request approved with comment:', approveComment);
-        setActionTaken(true);
-        setApproveComment('');
+        // API call for approval using PUT method
+        fetch(`http://localhost:5030/api/Approvals/${id}/manager/approve`, {
+          method: 'PUT', // Changed to PUT
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            approvingUserId: 4, // Hardcoded as 4 for now
+            comments: comment
+          })
+        })
+          .then(response => {
+            if (!response.ok) {
+              throw new Error('Approval failed');
+            }
+            return response.json();
+          })
+          .then(data => {
+            console.log('Request approved with comment:', comment);
+            setActionTaken(true);
+            setApproveComment('');
+            travelRequest.status = 'Approved';
+          })
+          .catch(error => {
+            console.error('Error approving request:', error);
+            alert('Failed to approve request. Please try again.');
+          });
       },
       'Approve Travel Request',
       'Confirm Approval'
@@ -188,22 +163,50 @@ const TravelRequestDetails: React.FC = () => {
   };
 
   const handleRejectSubmit = () => {
+    let comment = '';
+
     openModal(
       <div className="space-y-4">
         <textarea
           className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           placeholder="Add rejection reason (required)"
           rows={4}
+          onChange={(e) => comment = e.target.value}
         />
       </div>,
       () => {
-        if (!rejectComment.trim()) {
+        if (!comment.trim()) {
           alert('Please provide a rejection reason');
-          return; 
+          return;
         }
-        console.log('Request rejected with reason:', rejectComment);
-        setActionTaken(true);
-        setRejectComment('');
+
+        // API call for rejection using PUT method
+        fetch(`http://localhost:5030/api/Approvals/${id}/manager/reject`, {
+          method: 'PUT', // Changed to PUT
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            rejectingUserId: 4, // Hardcoded as 4 for now
+            comments: comment
+          })
+        })
+          .then(response => {
+            if (!response.ok) {
+              throw new Error('Rejection failed');
+            }
+            return response.json();
+          })
+          .then(data => {
+            console.log('Request rejected with reason:', comment);
+            setActionTaken(true);
+            setRejectComment('');
+            travelRequest.status = 'Rejected';
+          })
+          .catch(error => {
+            console.error('Error rejecting request:', error);
+            alert('Failed to reject request. Please try again.');
+          });
       },
       'Reject Travel Request',
       'Confirm Rejection'
@@ -220,11 +223,11 @@ const TravelRequestDetails: React.FC = () => {
     !feedbackSubmitted;
 
   const showCloseRequestButton = isAdmin &&
-    travelRequest.status === 'Returned';
+    travelRequest.status === 'Returned' &&
+    !requestClosed;
 
-  // Condition for showing Approve/Reject buttons
-  const showManagerActionButtons = isManager && 
-    travelRequest.status === 'Pending' && 
+  const showManagerActionButtons = isManager &&
+    travelRequest.status === 'PendingReview' &&
     !actionTaken;
 
   return (
@@ -260,13 +263,16 @@ const TravelRequestDetails: React.FC = () => {
         </div>
 
         <div className="flex space-x-3">
-          <button
-            className="btn-accent flex items-center"
-            onClick={handleDownloadDocuments}
-          >
-            <Download className="h-4 w-4 mr-2" />
-            Travel Docs
-          </button>
+
+          {showCloseRequestButton && (
+            <button
+              className="btn-secondary flex items-center"
+              onClick={handleCloseRequest}
+            >
+              <Lock className="h-4 w-4 mr-2" />
+              Finalize Request
+            </button>
+          )}
 
           {showFeedbackButton && (
             <button
@@ -278,15 +284,13 @@ const TravelRequestDetails: React.FC = () => {
             </button>
           )}
 
-          {showCloseRequestButton && (
-            <button
-              className="btn-primary flex items-center"
-              onClick={handleCloseRequest}
-            >
-              <Lock className="h-4 w-4 mr-2" />
-              Finalize Request
-            </button>
-          )}
+          <button
+            className="btn-primary flex items-center"
+            onClick={handleDownloadDocuments}
+          >
+            <Download className="h-4 w-4 mr-2" />
+            Travel Docs
+          </button>
 
           {showManagerActionButtons && (
             <>
@@ -315,7 +319,7 @@ const TravelRequestDetails: React.FC = () => {
       </div>
 
       <div>
-        <TravelInfoBanner travelRequest={travelRequest} />
+        <TravelInfoBanner requestId={id} />
       </div>
 
       <div className="flex flex-col lg:flex-row gap-4 items-stretch">

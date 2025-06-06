@@ -1,7 +1,8 @@
-import React, { createContext, useContext, useReducer, ReactNode, useState } from 'react';
-import { travelRequestService } from './TravelRequestService';
+import React, { createContext, useContext, useReducer, ReactNode, useState, useEffect } from 'react';
+import { travelRequestService } from './TravelRequestService'; 
 
-interface Location {
+
+export interface Location {
   country: string;
   city: string;
   state?: string;
@@ -9,28 +10,35 @@ interface Location {
   value: string;
 }
 
+
 interface TravelRequestState {
   travelType: 'domestic' | 'international';
   tripType: 'oneWay' | 'roundTrip';
   source: Location | null;
   destination: Location | null;
-  departureDate: Date | null;
-  returnDate: Date | null;
+  outboundDepartureDate: Date | null;
+  outboundDepartureTime: string;
+  outboundArrivalDate: Date | null;
+  outboundArrivalTime: string;
+  returnDepartureDate: Date | null;
+  returnDepartureTime: string;
+  returnArrivalDate: Date | null;
+  returnArrivalTime: string;
   transportMode: string;
   requiresAccommodation: boolean;
   requiresPickup: boolean;
   requiresDropoff: boolean;
   pickupLocation: string;
   dropoffLocation: string;
-  pickupTime: Date | null;
-  dropoffTime: Date | null;
-  requestCode: string;
   projectCode: string;
-  reason: string;
+  reason: string; 
   comments: string;
   requiresFoodPreference: boolean;
   foodPreference: 'veg' | 'non-veg';
+  foodPreferenceComment: string | null;
   attendedCct: boolean;
+  departureDate: Date | null;
+  returnDate: Date | null;
 }
 
 type TravelRequestAction =
@@ -38,122 +46,243 @@ type TravelRequestAction =
   | { type: 'SET_TRIP_TYPE'; payload: 'oneWay' | 'roundTrip' }
   | { type: 'SET_SOURCE'; payload: Location | null }
   | { type: 'SET_DESTINATION'; payload: Location | null }
-  | { type: 'SET_DEPARTURE_DATE'; payload: Date | null }
-  | { type: 'SET_RETURN_DATE'; payload: Date | null }
+  | { type: 'SET_OUTBOUND_DEPARTURE_DATE'; payload: Date | null }
+  | { type: 'SET_OUTBOUND_DEPARTURE_TIME'; payload: string }
+  | { type: 'SET_OUTBOUND_ARRIVAL_DATE'; payload: Date | null }
+  | { type: 'SET_OUTBOUND_ARRIVAL_TIME'; payload: string }
+  | { type: 'SET_RETURN_DEPARTURE_DATE'; payload: Date | null }
+  | { type: 'SET_RETURN_DEPARTURE_TIME'; payload: string }
+  | { type: 'SET_RETURN_ARRIVAL_DATE'; payload: Date | null }
+  | { type: 'SET_RETURN_ARRIVAL_TIME'; payload: string }
+  | { type: 'SET_DEPARTURE_DATE'; payload: Date | null } // Legacy
+  | { type: 'SET_RETURN_DATE'; payload: Date | null } // Legacy
   | { type: 'SET_TRANSPORT_MODE'; payload: string }
   | { type: 'SET_REQUIRES_ACCOMMODATION'; payload: boolean }
   | { type: 'SET_REQUIRES_PICKUP'; payload: boolean }
   | { type: 'SET_REQUIRES_DROPOFF'; payload: boolean }
   | { type: 'SET_PICKUP_LOCATION'; payload: string }
   | { type: 'SET_DROPOFF_LOCATION'; payload: string }
-  | { type: 'SET_PICKUP_TIME'; payload: Date | null }
-  | { type: 'SET_DROPOFF_TIME'; payload: Date | null }
-  | { type: 'SET_REQUEST_CODE'; payload: string }
   | { type: 'SET_PROJECT_CODE'; payload: string }
   | { type: 'SET_REASON'; payload: string }
   | { type: 'SET_COMMENTS'; payload: string }
   | { type: 'SET_REQUIRES_FOOD_PREFERENCE'; payload: boolean }
   | { type: 'SET_FOOD_PREFERENCE'; payload: 'veg' | 'non-veg' }
+  | { type: 'SET_FOOD_PREFERENCE_COMMENT'; payload: string }
   | { type: 'SET_ATTENDED_CCT'; payload: boolean }
   | { type: 'RESET_FORM' };
 
-// Initial state
 const initialState: TravelRequestState = {
   travelType: 'domestic',
   tripType: 'roundTrip',
   source: null,
   destination: null,
-  departureDate: null,
-  returnDate: null,
+  outboundDepartureDate: null,
+  outboundDepartureTime: '',
+  outboundArrivalDate: null,
+  outboundArrivalTime: '',
+  returnDepartureDate: null,
+  returnDepartureTime: '',
+  returnArrivalDate: null,
+  returnArrivalTime: '',
   transportMode: 'flight',
   requiresAccommodation: false,
   requiresPickup: false,
   requiresDropoff: false,
   pickupLocation: '',
   dropoffLocation: '',
-  pickupTime: null,
-  dropoffTime: null,
-  requestCode: '',
   projectCode: '',
   reason: '',
   comments: '',
   requiresFoodPreference: false,
   foodPreference: 'veg',
+  foodPreferenceComment: null,
   attendedCct: false,
+  departureDate: null,
+  returnDate: null,
 };
 
-// Reducer function
 const travelRequestReducer = (state: TravelRequestState, action: TravelRequestAction): TravelRequestState => {
   switch (action.type) {
     case 'SET_TRAVEL_TYPE':
-      return { ...state, travelType: action.payload };
+      const newTransportMode = action.payload === 'international' ? 'flight' : state.transportMode;
+      return { ...state, travelType: action.payload, transportMode: newTransportMode };
+    
     case 'SET_TRIP_TYPE':
+      if (action.payload === 'oneWay') {
+        return { 
+          ...state, 
+          tripType: action.payload, 
+          returnDate: null,
+          returnDepartureDate: null,
+          returnDepartureTime: '',
+          returnArrivalDate: null,
+          returnArrivalTime: ''
+        };
+      }
       return { ...state, tripType: action.payload };
+    
     case 'SET_SOURCE':
       return { ...state, source: action.payload };
+    
     case 'SET_DESTINATION':
       return { ...state, destination: action.payload };
+    
+    case 'SET_OUTBOUND_DEPARTURE_DATE':
+      return { 
+        ...state, 
+        outboundDepartureDate: action.payload,
+        departureDate: action.payload 
+      };
+    
+    case 'SET_OUTBOUND_DEPARTURE_TIME':
+      return { ...state, outboundDepartureTime: action.payload };
+    
+    case 'SET_OUTBOUND_ARRIVAL_DATE':
+      return { ...state, outboundArrivalDate: action.payload };
+    
+    case 'SET_OUTBOUND_ARRIVAL_TIME':
+      return { ...state, outboundArrivalTime: action.payload };
+    
+    case 'SET_RETURN_DEPARTURE_DATE':
+      return { 
+        ...state, 
+        returnDepartureDate: action.payload,
+        returnDate: action.payload 
+      };
+    
+    case 'SET_RETURN_DEPARTURE_TIME':
+      return { ...state, returnDepartureTime: action.payload };
+    
+    case 'SET_RETURN_ARRIVAL_DATE':
+      return { ...state, returnArrivalDate: action.payload };
+    
+    case 'SET_RETURN_ARRIVAL_TIME':
+      return { ...state, returnArrivalTime: action.payload };
+    
+    
     case 'SET_DEPARTURE_DATE':
-      return { ...state, departureDate: action.payload };
+      return { 
+        ...state, 
+        departureDate: action.payload,
+        outboundDepartureDate: action.payload
+      };
+    
     case 'SET_RETURN_DATE':
-      return { ...state, returnDate: action.payload };
+      return { 
+        ...state, 
+        returnDate: action.payload,
+        returnDepartureDate: action.payload
+      };
+    
     case 'SET_TRANSPORT_MODE':
       return { ...state, transportMode: action.payload };
+    
     case 'SET_REQUIRES_ACCOMMODATION':
       return { ...state, requiresAccommodation: action.payload };
+    
     case 'SET_REQUIRES_PICKUP':
-      return { ...state, requiresPickup: action.payload };
+      const newPickupLocation = !action.payload ? '' : state.pickupLocation;
+      return { ...state, requiresPickup: action.payload, pickupLocation: newPickupLocation };
+    
     case 'SET_REQUIRES_DROPOFF':
-      return { ...state, requiresDropoff: action.payload };
+      const newDropoffLocation = !action.payload ? '' : state.dropoffLocation;
+      return { ...state, requiresDropoff: action.payload, dropoffLocation: newDropoffLocation };
+    
     case 'SET_PICKUP_LOCATION':
       return { ...state, pickupLocation: action.payload };
+    
     case 'SET_DROPOFF_LOCATION':
       return { ...state, dropoffLocation: action.payload };
-    case 'SET_PICKUP_TIME':
-      return { ...state, pickupTime: action.payload };
-    case 'SET_DROPOFF_TIME':
-      return { ...state, dropoffTime: action.payload };
-    case 'SET_REQUEST_CODE':
-      return { ...state, requestCode: action.payload };
+    
     case 'SET_PROJECT_CODE':
       return { ...state, projectCode: action.payload };
+    
     case 'SET_REASON':
       return { ...state, reason: action.payload };
+    
     case 'SET_COMMENTS':
       return { ...state, comments: action.payload };
+    
     case 'SET_REQUIRES_FOOD_PREFERENCE':
+      if (!action.payload) {
+        return { 
+          ...state, 
+          requiresFoodPreference: action.payload,
+          foodPreference: 'veg',
+          foodPreferenceComment: null
+        };
+      }
       return { ...state, requiresFoodPreference: action.payload };
+    
     case 'SET_FOOD_PREFERENCE':
       return { ...state, foodPreference: action.payload };
+    
+    case 'SET_FOOD_PREFERENCE_COMMENT':
+      const comment = action.payload.trim() === '' ? null : action.payload;
+      return { ...state, foodPreferenceComment: comment };
+    
     case 'SET_ATTENDED_CCT':
       return { ...state, attendedCct: action.payload };
+    
     case 'RESET_FORM':
       return initialState;
+    
     default:
       return state;
   }
 };
 
-// Validation function for travel locations
-const validateTravelLocations = (state: TravelRequestState): string | null => {
+
+const validateTravelLocationsConsistency = (state: TravelRequestState): string | null => {
   if (!state.source?.country || !state.destination?.country) {
-    return null; // No validation if countries are not selected yet
+    return null; 
   }
 
-  const sameCountry = state.source.country === state.destination.country;
+  const sameCountry = state.source.country.toLowerCase() === state.destination.country.toLowerCase();
 
   if (state.travelType === 'domestic' && !sameCountry) {
-    return `Domestic travel must be within the same country. Source: ${state.source.country}, Destination: ${state.destination.country}`;
+    return `Domestic travel must be within the same country. Source: ${state.source.country}, Destination: ${state.destination.country}.`;
   }
 
   if (state.travelType === 'international' && sameCountry) {
-    return `International travel requires different countries. Both source and destination are in ${state.source.country}`;
+    return `International travel requires different countries. Both source and destination are in ${state.source.country}.`;
   }
-
   return null;
 };
 
-// Create context
+
+const SuccessPopup: React.FC<{ message: string; onClose: () => void }> = ({ message, onClose }) => {
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      onClose();
+    }, 4000);
+    return () => clearTimeout(timer);
+  }, [onClose]);
+
+  return (
+    <div className="fixed top-4 right-4 z-50 max-w-sm">
+      <div className="bg-green-500 text-white px-6 py-4 rounded-lg shadow-lg flex items-center space-x-3 transform transition-all duration-300 ease-out">
+        <div className="flex-shrink-0">
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+          </svg>
+        </div>
+        <div className="flex-1">
+          <p className="font-medium">{message}</p>
+        </div>
+        <button
+          onClick={onClose}
+          className="flex-shrink-0 text-green-200 hover:text-white transition-colors duration-200"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  );
+};
+
 interface TravelRequestContextType {
   state: TravelRequestState;
   dispatch: React.Dispatch<TravelRequestAction>;
@@ -166,61 +295,128 @@ interface TravelRequestContextType {
 
 const TravelRequestContext = createContext<TravelRequestContextType | undefined>(undefined);
 
-// Create provider
 interface TravelRequestProviderProps {
   children: ReactNode;
-  employeeId?: number; // Make employeeId configurable
+  userId: number; 
 }
+// const userString = localStorage.getItem('user');
+//   let userId;
+ 
+//   if (userString) {
+//     const user = JSON.parse(userString);
+//     userId = user.userId;
+//   } else {
+//     console.log('No user found in localStorage.');
+//   }
 
-export const TravelRequestProvider: React.FC<TravelRequestProviderProps> = ({ 
-  children, 
-  employeeId = 1 // Default employeeId
+
+
+export const TravelRequestProvider: React.FC<TravelRequestProviderProps> = ({
+  children,
+  userId =1,
 }) => {
   const [state, dispatch] = useReducer(travelRequestReducer, initialState);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [showSuccessPopup, setShowSuccessPopup] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
 
-  const getValidationError = (): string | null => {
-    return validateTravelLocations(state);
+  const validateForm = (): string | null => {
+    if (!state.source || !state.source.city || !state.source.country) {
+      return 'Please select a valid source location (city and country).';
+    }
+    
+    if (!state.destination || !state.destination.city || !state.destination.country) {
+      return 'Please select a valid destination location (city and country).';
+    }
+    
+    if (state.source.value && state.destination.value && state.source.value === state.destination.value) {
+      return 'Source and destination cannot be the same location.';
+    }
+
+    const locationConsistencyError = validateTravelLocationsConsistency(state);
+    if (locationConsistencyError) {
+      return locationConsistencyError;
+    }
+
+    if (!state.outboundDepartureDate) {
+      return 'Please select an outbound departure date.';
+    }
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (state.outboundDepartureDate < today) {
+      return 'Outbound departure date cannot be in the past.';
+    }
+
+    if (state.tripType === 'roundTrip') {
+      if (!state.returnDepartureDate) {
+        return 'Please select a return departure date for round trip.';
+      }
+      if (state.outboundDepartureDate && state.returnDepartureDate && state.returnDepartureDate < state.outboundDepartureDate) {
+        return 'Return departure date must be on or after outbound departure date.';
+      }
+    }
+
+    if (!state.transportMode) {
+      return 'Please select a mode of transport.';
+    }
+
+    if (!state.projectCode.trim()) {
+      return 'Please enter a project code.';
+    }
+    
+    if (!state.reason.trim()) {
+      return 'Please enter the purpose of travel.';
+    }
+
+    if (state.requiresPickup && !state.pickupLocation.trim()) {
+      return 'Please specify a pickup location when "Requires Pickup" is selected.';
+    }
+    
+    if (state.requiresDropoff && !state.dropoffLocation.trim()) {
+      return 'Please specify a drop-off location when "Requires Drop-off" is selected.';
+    }
+
+    if (state.requiresFoodPreference && !state.foodPreference) {
+      return 'Please select a food preference.';
+    }
+
+    return null; 
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Clear previous errors
     setSubmitError(null);
 
-    // Check for validation errors before proceeding
-    const validationError = getValidationError();
+    const validationError = validateForm();
     if (validationError) {
       setSubmitError(validationError);
-      alert(`Validation Error: ${validationError}`);
+      console.error("Form validation failed:", validationError);
       return;
     }
 
     setIsSubmitting(true);
+    console.log('Form validation passed. Submitting with state:', state);
 
     try {
-      // Use the service to submit the request
-      const result = await travelRequestService.submitTravelRequest(state, employeeId);
-      
+      const result = await travelRequestService.submitTravelRequest(state, userId);
+
       if (result.success) {
-        alert(result.message || 'Travel request submitted successfully!');
-        
-        // Optionally reset form after successful submission
-        // dispatch({ type: 'RESET_FORM' });
-        
-        // If you have navigation, you can redirect here
-        // navigate('/travel-requests');
+        console.log('Submission successful:', result);
+        setSuccessMessage(result.message || 'Travel request submitted successfully!');
+        setShowSuccessPopup(true);
+        setTimeout(() => {
+          dispatch({ type: 'RESET_FORM' });
+        }, 1500);
       } else {
-        setSubmitError(result.message || 'Failed to submit travel request');
-        alert(result.message || 'Failed to submit travel request');
+        console.error('Submission failed:', result.message);
+        setSubmitError(result.message || 'Failed to submit travel request. Please try again.');
       }
-    } catch (error) {
-      const errorMessage = 'An unexpected error occurred. Please try again.';
-      setSubmitError(errorMessage);
-      alert(errorMessage);
+    } catch (error: any) {
       console.error('Unexpected error in handleSubmit:', error);
+      const errorMessage = error.message || 'An unexpected error occurred. Please try again.';
+      setSubmitError(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -229,24 +425,41 @@ export const TravelRequestProvider: React.FC<TravelRequestProviderProps> = ({
   const resetForm = () => {
     dispatch({ type: 'RESET_FORM' });
     setSubmitError(null);
+    setShowSuccessPopup(false);
+  };
+
+  const getValidationError = (): string | null => {
+    return validateTravelLocationsConsistency(state);
+  };
+
+  const handleCloseSuccessPopup = () => {
+    setShowSuccessPopup(false);
   };
 
   return (
-    <TravelRequestContext.Provider value={{ 
-      state, 
-      dispatch, 
-      handleSubmit, 
-      isSubmitting, 
-      submitError,
-      resetForm,
-      getValidationError
-    }}>
-      {children}
-    </TravelRequestContext.Provider>
+    <>
+      <TravelRequestContext.Provider value={{
+        state,
+        dispatch,
+        handleSubmit,
+        isSubmitting,
+        submitError,
+        resetForm,
+        getValidationError
+      }}>
+        {children}
+      </TravelRequestContext.Provider>
+
+      {showSuccessPopup && (
+        <SuccessPopup
+          message={successMessage}
+          onClose={handleCloseSuccessPopup}
+        />
+      )}
+    </>
   );
 };
 
-// Custom hook to use the context
 export const useTravelRequest = () => {
   const context = useContext(TravelRequestContext);
   if (context === undefined) {

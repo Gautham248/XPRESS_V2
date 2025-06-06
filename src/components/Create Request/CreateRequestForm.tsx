@@ -4,7 +4,7 @@ import { useTravelRequest } from './TravelRequestContext';
 import BasicInfoSection from './BasicInfoSection';
 import TravelDetailsSection from './TravelDetailsSection';
 import AdditionalServicesSection from './AdditionalServicesSection';
-import PurposeSection from './PurposeSection';
+
 
 const CreateRequestForm: React.FC = () => {
   const navigate = useNavigate();
@@ -15,7 +15,7 @@ const CreateRequestForm: React.FC = () => {
       <BasicInfoSection />
       <TravelDetailsSection />
       <AdditionalServicesSection />
-      {/* <PurposeSection /> */}
+
 
       <div className="flex justify-end space-x-4">
         <button
