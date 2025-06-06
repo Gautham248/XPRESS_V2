@@ -8,9 +8,9 @@ interface DocumentTabsProps {
 
 function DocumentTabs({ activeTab, setActiveTab }: DocumentTabsProps) {
   const tabs: { id: DocumentType; label: string }[] = [
-    { id: 'passport', label: 'Passport' },
-    { id: 'visa', label: 'Visa' },
-    { id: 'aadhar', label: 'Aadhar' },
+    { id: 'Passport', label: 'Passport' },
+    { id: 'Visa', label: 'Visa' },
+    { id: 'Aadhar', label: 'Aadhar' },
   ];
 
   return (

@@ -7,7 +7,7 @@ export interface TravelRequest {
   source: string;
   destination: string;
   purpose: string;
-  status: 'Pending' | 'Approved' | 'Rejected' | 'Completed' | 'Manager Approved' | 'Tickets Dispatched' | 'Tickets Selected' | 'DU Head Approved' | 'In-transit' | 'Returned' | 'Closed';
+  status: 'PendingReview' | 'Approved' | 'Rejected' | 'Completed' | 'Verified' | 'Tickets Dispatched' | 'Tickets Selected' | 'DU Head Approved' | 'In-transit' | 'Returned' | 'Closed';
   estimatedCost: number;
   transportationType: 'Flight' | 'Train' | 'Car Rental' | 'Other';
   accommodationType: 'Hotel' | 'Airbnb' | 'None' | 'Other';
@@ -24,7 +24,7 @@ export interface TravelRequest {
 
 export interface TimelineEvent {
   id: string;
-  type: 'Pending' | 'Approved' | 'Rejected' | 'Modified' | 'Completed' | 'Manager Approved' | 'DU Head Approved' | 'Tickets Selected' | 'Tickets Dispatched' | 'In-transit' | 'Returned' | 'Closed';
+  type: 'Pending' | 'Approved' | 'Rejected' | 'Modified' | 'Completed' | 'Verified' | 'DU Head Approved' | 'Tickets Selected' | 'Tickets Dispatched' | 'In-transit' | 'Returned' | 'Closed';
   date: string;
   actor: string;
   description: string;
@@ -59,7 +59,7 @@ export const getStatusColor = (status: string) => {
   switch (status) {
     case 'Pending':
       return 'bg-yellow-100 text-yellow-800';
-    case 'Manager Approved':
+    case 'Verified':
       return 'bg-purple-100 text-purple-800';
     case 'Tickets Dispatched':
       return 'bg-green-100 text-green-800';
@@ -94,7 +94,7 @@ export const mockTravelRequests: TravelRequest[] = [
     source: 'Los Angeles, CA',
     destination: 'New York, NY',
     purpose: 'Annual Marketing Conference',
-    status: 'Manager Approved',
+    status: 'PendingReview',
     estimatedCost: 2500,
     transportationType: 'Flight',
     accommodationType: 'Hotel',
@@ -123,7 +123,7 @@ export const mockTravelRequests: TravelRequest[] = [
       },
       {
         id: 'TL-003',
-        type: 'Manager Approved',
+        type: 'Verified',
         date: '2025-01-12T10:00:00',
         actor: 'Sarah Parker',
         description: 'Request approved by manager',
@@ -140,7 +140,7 @@ export const mockTravelRequests: TravelRequest[] = [
     source: 'New York, NY',
     destination: 'London, UK',
     purpose: 'Client Meeting',
-    status: 'Manager Approved',
+    status: 'PendingReview',
     estimatedCost: 4800,
     transportationType: 'Flight',
     accommodationType: 'Hotel',
@@ -169,7 +169,7 @@ export const mockTravelRequests: TravelRequest[] = [
       },
       {
         id: 'TL-003',
-        type: 'Manager Approved',
+        type: 'Verified',
         date: '2025-02-03T14:00:00',
         actor: 'Michael Davis',
         description: 'Request approved by manager',
@@ -217,7 +217,7 @@ export const mockTravelRequests: TravelRequest[] = [
       },
       {
         id: 'TL-002',
-        type: 'Manager Approved',
+        type: 'Verified',
         date: '2025-01-16T15:30:00',
         actor: 'Sarah Parker',
         description: 'Request approved by manager',
@@ -287,7 +287,7 @@ export const mockTravelRequests: TravelRequest[] = [
       },
       {
         id: 'TL-003',
-        type: 'Manager Approved',
+        type: 'Verified',
         date: '2025-02-12T10:00:00',
         actor: 'David Wilson',
         description: 'Request approved by manager',
@@ -373,7 +373,7 @@ export const mockTravelRequests: TravelRequest[] = [
       },
       {
         id: 'TL-002',
-        type: 'Manager Approved',
+        type: 'Verified',
         date: '2025-01-06T15:00:00',
         actor: 'Michael Davis',
         description: 'Request approved by manager',
@@ -438,7 +438,7 @@ export const mockTravelRequests: TravelRequest[] = [
     source: 'Chicago, IL',
     destination: 'Paris, France',
     purpose: 'Industry Exhibition',
-    status: 'Pending',
+    status: 'PendingReview',
     estimatedCost: 4200,
     transportationType: 'Flight',
     accommodationType: 'Hotel',
@@ -491,7 +491,7 @@ export const mockTravelRequests: TravelRequest[] = [
       },
       {
         id: 'TL-002',
-        type: 'Manager Approved',
+        type: 'Verified',
         date: '2025-02-06T14:00:00',
         actor: 'Jennifer Lee',
         description: 'Request approved by manager',
@@ -561,7 +561,7 @@ export const mockTravelRequests: TravelRequest[] = [
       },
       {
         id: 'TL-002',
-        type: 'Manager Approved',
+        type: 'Verified',
         date: '2025-02-26T14:00:00',
         actor: 'David Wilson',
         description: 'Request approved by manager',
@@ -609,7 +609,7 @@ export const mockTravelRequests: TravelRequest[] = [
       },
       {
         id: 'TL-002',
-        type: 'Manager Approved',
+        type: 'Verified',
         date: '2025-02-13T14:00:00',
         actor: 'Michael Davis',
         description: 'Request approved by manager',
@@ -666,7 +666,7 @@ export const mockTravelRequests: TravelRequest[] = [
     source: 'Los Angeles, CA',
     destination: 'Sydney, Australia',
     purpose: 'Global Partners Meeting',
-    status: 'Pending',
+    status: 'PendingReview',
     estimatedCost: 7200,
     transportationType: 'Flight',
     accommodationType: 'Hotel',
@@ -719,7 +719,7 @@ export const mockTravelRequests: TravelRequest[] = [
       },
       {
         id: 'TL-002',
-        type: 'Manager Approved',
+        type: 'Verified',
         date: '2025-02-16T14:30:00',
         actor: 'David Wilson',
         description: 'Request approved by manager',

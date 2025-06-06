@@ -72,7 +72,7 @@ const TravelRequestDetails: React.FC = () => {
 
   const handleFeedbackSubmit = () => {
     let feedbackText = '';
-    
+
     openModal(
       <div className="space-y-4">
         <textarea
@@ -93,7 +93,7 @@ const TravelRequestDetails: React.FC = () => {
 
   const handleCloseRequest = () => {
     let closingRemarks = '';
-    
+
     openModal(
       <div className="space-y-4">
         <p className="text-red-600 mb-3 italic">
@@ -118,7 +118,7 @@ const TravelRequestDetails: React.FC = () => {
 
   const handleApproveSubmit = () => {
     let comment = '';
-    
+
     openModal(
       <div className="space-y-4">
         <textarea
@@ -129,10 +129,33 @@ const TravelRequestDetails: React.FC = () => {
         />
       </div>,
       () => {
-        console.log('Request approved with comment:', comment);
-        setActionTaken(true);
-        setApproveComment('');
-        travelRequest.status = 'Approved';
+        // API call for approval using PUT method
+        fetch(`http://localhost:5030/api/Approvals/${id}/manager/approve`, {
+          method: 'PUT', // Changed to PUT
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            approvingUserId: 4, // Hardcoded as 4 for now
+            comments: comment
+          })
+        })
+          .then(response => {
+            if (!response.ok) {
+              throw new Error('Approval failed');
+            }
+            return response.json();
+          })
+          .then(data => {
+            console.log('Request approved with comment:', comment);
+            setActionTaken(true);
+            setApproveComment('');
+            travelRequest.status = 'Approved';
+          })
+          .catch(error => {
+            console.error('Error approving request:', error);
+            alert('Failed to approve request. Please try again.');
+          });
       },
       'Approve Travel Request',
       'Confirm Approval'
@@ -141,7 +164,7 @@ const TravelRequestDetails: React.FC = () => {
 
   const handleRejectSubmit = () => {
     let comment = '';
-    
+
     openModal(
       <div className="space-y-4">
         <textarea
@@ -154,12 +177,36 @@ const TravelRequestDetails: React.FC = () => {
       () => {
         if (!comment.trim()) {
           alert('Please provide a rejection reason');
-          return; 
+          return;
         }
-        console.log('Request rejected with reason:', comment);
-        setActionTaken(true);
-        setRejectComment('');
-        travelRequest.status = 'Rejected';
+
+        // API call for rejection using PUT method
+        fetch(`http://localhost:5030/api/Approvals/${id}/manager/reject`, {
+          method: 'PUT', // Changed to PUT
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            rejectingUserId: 4, // Hardcoded as 4 for now
+            comments: comment
+          })
+        })
+          .then(response => {
+            if (!response.ok) {
+              throw new Error('Rejection failed');
+            }
+            return response.json();
+          })
+          .then(data => {
+            console.log('Request rejected with reason:', comment);
+            setActionTaken(true);
+            setRejectComment('');
+            travelRequest.status = 'Rejected';
+          })
+          .catch(error => {
+            console.error('Error rejecting request:', error);
+            alert('Failed to reject request. Please try again.');
+          });
       },
       'Reject Travel Request',
       'Confirm Rejection'
@@ -179,8 +226,8 @@ const TravelRequestDetails: React.FC = () => {
     travelRequest.status === 'Returned' &&
     !requestClosed;
 
-  const showManagerActionButtons = isManager && 
-    travelRequest.status === 'Pending' && 
+  const showManagerActionButtons = isManager &&
+    travelRequest.status === 'PendingReview' &&
     !actionTaken;
 
   return (
@@ -236,7 +283,7 @@ const TravelRequestDetails: React.FC = () => {
               Submit Feedback
             </button>
           )}
-          
+
           <button
             className="btn-primary flex items-center"
             onClick={handleDownloadDocuments}
@@ -272,7 +319,7 @@ const TravelRequestDetails: React.FC = () => {
       </div>
 
       <div>
-        <TravelInfoBanner travelRequest={travelRequest} />
+        <TravelInfoBanner requestId={id} />
       </div>
 
       <div className="flex flex-col lg:flex-row gap-4 items-stretch">
