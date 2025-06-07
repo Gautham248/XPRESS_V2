@@ -195,43 +195,53 @@ const DataTable = <T extends Record<string, any>>({
     return true;
   });
 
-  const dateFilteredData = filteredData.filter(item => {
-    if (!dateFilterKey || (!startDate && !endDate)) return true;
+const dateFilteredData = filteredData.filter(item => {
+  if (!dateFilterKey || (!startDate && !endDate)) return true;
 
-    if (dateFilterType === 'requestDate') {
-      const itemDateValue = item[dateFilterKey];
-      if (!itemDateValue) return false; 
-      const dateValue = new Date(itemDateValue);
-      if (isNaN(dateValue.getTime())) return false;
+  if (dateFilterType === 'requestDate') {
+    const itemDateValue = item[dateFilterKey];
+    if (!itemDateValue) return false;
+    const dateValue = new Date(itemDateValue);
+    if (isNaN(dateValue.getTime())) return false;
 
-      const sDate = startDate ? new Date(new Date(startDate).setHours(0,0,0,0)) : null;
-      const eDate = endDate ? new Date(new Date(endDate).setHours(23,59,59,999)) : null;
-      
-      if (sDate && eDate && sDate.getTime() === new Date(new Date(eDate).setHours(0,0,0,0)).getTime()) {
-        const itemDay = new Date(new Date(dateValue).setHours(0,0,0,0));
-        return itemDay.getTime() === sDate.getTime();
-      }
-      if (sDate && eDate) return dateValue >= sDate && dateValue <= eDate;
-      if (sDate) return dateValue >= sDate;
-      if (eDate) return dateValue <= eDate;
-      return true;
-    } else {
-      const departureDate = item.departureDate ? new Date(item.departureDate) : null;
-      const returnDate = item.returnDate ? new Date(item.returnDate) : null;
-      if (!departureDate || !returnDate || isNaN(departureDate.getTime()) || isNaN(returnDate.getTime())) return false;
+    const sDate = startDate ? new Date(new Date(startDate).setHours(0, 0, 0, 0)) : null;
+    const eDate = endDate ? new Date(new Date(endDate).setHours(23, 59, 59, 999)) : null;
 
-      const sDate = startDate ? new Date(new Date(startDate).setHours(0,0,0,0)) : null;
-      const eDate = endDate ? new Date(new Date(endDate).setHours(23,59,59,999)) : null;
+    // Normalize item date to start of day for comparison
+    const itemDay = new Date(new Date(dateValue).setHours(0, 0, 0, 0));
 
-      if (sDate && eDate) {
-        return departureDate <= eDate && returnDate >= sDate;
-      }
-      if (sDate) return returnDate >= sDate;
-      if (eDate) return departureDate <= eDate;
-      return true;
+    if (sDate && eDate && sDate.getTime() === new Date(new Date(eDate).setHours(0, 0, 0, 0)).getTime()) {
+      // Same day comparison
+      return itemDay.getTime() === sDate.getTime();
     }
-  });
+    if (sDate && eDate) return dateValue >= sDate && dateValue <= eDate;
+    if (sDate) return dateValue >= sDate;
+    if (eDate) return dateValue <= eDate;
+    return true;
+  } else {
+    const departureDate = item.departureDate ? new Date(item.departureDate) : null;
+    const returnDate = item.returnDate ? new Date(item.returnDate) : null;
+    if (!departureDate || !returnDate || isNaN(departureDate.getTime()) || isNaN(returnDate.getTime())) return false;
 
+    const sDate = startDate ? new Date(new Date(startDate).setHours(0, 0, 0, 0)) : null;
+    const eDate = endDate ? new Date(new Date(endDate).setHours(23, 59, 59, 999)) : null;
+
+    // Normalize departure and return dates to start of day for comparison
+    const departureDay = departureDate ? new Date(new Date(departureDate).setHours(0, 0, 0, 0)) : null;
+    const returnDay = returnDate ? new Date(new Date(returnDate).setHours(0, 0, 0, 0)) : null;
+
+    if (sDate && eDate && sDate.getTime() === new Date(new Date(eDate).setHours(0, 0, 0, 0)).getTime()) {
+      // Same day comparison: check if travel period includes the selected day
+      return departureDay && returnDay && departureDay.getTime() <= sDate.getTime() && returnDay.getTime() >= sDate.getTime();
+    }
+    if (sDate && eDate) {
+      return departureDate <= eDate && returnDate >= sDate;
+    }
+    if (sDate) return returnDate >= sDate;
+    if (eDate) return departureDate <= eDate;
+    return true;
+  }
+});
   const sortedData = [...dateFilteredData].sort((a, b) => {
     const aSortValue = a[sortBy];
     const bSortValue = b[sortBy];
