@@ -51,7 +51,7 @@ interface TicketProps {
   requestId: string;
 }
 interface User {
-  id: string;
+  userId: string;
   email: string;
   role: string;
 }
@@ -183,10 +183,12 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId }) => {
 
   const handleAddOption = async () => {
     if (!newOptionText.trim() || !currentUser || !requestId) return;
-    const userId = parseInt(currentUser.id, 10);
-    if (isNaN(userId)) { setError("Invalid user ID."); return; }
+    const id = parseInt(currentUser.userId, 10);
+    console.log(id);
+    
+    if (isNaN(id)) { setError("Invalid user ID."); return; }
 
-    const payload: AddTicketOptionPayload = { optionDescription: newOptionText, createdByUserId: userId };
+    const payload: AddTicketOptionPayload = { optionDescription: newOptionText, createdByUserId: id };
     setIsLoadingOptions(true);
     try {
       const response = await axios.post<TicketOptionApiResponse>(`${API_BASE_URL}/travelrequests/${requestId}/ticketoptions`, payload);
@@ -219,10 +221,10 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId }) => {
   const handleSelectOption = async (optionIdString: string) => {
     if ((currentUser?.role !== 'manager' && currentUser?.role !== 'duhead') || !requestId) return;
     const optionId = parseInt(optionIdString, 10);
-    const userId = parseInt(currentUser!.id, 10);
-    if (isNaN(optionId) || isNaN(userId)) { setError("Invalid option or user ID."); return; }
+    const id = parseInt(currentUser!.userId, 10);
+    if (isNaN(optionId) || isNaN(id)) { setError("Invalid option or user ID."); return; }
 
-    const payload: SelectTicketOptionPayload = { selectingUserId: userId, comments: "" };
+    const payload: SelectTicketOptionPayload = { selectingUserId: id, comments: "" };
     setIsLoadingOptions(true);
     try {
       const response = await axios.put<{ isSuccess: boolean, errorMessages?: string[] }>(`${API_BASE_URL}/travelrequests/${requestId}/ticketoptions/${optionId}/select`, payload);
@@ -334,7 +336,7 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId }) => {
     if (status === 'DUApproved') {
       return (
         <SelectedView
-          ticketOptions={uiTicketOptions.filter(opt => opt.selected)}
+          ticketOptions={uiTicketOptions}
           onUploadTickets={() => setIsUploadTicketsFileModalOpen(true)}
           buttons={['uploadTickets']}
           customButtons={[]}
@@ -345,9 +347,9 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId }) => {
     if (['OptionSelected', 'TicketDispatched', 'InTransit', 'Returned', 'Closed'].includes(status)) {
       return (
         <SelectedView
-          ticketOptions={uiTicketOptions.filter(opt => opt.selected)}
+          ticketOptions={uiTicketOptions}
           onDownloadTickets={() => console.log("Admin: Download initiated for selected tickets")}
-          buttons={['downloadTickets']}
+          // buttons={['downloadTickets']}
           customButtons={[]}
         />
       );
@@ -433,10 +435,20 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId }) => {
         />
       );
     }
-    if (['OptionSelected', 'DUApproved', 'TicketDispatched', 'InTransit', 'Returned', 'Closed'].includes(status)) {
+    if (status === 'OptionSelected') {
       return (
         <SelectedView
-          ticketOptions={uiTicketOptions.filter(opt => opt.selected)}
+          ticketOptions={uiTicketOptions}
+          onDownloadTickets={() => console.log("Manager: Download initiated")}
+          // buttons={['downloadTickets']}
+          customButtons={[]}
+        />
+      );
+    }
+    if (['', 'DUApproved', 'TicketDispatched', 'InTransit', 'Returned', 'Closed'].includes(status)) {
+      return (
+        <SelectedView
+          ticketOptions={uiTicketOptions}
           onDownloadTickets={() => console.log("Manager: Download initiated")}
           buttons={['downloadTickets']}
           customButtons={[]}
@@ -457,7 +469,7 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId }) => {
     }
     return (
       <SelectedView
-        ticketOptions={selectedOption ? [selectedOption] : []}
+        ticketOptions={uiTicketOptions}
         onDownloadTickets={selectedOption ? () => console.log("Employee: Download initiated") : undefined}
         buttons={selectedOption ? ['downloadTickets'] : []}
         customButtons={[]}
