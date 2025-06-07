@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
-import { 
-  Briefcase, 
-  Clock, 
-  Plane, 
-  DollarSign, 
-  TrendingUp, 
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import {
+  Briefcase,
+  Clock,
+  Plane,
+  DollarSign,
+  TrendingUp,
   TrendingDown,
   Calendar,
   MapPin,
@@ -12,17 +13,20 @@ import {
   AlertCircle,
   CheckCircle,
   FileText,
-  User
+  User,
+  Edit // Import the Edit icon
 } from 'lucide-react';
 import { format, parseISO, differenceInDays } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
-import { 
-  dashboardStats, 
-  mockTravelRequests,
-  
+import {
+  dashboardStats,
+  mockTravelRequests, // Keeping this for initial data load simulation
 } from '../../data/mockData';
-import {mockUserDocuments} from '../../data/documentData';
+import { mockUserDocuments } from '../../data/documentData';
 import { getStatusColor } from '../../data/mockData';
+
+// Import the modal component you created
+import EditRequestModal from './EditRequestmodal'; // Adjust this path if necessary
 
 interface TravelRequest {
   id: string;
@@ -59,15 +63,43 @@ interface UserDocuments {
 const EmployeeDashboard: React.FC = () => {
   const navigate = useNavigate();
 
+  // --- NEW STATE MANAGEMENT ---
+  const [travelRequests, setTravelRequests] = useState<TravelRequest[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedRequestId, setSelectedRequestId] = useState<string | null>(null);
+  // --- END NEW STATE MANAGEMENT ---
+
   // Mock user data (assuming logged-in user)
   const currentUser = { id: 'USER001', name: 'John Smith', role: 'Employee', department: 'MKT-01', photo: '' };
 
-  // Filter travel requests based on user (no status filter)
-  const filteredRequests = mockTravelRequests.filter(request => 
-    request.travelerName === currentUser.name
-  );
+  // --- NEW: Function to fetch travel requests from an API (simulated here) ---
+  const fetchTravelRequests = async () => {
+    setIsLoading(true);
+    try {
+      // In a real application, you would make an API call like this:
+      // const response = await axios.get('http://localhost:5030/api/TravelRequest/user/USER001');
+      // setTravelRequests(response.data);
 
-  // Document expiry alerts
+      // For demonstration, we continue to filter the mock data.
+      // This simulates an API call returning the user's requests.
+      const filtered = mockTravelRequests.filter(req => req.travelerName === currentUser.name);
+      setTravelRequests(filtered);
+
+    } catch (error) {
+      console.error("Failed to fetch travel requests:", error);
+      // Handle error state if needed
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // --- NEW: useEffect to fetch data on component mount ---
+  useEffect(() => {
+    fetchTravelRequests();
+  }, []); // The empty dependency array ensures this runs only once on mount
+
+  // Document expiry alerts (no changes here)
   const userDocs = mockUserDocuments.find(doc => doc.userId === currentUser.id);
   const documentAlerts = [
     ...(userDocs?.visaDocuments || []).map(doc => ({
@@ -82,31 +114,42 @@ const EmployeeDashboard: React.FC = () => {
     }))
   ].filter(alert => alert.daysUntilExpiry <= 45);
 
-  // SLA alerts for delayed requests
-  const slaAlerts = filteredRequests
-    .filter(request => ['Pending', 'Manager Approved'].includes(request.status) && 
+  // SLA alerts for delayed requests (no changes here)
+  const slaAlerts = travelRequests
+    .filter(request => ['Pending', 'Manager Approved'].includes(request.status) &&
       differenceInDays(new Date(), parseISO(request.requestDate)) > 3)
     .map(request => ({
       id: request.id,
       message: `Request ${request.id} delayed at ${request.status} stage`
     }));
 
-  const handleRowClick = (item: TravelRequest) => {
+  const handleViewDetailsClick = (item: TravelRequest) => {
+    // This function remains for navigating to the details page
     const userString = localStorage.getItem('user');
     const user = userString ? JSON.parse(userString) : null;
     if (!user) return;
 
-    const path = window.location.pathname;
-    let basePath = '';
-    if (user.role === 'admin') {
-      basePath = '/admin/travel-requests';
-    } else if (user.role === 'manager') {
-      basePath = path.includes('team-requests') ? '/manager/team-requests' : '/manager/my-requests';
-    } else if (user.role === 'employee') {
-      basePath = '/employee/my-requests';
-    }
-    navigate(`${basePath}/${item.id}`);
+    // Simplified navigation logic, adjust if needed
+    navigate(`/employee/my-requests/${item.id}`);
   };
+
+  // --- NEW: Handlers for the Edit Modal ---
+  const handleEditClick = (e: React.MouseEvent, requestId: string) => {
+    e.stopPropagation(); // Prevent row click event from firing
+    setSelectedRequestId(requestId);
+    setIsEditModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsEditModalOpen(false);
+    setSelectedRequestId(null);
+  };
+
+  const handleUpdateSuccess = () => {
+    handleCloseModal();
+    fetchTravelRequests(); // Re-fetch data to show updated information
+  };
+  // --- END NEW MODAL HANDLERS ---
 
   const getIconComponent = (iconName: string) => {
     switch (iconName) {
@@ -140,7 +183,7 @@ const EmployeeDashboard: React.FC = () => {
           </div>
         </div>
         <div className="flex space-x-4 mt-4 md:mt-0">
-          <button className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
+          <button onClick={() => navigate('/employee/new-request')} className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
             New Travel Request
           </button>
           <button className="border border-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-100">
@@ -149,71 +192,14 @@ const EmployeeDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Pending Actions */}
-      {/* <div className="card bg-white shadow-sm p-6 rounded-lg">
-        <h3 className="text-lg font-semibold mb-4">Pending Actions</h3>
-        {slaAlerts.length === 0 && documentAlerts.length === 0 ? (
-          <p className="text-gray-500">No pending actions.</p>
-        ) : (
-          <div className="space-y-2">
-            {slaAlerts.map(alert => (
-              <div key={alert.id} className="flex items-center text-yellow-600">
-                <AlertCircle className="h-5 w-5 mr-2" />
-                <span>{alert.message}</span>
-              </div>
-            ))}
-            {documentAlerts.map((alert, index) => (
-              <div key={index} className={`flex items-center ${alert.daysUntilExpiry <= 30 ? 'text-red-600' : 'text-yellow-600'}`}>
-                <AlertCircle className="h-5 w-5 mr-2" />
-                <span>{alert.message}</span>
-              </div>
-            ))}
-          </div>
-        )}
-      </div> */}
-
-      {/* Dashboard Stats */}
-      {/* <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {dashboardStats.map((stat, index) => {
-          const Icon = getIconComponent(stat.icon);
-          return (
-            <div key={index} className="bg-white shadow-sm p-6 rounded-lg hover:shadow-md transition-all">
-              <div className="flex justify-between items-start">
-                <div>
-                  <p className="text-sm font-medium text-gray-500">{stat.label}</p>
-                  <h3 className="text-2xl font-semibold mt-2">
-                    {stat.label.includes('Budget') ? `$${stat.value.toLocaleString()}` : stat.value}
-                  </h3>
-                </div>
-                <div className={`p-3 rounded-full ${getIconBackgroundColor(stat.icon)}`}>
-                  <Icon className="h-5 w-5 text-white" />
-                </div>
-              </div>
-              <div className="mt-4 flex items-center">
-                <span className={`text-sm font-medium flex items-center ${stat.changePercent >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {stat.changePercent >= 0 ? (
-                    <TrendingUp className="h-3 w-3 mr-1" />
-                  ) : (
-                    <TrendingDown className="h-3 w-3 mr-1" />
-                  )}
-                  {Math.abs(stat.changePercent)}%
-                </span>
-                <span className="text-sm text-gray-500 ml-1">vs last month</span>
-              </div>
-            </div>
-          );
-        })}
-      </div> */}
-
-      {/* Active Travel Requests */}
+      {/* Active Travel Requests - MODIFIED SECTION */}
       <div className="card bg-white shadow-sm p-6 rounded-lg">
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-lg font-semibold">Active Travel Requests</h3>
-          {/* <button className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
-            <Calendar className="h-4 w-4 inline mr-2" /> View Calendar
-          </button> */}
         </div>
-        {filteredRequests.length === 0 ? (
+        {isLoading ? (
+          <p className="text-gray-500 text-center py-6">Loading active requests...</p>
+        ) : travelRequests.length === 0 ? (
           <p className="text-gray-500 text-center py-6">No active requests. Start a new request!</p>
         ) : (
           <div className="overflow-x-auto">
@@ -225,30 +211,41 @@ const EmployeeDashboard: React.FC = () => {
                   <th className="text-left py-3 px-4 font-medium text-gray-500">Travel Dates</th>
                   <th className="text-left py-3 px-4 font-medium text-gray-500">Purpose</th>
                   <th className="text-left py-3 px-4 font-medium text-gray-500">Status</th>
-                  <th className="text-right py-3 px-4 font-medium text-gray-500">Actions</th>
+                  <th className="text-center py-3 px-4 font-medium text-gray-500">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredRequests.map((trip, index) => (
-                  <tr 
-                    key={index} 
-                    className="border-b last:border-0 hover:bg-gray-50 cursor-pointer"
-                    onClick={() => handleRowClick(trip)}
+                {travelRequests.map((trip) => (
+                  <tr
+                    key={trip.id}
+                    className="border-b last:border-0 hover:bg-gray-50"
                   >
-                    <td className="py-3 px-4">{trip.id}</td>
-                    <td className="py-3 px-4">{trip.destination}</td>
-                    <td className="py-3 px-4">{format(parseISO(trip.departureDate), 'MMM dd')} - {format(parseISO(trip.returnDate), 'MMM dd, yyyy')}</td>
-                    <td className="py-3 px-4">{trip.purpose}</td>
-                    <td className="py-3 px-4">
+                    <td className="py-3 px-4 cursor-pointer" onClick={() => handleViewDetailsClick(trip)}>{trip.id}</td>
+                    <td className="py-3 px-4 cursor-pointer" onClick={() => handleViewDetailsClick(trip)}>{trip.destination}</td>
+                    <td className="py-3 px-4 cursor-pointer" onClick={() => handleViewDetailsClick(trip)}>{format(parseISO(trip.departureDate), 'MMM dd')} - {format(parseISO(trip.returnDate), 'MMM dd, yyyy')}</td>
+                    <td className="py-3 px-4 cursor-pointer" onClick={() => handleViewDetailsClick(trip)}>{trip.purpose}</td>
+                    <td className="py-3 px-4 cursor-pointer" onClick={() => handleViewDetailsClick(trip)}>
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(trip.status)}`}>
                         {trip.status}
                       </span>
                     </td>
-                    <td className="py-3 px-4 text-right">
-                      <button className="text-sm text-blue-600 hover:text-blue-800">View Details</button>
-                      {['Approved', 'Tickets Selected', 'Tickets Dispatched'].includes(trip.status) && (
-                        <button className="text-sm text-blue-600 hover:text-blue-800 ml-2">Add Subtrip</button>
-                      )}
+                    <td className="py-3 px-4 text-center">
+                      <div className="flex items-center justify-center space-x-4">
+                        <button
+                          onClick={() => handleViewDetailsClick(trip)}
+                          className="text-sm text-blue-600 hover:text-blue-800"
+                          title="View Details"
+                        >
+                          View Details
+                        </button>
+                        <button
+                          onClick={(e) => handleEditClick(e, trip.id)}
+                          className="p-1 text-gray-600 hover:text-blue-700 rounded-full hover:bg-blue-100"
+                          title="Edit Request"
+                        >
+                           <Edit size={16} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -257,6 +254,7 @@ const EmployeeDashboard: React.FC = () => {
           </div>
         )}
       </div>
+      {/* END MODIFIED SECTION */}
 
       {/* Document Repository */}
       <div className="card bg-white shadow-sm p-6 rounded-lg">
@@ -319,6 +317,17 @@ const EmployeeDashboard: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* --- NEW: RENDER THE MODAL --- */}
+      {isEditModalOpen && selectedRequestId && (
+        <EditRequestModal
+          isOpen={isEditModalOpen}
+          onClose={handleCloseModal}
+          requestId={selectedRequestId}
+          onUpdateSuccess={handleUpdateSuccess}
+        />
+      )}
+      {/* --- END NEW --- */}
     </div>
   );
 };
