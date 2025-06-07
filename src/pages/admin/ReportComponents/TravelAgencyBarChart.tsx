@@ -1,13 +1,29 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { ExternalLink, Filter, ChevronDown, Globe, MapPin } from 'lucide-react';
 import EmptyStateView from './EmptyStateView';
 import Modal from './Modal';
 import ReusableTable from './ReusableTable';
 
+// API Response interfaces
+interface TravelAgencyApiResponse {
+  isSuccess: boolean;
+  result: TravelAgencyApiItem[];
+  statusCode: number;
+  errorMessages: string[];
+}
+
+interface TravelAgencyApiItem {
+  travelAgencyName: string;
+  travelType: 'International' | 'Domestic';
+  requestCount: number;
+  totalExpense: number;
+}
+
+// Chart data interface (transformed from API response)
 interface BarChartItem {
-  name: string; // Assumed to be like "TA-1 (Domestic)" or "TA-2 (International)"
-  value: number;
-  cost?: number;
+  name: string; // Will be like "TA-1 (International)" or "TA-2 (Domestic)"
+  value: number; // requestCount
+  cost?: number; // totalExpense
   travelType?: 'international' | 'domestic';
 }
 
@@ -19,7 +35,6 @@ interface TableDataItem {
 }
 
 interface TravelAgencyBarChartProps {
-  chartData?: BarChartItem[];
   startDate?: string;
   endDate?: string;
 }
@@ -27,11 +42,58 @@ interface TravelAgencyBarChartProps {
 type TravelTypeFilter = 'all' | 'international' | 'domestic';
 
 const TravelAgencyBarChart: React.FC<TravelAgencyBarChartProps> = ({ 
-   chartData, startDate, endDate 
+   startDate, endDate 
 }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [travelTypeFilter, setTravelTypeFilter] = useState<TravelTypeFilter>('all');
   const [isFilterOpen, setIsFilterOpen] = useState<boolean>(false);
+  const [chartData, setChartData] = useState<BarChartItem[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch data from API
+  useEffect(() => {
+    const fetchTravelAgencyData = async () => {
+      if (!startDate || !endDate) return;
+      
+      setLoading(true);
+      setError(null);
+      
+      try {
+        const response = await fetch(
+          `http://localhost:5030/api/TravelAgencyStats/stats?startDate=${startDate}&endDate=${endDate}`
+        );
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch travel agency data');
+        }
+        
+        const data: TravelAgencyApiResponse = await response.json();
+        
+        if (data.isSuccess && data.result) {
+          // Transform API data to chart format
+          const transformedData: BarChartItem[] = data.result.map(item => ({
+            name: `${item.travelAgencyName} (${item.travelType})`,
+            value: item.requestCount,
+            cost: item.totalExpense,
+            travelType: item.travelType.toLowerCase() as 'international' | 'domestic'
+          }));
+          
+          setChartData(transformedData);
+        } else {
+          const errorMessage = data.errorMessages?.join(', ') || 'Unknown API error occurred';
+          throw new Error(errorMessage);
+        }
+      } catch (err: any) {
+        setError(err.message);
+        setChartData([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTravelAgencyData();
+  }, [startDate, endDate]);
 
   // Filter data based on travel type
   const filteredChartData = useMemo(() => {
@@ -81,6 +143,34 @@ const TravelAgencyBarChart: React.FC<TravelAgencyBarChartProps> = ({
     { value: 'international', label: 'International Only', icon: <Globe className="w-4 h-4" />, count: chartData?.filter(item => item.travelType === 'international').length || 0 },
     { value: 'domestic', label: 'Domestic Only', icon: <MapPin className="w-4 h-4" />, count: chartData?.filter(item => item.travelType === 'domestic').length || 0 }
   ];
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="bg-white rounded-lg p-6 shadow-sm">
+        <div className="mb-4 flex justify-between items-center">
+          <h2 className="text-xl font-semibold text-gray-800">Agency Booking Metrics</h2>
+        </div>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-gray-500">Loading travel agency data...</div>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="bg-white rounded-lg p-6 shadow-sm">
+        <div className="mb-4 flex justify-between items-center">
+          <h2 className="text-xl font-semibold text-gray-800">Agency Booking Metrics</h2>
+        </div>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-red-500">Error: {error}</div>
+        </div>
+      </div>
+    );
+  }
 
   if (isEmptyData) {
     return (
@@ -137,7 +227,7 @@ const TravelAgencyBarChart: React.FC<TravelAgencyBarChartProps> = ({
         {/* Overlay to close dropdown when clicking outside */}
         {isFilterOpen && (
           <div 
-            className="fixed inset-0 z-5" // z-index was 5, ensure it's below dropdown (z-10)
+            className="fixed inset-0 z-5"
             onClick={() => setIsFilterOpen(false)}
           />
         )}
@@ -174,14 +264,12 @@ const TravelAgencyBarChart: React.FC<TravelAgencyBarChartProps> = ({
   };
 
   // Dynamic Y-axis calculation based on filtered data
-  const maxDataValue = Math.max(...filteredChartData.map(item => item.value), 0); // Added 0 to handle empty filteredChartData gracefully for Math.max
+  const maxDataValue = Math.max(...filteredChartData.map(item => item.value), 0);
   const yAxisMax = Math.ceil(maxDataValue) + 1; 
   
   // Calculate bar height scaling factor
-  const chartHeight = 220; // This is the effective drawing height for bars
+  const chartHeight = 220;
   const barHeightScale = yAxisMax > 1 ? chartHeight / (yAxisMax -1) : chartHeight;
-                       
-
 
   return (
     <div className="bg-white rounded-lg pt-6 ">
@@ -211,7 +299,7 @@ const TravelAgencyBarChart: React.FC<TravelAgencyBarChartProps> = ({
 
           {/* Dropdown Menu */}
           {isFilterOpen && (
-            <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 z-20 overflow-hidden"> {/* Increased z-index for dropdown */}
+            <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 z-20 overflow-hidden">
               <div className="py-1">
                 {filterOptions.map((option) => (
                   <button
@@ -243,13 +331,13 @@ const TravelAgencyBarChart: React.FC<TravelAgencyBarChartProps> = ({
       {/* Overlay to close dropdown when clicking outside */}
       {isFilterOpen && (
         <div 
-          className="fixed inset-0 z-10" // z-index for overlay, must be below dropdown
+          className="fixed inset-0 z-10"
           onClick={() => setIsFilterOpen(false)}
         />
       )}
 
       <div className="relative h-64 flex justify-center">
-        <div className="w-full max-w-lg relative"> {/* This is the main chart plotting area */}
+        <div className="w-full max-w-lg relative">
           {/* Y-axis line */}
           <div className="absolute left-14 top-0 bottom-8 w-px bg-gray-300"></div>
           
@@ -261,16 +349,15 @@ const TravelAgencyBarChart: React.FC<TravelAgencyBarChartProps> = ({
           {/* Y-axis values and grid lines */}
           <div className="absolute left-0 top-0 bottom-8 flex flex-col justify-between">
             {Array.from({ length: yAxisMax + 1 }).map((_, i) => (
-              <div key={i} className="flex items-center relative"> {/* Added relative for grid line positioning */}
+              <div key={i} className="flex items-center relative">
                 <span className="text-xs font-medium text-gray-600 w-10 text-right pr-2">
                   {yAxisMax - i}
                 </span>
-                {/* Improved Grid line: spans from Y-axis line to right edge of bar area */}
                 <div 
                   className="absolute h-px bg-gray-200"
                   style={{ 
-                    left: '3.5rem', /* Corresponds to left-14 (Y-axis line) relative to chart parent */
-                    right: '1rem',  /* Corresponds to right-4 (bar area end) relative to chart parent */
+                    left: '3.5rem',
+                    right: '1rem',
                     top: '50%',     
                     transform: 'translateY(-50%)' 
                   }}
@@ -287,7 +374,7 @@ const TravelAgencyBarChart: React.FC<TravelAgencyBarChartProps> = ({
             Travel Agency
           </div>
 
-          {/* Chart area with bars - MODIFIED bottom position */}
+          {/* Chart area with bars */}
           <div className="absolute left-16 right-4 top-0 bottom-1 flex items-end justify-around">
             {filteredChartData.map((entry, index) => {
               const colors = [
@@ -297,7 +384,7 @@ const TravelAgencyBarChart: React.FC<TravelAgencyBarChartProps> = ({
               ];
               const barColor = colors[index % colors.length];
               
-              // MODIFICATION: Parse entry.name to remove "(Domestic)" or "(International)" part for display
+              // Parse entry.name to remove "(Domestic)" or "(International)" part for display
               const displayName = entry.name.split('(')[0].trim();
               
               return (
@@ -313,7 +400,7 @@ const TravelAgencyBarChart: React.FC<TravelAgencyBarChartProps> = ({
                       className={`${barColor} relative flex items-center justify-center`}
                       style={{ 
                         width: `${Math.max(64, 300 / filteredChartData.length)}px`,
-                        height: `${entry.value * (chartHeight / yAxisMax)}px`, // Use consistent scaling factor
+                        height: `${entry.value * (chartHeight / yAxisMax)}px`,
                         minHeight: '40px' 
                       }}
                     >
@@ -326,7 +413,7 @@ const TravelAgencyBarChart: React.FC<TravelAgencyBarChartProps> = ({
                     </div>
                   </div>
                   
-                  {/* X-axis label (agency name) - MODIFIED to use displayName and centered */}
+                  {/* X-axis label (agency name) */}
                   <div className="mt-2 text-sm font-medium text-gray-700 text-center w-full px-1 break-words">
                     {displayName}
                   </div>

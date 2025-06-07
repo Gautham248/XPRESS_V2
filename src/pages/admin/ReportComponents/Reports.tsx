@@ -78,11 +78,6 @@ interface TripDetailsData {
   internationalTripCount: number;
 }
 
-interface ChartDataItem {
-  name: string;
-  value: number;
-}
-
 interface ModalData {
   title: string;
   data: TravelRequest[];
@@ -215,24 +210,6 @@ const Reports: React.FC = () => {
     return { avgDays: 1, slaBreachCount: 1, withinSLA: 3 };
   };
   const processingTimeData = getSimplifiedProcessingMetrics();
-  
-  const getAirlineDistribution = (): ChartDataItem[] => {
-    const airlineCounts: Record<string, number> = {};
-    filteredRequests.forEach(req => { 
-      if (req.airline) airlineCounts[req.airline] = (airlineCounts[req.airline] || 0) + 1; 
-    });
-    return Object.entries(airlineCounts).map(([name, value]) => ({ name, value }));
-  };
-  const airlineData = getAirlineDistribution();
-
-  const getAgencyDistribution = (): ChartDataItem[] => {
-    const agencyCounts: Record<string, number> = {};
-    filteredRequests.forEach(req => { 
-      if (req.travelAgency) agencyCounts[req.travelAgency] = (agencyCounts[req.travelAgency] || 0) + 1; 
-    });
-    return Object.entries(agencyCounts).map(([name, value]) => ({ name, value }));
-  };
-  const agencyData = getAgencyDistribution();
 
   const openModal = (title: string, data: TravelRequest[], headers: string[]) => 
     setModalData({ title, data, headers });
@@ -376,8 +353,8 @@ const Reports: React.FC = () => {
 
       {/* Row 3: Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="border rounded-lg p-4 bg-white shadow-sm"><TravelAgencyBarChart chartData={agencyData} startDate={startDate} endDate={endDate} /></div>
-        <div className="border rounded-lg p-4 bg-white shadow-sm"><AirlineDistributionChart chartData={airlineData} startDate={startDate} endDate={endDate} /></div>
+        <div className="border rounded-lg p-4 bg-white shadow-sm"><TravelAgencyBarChart startDate={startDate} endDate={endDate} /></div>
+        <div className="border rounded-lg p-4 bg-white shadow-sm"><AirlineDistributionChart startDate={startDate} endDate={endDate} /></div>
       </div>
 
       {/* Modal Section */}
