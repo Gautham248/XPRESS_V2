@@ -35,6 +35,7 @@ interface DataTableProps<T> {
   newButtonPath?: string;
   getStatusColor?: (status: string) => string;
   getTypeColor?: (type: string) => string;
+  getTripTypeColor?: (tripType: string) => string; // Added for isRoundTrip styling
   renderActions?: (item: T) => React.ReactNode;
   onRowClick?: (item: T) => void;
 }
@@ -51,6 +52,7 @@ const DataTable = <T extends Record<string, any>>({
   newButtonPath,
   getStatusColor,
   getTypeColor,
+  getTripTypeColor, // Added to props
   renderActions,
   onRowClick,
 }: DataTableProps<T>) => {
@@ -123,6 +125,13 @@ const DataTable = <T extends Record<string, any>>({
   }, [visibleColumns, title]);
 
   useEffect(() => {
+    // Update sortBy if the current sortBy key is no longer in headers
+    if (headers.length > 0 && !headers.some(h => h.key === sortBy)) {
+      setSortBy(headers[0].key);
+    }
+  }, [headers, sortBy]);
+
+  useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (statusDropdownRef.current && !statusDropdownRef.current.contains(event.target as Node)) setShowStatusDropdown(false);
       if (typeDropdownRef.current && !typeDropdownRef.current.contains(event.target as Node)) setShowTypeDropdown(false);
@@ -181,7 +190,7 @@ const DataTable = <T extends Record<string, any>>({
     const matchesSearch = searchableFields.length === 0 || searchableFields.some(field => 
       String(item[field] ?? '').toLowerCase().includes(searchTerm.toLowerCase())
     );
-    const matchesStatus = statusOptions.length === 0 || statusFilter.size === 0 || statusFilter.has(item.status);
+    const matchesStatus = statusOptions.length === 0 || statusFilter.size === 0 || statusFilter.has(item.currentStatusName);
     const matchesType = typeOptions.length === 0 || typeFilter === 'All' || item.travelType === typeFilter;
 
     if (!(matchesSearch && matchesStatus && matchesType)) return false;
@@ -194,53 +203,50 @@ const DataTable = <T extends Record<string, any>>({
     }
     return true;
   });
-const dateFilteredData = filteredData.filter(item => {
-  if (!dateFilterKey || (!startDate && !endDate)) return true;
 
-  if (dateFilterType === 'requestDate') {
-    const itemDateValue = item[dateFilterKey];
-    if (!itemDateValue) return false;
-    const dateValue = new Date(itemDateValue);
-    if (isNaN(dateValue.getTime())) return false;
+  const dateFilteredData = filteredData.filter(item => {
+    if (!dateFilterKey || (!startDate && !endDate)) return true;
 
-    const sDate = startDate ? new Date(new Date(startDate).setHours(0, 0, 0, 0)) : null;
-    const eDate = endDate ? new Date(new Date(endDate).setHours(23, 59, 59, 999)) : null;
+    if (dateFilterType === 'requestDate') {
+      const itemDateValue = item[dateFilterKey];
+      if (!itemDateValue) return false;
+      const dateValue = new Date(itemDateValue);
+      if (isNaN(dateValue.getTime())) return false;
 
-    // Normalize item date to start of day for comparison
-    const itemDay = new Date(new Date(dateValue).setHours(0, 0, 0, 0));
+      const sDate = startDate ? new Date(new Date(startDate).setHours(0, 0, 0, 0)) : null;
+      const eDate = endDate ? new Date(new Date(endDate).setHours(23, 59, 59, 999)) : null;
 
-    if (sDate && eDate && sDate.getTime() === new Date(new Date(eDate).setHours(0, 0, 0, 0)).getTime()) {
-      // Same day comparison
-      return itemDay.getTime() === sDate.getTime();
+      const itemDay = new Date(new Date(dateValue).setHours(0, 0, 0, 0));
+
+      if (sDate && eDate && sDate.getTime() === new Date(new Date(eDate).setHours(0, 0, 0, 0)).getTime()) {
+        return itemDay.getTime() === sDate.getTime();
+      }
+      if (sDate && eDate) return dateValue >= sDate && dateValue <= eDate;
+      if (sDate) return dateValue >= sDate;
+      if (eDate) return dateValue <= eDate;
+      return true;
+    } else {
+      const departureDate = item.departureDate ? new Date(item.departureDate) : null;
+      const returnDate = item.returnDate ? new Date(item.returnDate) : null;
+      if (!departureDate || !returnDate || isNaN(departureDate.getTime()) || isNaN(returnDate.getTime())) return false;
+
+      const sDate = startDate ? new Date(new Date(startDate).setHours(0, 0, 0, 0)) : null;
+      const eDate = endDate ? new Date(new Date(endDate).setHours(23, 59, 59, 999)) : null;
+
+      const departureDay = departureDate ? new Date(new Date(departureDate).setHours(0, 0, 0, 0)) : null;
+      const returnDay = returnDate ? new Date(new Date(returnDate).setHours(0, 0, 0, 0)) : null;
+
+      if (sDate && eDate && sDate.getTime() === new Date(new Date(eDate).setHours(0, 0, 0, 0)).getTime()) {
+        return departureDay && returnDay && departureDay.getTime() <= sDate.getTime() && returnDay.getTime() >= sDate.getTime();
+      }
+      if (sDate && eDate) {
+        return departureDate <= eDate && returnDate >= sDate;
+      }
+      if (sDate) return returnDate >= sDate;
+      if (eDate) return departureDate <= eDate;
+      return true;
     }
-    if (sDate && eDate) return dateValue >= sDate && dateValue <= eDate;
-    if (sDate) return dateValue >= sDate;
-    if (eDate) return dateValue <= eDate;
-    return true;
-  } else {
-    const departureDate = item.departureDate ? new Date(item.departureDate) : null;
-    const returnDate = item.returnDate ? new Date(item.returnDate) : null;
-    if (!departureDate || !returnDate || isNaN(departureDate.getTime()) || isNaN(returnDate.getTime())) return false;
-
-    const sDate = startDate ? new Date(new Date(startDate).setHours(0, 0, 0, 0)) : null;
-    const eDate = endDate ? new Date(new Date(endDate).setHours(23, 59, 59, 999)) : null;
-
-    // Normalize departure and return dates to start of day for comparison
-    const departureDay = departureDate ? new Date(new Date(departureDate).setHours(0, 0, 0, 0)) : null;
-    const returnDay = returnDate ? new Date(new Date(returnDate).setHours(0, 0, 0, 0)) : null;
-
-    if (sDate && eDate && sDate.getTime() === new Date(new Date(eDate).setHours(0, 0, 0, 0)).getTime()) {
-      // Same day comparison: check if travel period includes the selected day
-      return departureDay && returnDay && departureDay.getTime() <= sDate.getTime() && returnDay.getTime() >= sDate.getTime();
-    }
-    if (sDate && eDate) {
-      return departureDate <= eDate && returnDate >= sDate;
-    }
-    if (sDate) return returnDate >= sDate;
-    if (eDate) return departureDate <= eDate;
-    return true;
-  }
-});
+  });
 
   const sortedData = [...dateFilteredData].sort((a, b) => {
     const aSortValue = a[sortBy];
@@ -248,11 +254,11 @@ const dateFilteredData = filteredData.filter(item => {
     if (sortOrder === 'asc') {
       if (typeof aSortValue === 'string' && typeof bSortValue === 'string') return aSortValue.localeCompare(bSortValue);
       if (typeof aSortValue === 'number' && typeof bSortValue === 'number') return aSortValue - bSortValue;
-      return String(aSortValue).localeCompare(String(bSortValue));
+      return String(aSortValue ?? '').localeCompare(String(bSortValue ?? ''));
     } else { 
       if (typeof aSortValue === 'string' && typeof bSortValue === 'string') return bSortValue.localeCompare(aSortValue);
-      if (typeof aSortValue === 'number' && typeof bSortValue === 'number') return bSortValue - bSortValue;
-      return String(bSortValue).localeCompare(String(aSortValue));
+      if (typeof aSortValue === 'number' && typeof bSortValue === 'number') return bSortValue - aSortValue;
+      return String(bSortValue ?? '').localeCompare(String(aSortValue ?? ''));
     }
   });
 
@@ -282,7 +288,9 @@ const dateFilteredData = filteredData.filter(item => {
         if (visibleColumns.includes(header.key)) {
           if (header.key === 'travelDates' && item.departureDate && item.returnDate) { 
             exportItem[header.displayName] = `${formatDateForDisplay(item.departureDate)} - ${formatDateForDisplay(item.returnDate)}`;
-          } else exportItem[header.displayName] = item[header.key];
+          } else {
+            exportItem[header.displayName] = item[header.key] ?? 'N/A';
+          }
         }
       });
       return exportItem;
@@ -325,7 +333,7 @@ const dateFilteredData = filteredData.filter(item => {
             <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
               <Search className="h-4 w-4 text-muted-foreground" />
             </div>
-            <input type="text" placeholder={`Search by ${searchableFields.join(', ') || 'fields'}...`}
+            <input type="text"
               className="pl-10 pr-4 py-2 w-full rounded-md bg-muted focus:outline-none focus:ring-1 focus:ring-primary"
               value={searchTerm} onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
             />
@@ -424,15 +432,15 @@ const dateFilteredData = filteredData.filter(item => {
               <ChevronDown className="h-4 w-4 ml-1.5 text-gray-500" />
             </button>
             {showColumnsDropdown && (
-              <div className="absolute z-20 right-0 mt-1 w-48 bg-white border border-gray-200 rounded-md shadow-lg">
-                <div className="py-1">
+              <div className="absolute z-20 right-0 mt-1 w-96 max-h-64 overflow-y-auto bg-white border border-gray-200 rounded-md shadow-lg">
+                <div className="grid grid-cols-2 gap-2 p-2">
                   {headers.map(h => (
-                    <button key={h.key} className="w-full text-left px-3 py-1.5 text-sm hover:bg-gray-100 flex items-center" onClick={() => handleColumnToggle(h.key)}>
+                    <button key={h.key} className="text-left px-3 py-1.5 text-sm hover:bg-gray-100 flex items-center" onClick={() => handleColumnToggle(h.key)}>
                       <input type="checkbox" checked={visibleColumns.includes(h.key)} readOnly className="mr-2 pointer-events-none" />{h.displayName}
                     </button>
                   ))}
                   {renderActions && (
-                    <button className="w-full text-left px-3 py-1.5 text-sm hover:bg-gray-100 flex items-center" onClick={() => handleColumnToggle('actions')}>
+                    <button className="text-left px-3 py-1.5 text-sm hover:bg-gray-100 flex items-center" onClick={() => handleColumnToggle('actions')}>
                       <input type="checkbox" checked={visibleColumns.includes('actions')} readOnly className="mr-2 pointer-events-none" />Actions
                     </button>
                   )}
@@ -459,11 +467,9 @@ const dateFilteredData = filteredData.filter(item => {
                         className={`flex items-center ${header.sortable !== false ? 'cursor-pointer hover:text-foreground' : ''}`}>
                         <span>{header.displayName}</span>{header.sortable !== false && getSortIcon(header.key)}
                       </div>
-                      {header.filterable !== false && header.key !== 'status' && header.key !== 'travelType' && header.key !== 'travelDates' && (
+                      {header.filterable !== false && header.key !== 'currentStatusName' && header.key !== 'travelType' && header.key !== 'isRoundTrip' && header.key !== 'travelDates' && (
                         <button title={`Filter by ${header.displayName}`}
-                          onClick={(e) => { e.stopPropagation(); setActiveColumnFilterKey(k => k === header.key ? null : header
-
-.key);}}
+                          onClick={(e) => { e.stopPropagation(); setActiveColumnFilterKey(k => k === header.key ? null : header.key); }}
                           className={`column-filter-trigger-button ml-2 p-0.5 rounded hover:bg-muted/50 ${columnFilters[header.key]?.trim() ? 'text-primary' : 'text-gray-400 group-hover:opacity-100 opacity-0 transition-opacity'}`}>
                           <Filter className="h-3.5 w-3.5" />
                         </button>
@@ -499,15 +505,19 @@ const dateFilteredData = filteredData.filter(item => {
                         <div className="flex items-center"><Calendar className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
                           <span>{formatDateForDisplay(item.departureDate)} - {formatDateForDisplay(item.returnDate)}</span>
                         </div>
-                      ) : header.key === 'status' && getStatusColor ? (
+                      ) : header.key === 'currentStatusName' && getStatusColor ? (
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(item[header.key])}`}>
-                          {item[header.key]}
+                          {item[header.key] ?? 'N/A'}
                         </span>
                       ) : header.key === 'travelType' && getTypeColor ? (
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getTypeColor(item[header.key])}`}>
-                          {item[header.key]}
+                          {item[header.key] ?? 'N/A'}
                         </span>
-                      ) : ( String(item[header.key] ?? '') )}
+                      ) : header.key === 'isRoundTrip' && getTripTypeColor ? (
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getTripTypeColor(item[header.key])}`}>
+                          {item[header.key] ?? 'N/A'}
+                        </span>
+                      ) : ( String(item[header.key] ?? 'N/A') )}
                     </td>
                   ))}
                   {renderActions && visibleColumns.includes('actions') && (
@@ -570,7 +580,7 @@ const dateFilteredData = filteredData.filter(item => {
         </div>
       </div>
     </div>
-  );
+  ); 
 };
 
 export default DataTable;
