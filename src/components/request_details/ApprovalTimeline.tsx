@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { Check, Clock, X, Loader2, Edit } from 'lucide-react';
 import { format, isValid, parse } from 'date-fns';
-import { TimelineStep } from './TimelineModal'; // Assuming this is correctly imported
+import { TimelineStep } from './TimelineModal';
 
 // --- Prop and API Data Interfaces ---
 interface ApprovalTimelineProps {
@@ -31,7 +31,7 @@ const LINEAR_PROGRESSION_STATUSES = [
   'OptionsListed',
   'OptionSelected',
   'DUApproved',
-  'BUApproved',
+  // 'BUApproved' is skipped
   'TicketDispatched',
   'InTransit',
   'Returned',
@@ -46,7 +46,7 @@ const STATUS_DISPLAY_PROPERTIES: Record<string, { displayName: string; icon: Rea
   OptionsListed: { displayName: 'Options Provided', icon: <Check className="h-4 w-4" /> },
   OptionSelected: { displayName: 'Option Confirmed', icon: <Check className="h-4 w-4" /> },
   DUApproved: { displayName: 'DU Approval', icon: <Check className="h-4 w-4" /> },
-  BUApproved: { displayName: 'BU Approval', icon: <Check className="h-4 w-4" /> },
+  // BUApproved is removed from display properties
   TicketDispatched: { displayName: 'Ticket Issued', icon: <Check className="h-4 w-4" /> },
   InTransit: { displayName: 'In Transit', icon: <Check className="h-4 w-4" /> },
   Returned: { displayName: 'Returned', icon: <Check className="h-4 w-4" /> },
@@ -86,11 +86,15 @@ const ApprovalTimeline: React.FC<ApprovalTimelineProps> = ({ requestId }) => {
       setLoading(true);
       setError(null);
       try {
+        const token = localStorage.getItem('jwtToken');
+        if (!token) {
+          throw new Error('No token found. Please log in again.');
+        }
         const response = await axios.get<{ isSuccess: boolean; result: ApiTravelRequestTimelineData; errorMessages?: string[] }>(
           `${API_BASE_URL}/TravelRequest/${requestId}/timeline`,
           {
             headers: {
-              Authorization: 'Bearer <your-token>', // Replace with actual JWT token or dynamic retrieval
+              Authorization: `Bearer ${token}`,
             },
           }
         );
@@ -105,6 +109,10 @@ const ApprovalTimeline: React.FC<ApprovalTimelineProps> = ({ requestId }) => {
           setError(
             `API Error: ${err.response?.status} - ${err.response?.data?.errorMessages?.join(', ') || err.response?.statusText || err.message}`
           );
+          if (err.response?.status === 401) {
+            localStorage.removeItem('jwtToken');
+            window.location.href = '/login';
+          }
         } else if (err instanceof Error) {
           setError(`An unexpected error occurred: ${err.message}`);
         } else {
@@ -138,7 +146,7 @@ const ApprovalTimeline: React.FC<ApprovalTimelineProps> = ({ requestId }) => {
       status: getDisplayProperties(rawApiStatus).displayName,
       date,
       description,
-      details: options.details || null, // Set details from options
+      details: options.details || null,
       completed: false,
       active: false,
       rejected: false,
@@ -154,10 +162,12 @@ const ApprovalTimeline: React.FC<ApprovalTimelineProps> = ({ requestId }) => {
 
     const { status: rawStatus, timelineEvents, requestDate, travelerName } = travelRequestData;
 
+    // Filter out 'BUApproved' events from timelineEvents
+    const filteredEvents = timelineEvents.filter(event => event.type !== 'BUApproved');
+
     // Merge duplicate 'OptionSelected' events
-    const mergedEvents = timelineEvents.reduce((acc: ApiTimelineEvent[], event: ApiTimelineEvent) => {
+    const mergedEvents = filteredEvents.reduce((acc: ApiTimelineEvent[], event: ApiTimelineEvent) => {
       if (event.type === 'OptionSelected' && acc[acc.length - 1]?.type === 'OptionSelected') {
-        // Keep the latest event (higher ID or later date)
         const prev = acc[acc.length - 1];
         const prevDate = parse(prev.date, DATE_FORMAT, new Date());
         const currDate = parse(event.date, DATE_FORMAT, new Date());
@@ -174,6 +184,12 @@ const ApprovalTimeline: React.FC<ApprovalTimelineProps> = ({ requestId }) => {
     const isGloballyCanceled = rawStatus === 'Cancelled';
     const isTerminal = isGloballyRejected || isGloballyCanceled || rawStatus === 'Closed';
 
+    // Adjust rawStatus if it's 'BUApproved' to the next valid status
+    let adjustedStatus = rawStatus;
+    if (rawStatus === 'BUApproved') {
+      adjustedStatus = 'TicketDispatched'; // Skip to the next step
+    }
+
     // Find latest completed linear event index
     const latestCompletedLinearIndex = mergedEvents
       .filter((event: ApiTimelineEvent) => !['Modified', 'Rejected', 'Cancelled'].includes(event.type))
@@ -183,7 +199,7 @@ const ApprovalTimeline: React.FC<ApprovalTimelineProps> = ({ requestId }) => {
       }, -1);
 
     let effectiveLinearIndex = latestCompletedLinearIndex;
-    const overallLinearIndex = LINEAR_PROGRESSION_STATUSES.indexOf(rawStatus as LinearStatus);
+    const overallLinearIndex = LINEAR_PROGRESSION_STATUSES.indexOf(adjustedStatus as LinearStatus);
     if (overallLinearIndex > effectiveLinearIndex) {
       effectiveLinearIndex = overallLinearIndex;
     }
@@ -224,7 +240,7 @@ const ApprovalTimeline: React.FC<ApprovalTimelineProps> = ({ requestId }) => {
           rejected: isRejectedEvent,
           isModified,
           canceled: isCanceledEvent,
-          details: event.details, // Pass details from API event
+          details: event.details,
         }
       );
     });
@@ -276,7 +292,7 @@ const ApprovalTimeline: React.FC<ApprovalTimelineProps> = ({ requestId }) => {
       );
     }
 
-    // Add future linear steps
+    // Add future linear steps, excluding BUApproved
     if (!isTerminal && effectiveLinearIndex < LINEAR_PROGRESSION_STATUSES.length - 1) {
       let foundActive = false;
       LINEAR_PROGRESSION_STATUSES.forEach((rawStatus, idx) => {
