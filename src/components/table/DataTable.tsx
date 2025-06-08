@@ -194,7 +194,6 @@ const DataTable = <T extends Record<string, any>>({
     }
     return true;
   });
-
 const dateFilteredData = filteredData.filter(item => {
   if (!dateFilterKey || (!startDate && !endDate)) return true;
 
@@ -242,6 +241,7 @@ const dateFilteredData = filteredData.filter(item => {
     return true;
   }
 });
+
   const sortedData = [...dateFilteredData].sort((a, b) => {
     const aSortValue = a[sortBy];
     const bSortValue = b[sortBy];
