@@ -30,6 +30,8 @@ interface ApiTravelInfoItem {
   isVegetarian: boolean;
   isDropOffRequired: boolean;
   isPickUpRequired: boolean;
+  dropOffLocation: string | null;
+  pickUpLocation: string | null;
 }
 
 interface TravelInfoApiResponse {
@@ -51,8 +53,8 @@ interface TravelRequestData {
   travelType: string;
   purpose: string;
   foodPreference: string;
-  isPickUpRequired: boolean;
-  isDropOffRequired: boolean;
+  pickUpLocation: string | null;
+  dropOffLocation: string | null;
 }
 
 interface TravelInfoProps {
@@ -96,8 +98,8 @@ const TravelInfo: React.FC<TravelInfoProps> = ({ requestId }) => {
             travelType: apiData.isInternational ? "International" : "Domestic",
             purpose: apiData.purposeOfTravel,
             foodPreference: apiData.isVegetarian ? "Vegetarian" : "Non-Vegetarian",
-            isPickUpRequired: apiData.isPickUpRequired,
-            isDropOffRequired: apiData.isDropOffRequired,
+            pickUpLocation: apiData.pickUpLocation,
+            dropOffLocation: apiData.dropOffLocation,
           };
           setTravelRequest(mappedData);
         } else {
@@ -288,19 +290,19 @@ const TravelInfo: React.FC<TravelInfoProps> = ({ requestId }) => {
         <div>
           <p className="text-sm text-gray-600 mb-1 flex items-center">
             <CarTaxiFront className="h-4 w-4 mr-2" />
-            Pick-up Service
+            Pick-up Location
           </p>
           <p className="font-medium text-gray-900">
-            {travelRequest.isPickUpRequired ? 'Required' : 'Not Required'}
+            {travelRequest.pickUpLocation || '-'}
           </p>
         </div>
         <div>
           <p className="text-sm text-gray-600 mb-1 flex items-center">
             <CarTaxiFront className="h-4 w-4 mr-2" />
-            Drop-off Service
+            Drop-off Location
           </p>
           <p className="font-medium text-gray-900">
-            {travelRequest.isDropOffRequired ? 'Required' : 'Not Required'}
+            {travelRequest.dropOffLocation || '-'}
           </p>
         </div>
       </div>

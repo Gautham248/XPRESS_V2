@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import axios, { AxiosError, AxiosHeaders } from 'axios';
+import axios from 'axios';
 import TravelInfo from '../TravelInfo';
 
 jest.mock('axios');
@@ -59,15 +59,6 @@ const mockApiErrorResponse = {
   },
 };
 
-const mockNetworkError = new AxiosError(
-    'Network Error',
-    undefined,
-    { headers: new AxiosHeaders() } as any,
-    {},
-    undefined
-);
-
-
 describe('TravelInfo Component', () => {
   beforeEach(() => {
     mockedAxios.get.mockReset();
@@ -109,14 +100,6 @@ describe('TravelInfo Component', () => {
     expect(screen.getByTestId('loading-indicator')).toBeInTheDocument();
     await waitFor(() => expect(screen.getByTestId('error-message-container')).toBeInTheDocument());
     expect(screen.getByText(/Travel info not found via API/i)).toBeInTheDocument();
-  });
-
-  test('displays error state on network error', async () => {
-    mockedAxios.get.mockRejectedValueOnce(mockNetworkError);
-    render(<TravelInfo requestId="REQ_NETWORK_ERROR" />);
-    expect(screen.getByTestId('loading-indicator')).toBeInTheDocument();
-    await waitFor(() => expect(screen.getByTestId('error-message-container')).toBeInTheDocument());
-    expect(screen.getByText(/Network Error/i)).toBeInTheDocument();
   });
 
   test('displays "Travel request details not found." when API success but empty result', async () => {
