@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import axios from 'axios'; // Import axios
 import {
   Check,
   X,
@@ -164,107 +165,106 @@ const TravelRequestDetails: React.FC = () => {
 
   const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
   const [actionTaken, setActionTaken] = useState(false);
+
+
   const [requestClosed, setRequestClosed] = useState(false);
 
   const userString = localStorage.getItem('user');
   let role = '';
   let userId: number | undefined = undefined;
+  let currentUser: any = null;
 
   if (userString) {
     const user = JSON.parse(userString);
     role = user.role;
-    userId = user.userId;
+    userId = parseInt(user.userId, 10);
+    currentUser = user;
   }
 
-  useEffect(() => {
+  const fetchTravelRequest = useCallback(async () => {
     if (!id) {
       setError("Travel Request ID is missing.");
       setIsLoading(false);
       return;
     }
-
-    const fetchTravelRequest = async () => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        const response = await fetch(`http://localhost:5030/api/TravelRequest/${id}`);
-        if (!response.ok) {
-          let errorMsg = `Failed to fetch travel request: ${response.statusText}`;
-          try {
-            const errorData = await response.json();
-            errorMsg = errorData.errorMessages?.join(', ') || errorMsg;
-          } catch (e) {}
-          throw new Error(errorMsg);
-        }
-        const data = await response.json();
-        const apiData = data.result; 
-
-        if (data.isSuccess && apiData) {
-          // Map status ID to status name
-          const statusName = INDEX_TO_STATUS_MAP[apiData.currentStatusId] || 'PendingReview';
-          
-          setTravelRequestData({
-            id: apiData.requestId,
-            outboundDepartureDate: apiData.outboundDepartureDate,
-            returnDepartureDate: apiData.returnDepartureDate,
-            purpose: apiData.purposeOfTravel,
-            submissionDate: apiData.createdAt,
-            transportation: apiData.travelModeName,
-            destination: apiData.destinationPlace,
-            sourcePlace: apiData.sourcePlace,
-            sourceCountry: apiData.sourceCountry,
-            destinationCountry: apiData.destinationCountry,
-            outboundArrivalDate: apiData.outboundArrivalDate,
-            returnArrivalDate: apiData.returnArrivalDate,
-            isAccommodationRequired: apiData.isAccommodationRequired,
-            isPickUpRequired: apiData.isPickupRequired,
-            isDropOffRequired: apiData.isDropoffRequired,
-            pickupPlace: apiData.pickupPlace,
-            dropoffPlace: apiData.dropoffPlace,
-            comments: apiData.comments,
-            isVegetarian: apiData.isVegetarian,
-            attendedCct: apiData.attendedCct,
-            travelAgencyName: apiData.travelAgencyName,
-            totalExpense: apiData.totalExpense,
-            uploadedTicketPdfPath: apiData.uploadedTicketPdfPath,
-            updatedAt: apiData.updatedAt,
-            employeeName: apiData.employeeName,
-            isInternational: apiData.isInternational,
-            isRoundTrip: apiData.isRoundTrip,
-            projectName: apiData.projectName,
-            selectedTicketOptionId: apiData.selectedTicketOptionId,
-            createdAt: apiData.createdAt,
-            currentStatusId: apiData.currentStatusId,
-            status: statusName
-          });
-        } else {
-          throw new Error(data.errorMessages?.join(', ') || 'Travel request data not found or invalid format.');
-        }
-      } catch (err) {
-        console.error('Error fetching travel request:', err);
-        setError(err instanceof Error ? err.message : String(err));
-      } finally {
-        setIsLoading(false);
+    
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await fetch(`http://localhost:5030/api/TravelRequest/${id}`);
+      if (!response.ok) {
+        let errorMsg = `Failed to fetch travel request: ${response.statusText}`;
+        try {
+          const errorData = await response.json();
+          errorMsg = errorData.errorMessages?.join(', ') || errorMsg;
+        } catch (e) {}
+        throw new Error(errorMsg);
       }
-    };
+      const data = await response.json();
+      const apiData = data.result; 
 
-    fetchTravelRequest();
+      if (data.isSuccess && apiData) {
+        const statusName = INDEX_TO_STATUS_MAP[apiData.currentStatusId] || 'PendingReview';
+        
+        setTravelRequestData({
+          id: apiData.requestId,
+          outboundDepartureDate: apiData.outboundDepartureDate,
+          returnDepartureDate: apiData.returnDepartureDate,
+          purpose: apiData.purposeOfTravel,
+          submissionDate: apiData.createdAt,
+          transportation: apiData.travelModeName,
+          destination: apiData.destinationPlace,
+          sourcePlace: apiData.sourcePlace,
+          sourceCountry: apiData.sourceCountry,
+          destinationCountry: apiData.destinationCountry,
+          outboundArrivalDate: apiData.outboundArrivalDate,
+          returnArrivalDate: apiData.returnArrivalDate,
+          isAccommodationRequired: apiData.isAccommodationRequired,
+          isPickUpRequired: apiData.isPickupRequired,
+          isDropOffRequired: apiData.isDropoffRequired,
+          pickupPlace: apiData.pickupPlace,
+          dropoffPlace: apiData.dropoffPlace,
+          comments: apiData.comments,
+          isVegetarian: apiData.isVegetarian,
+          attendedCct: apiData.attendedCct,
+          travelAgencyName: apiData.travelAgencyName,
+          totalExpense: apiData.totalExpense,
+          uploadedTicketPdfPath: apiData.uploadedTicketPdfPath,
+          updatedAt: apiData.updatedAt,
+          employeeName: apiData.employeeName,
+          isInternational: apiData.isInternational,
+          isRoundTrip: apiData.isRoundTrip,
+          projectName: apiData.projectName,
+          selectedTicketOptionId: apiData.selectedTicketOptionId,
+          createdAt: apiData.createdAt,
+          currentStatusId: apiData.currentStatusId,
+          status: statusName
+        });
+      } else {
+        throw new Error(data.errorMessages?.join(', ') || 'Travel request data not found or invalid format.');
+      }
+    } catch (err) {
+      console.error('Error fetching travel request:', err);
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setIsLoading(false);
+    }
   }, [id]);
+
+  useEffect(() => {
+    fetchTravelRequest();
+  }, [fetchTravelRequest]);
 
   const formatDate = (dateString: string | undefined): string => {
     if (!dateString) return 'N/A';
     const date = new Date(dateString);
-    if (isNaN(date.getTime())) return dateString; // Return original if invalid
-    const day = date.getDate().toString().padStart(2, '0');
-    const month = (date.getMonth() + 1).toString().padStart(2, '0'); // Month is 0-indexed
-    const year = date.getFullYear();
-    return `${day}-${month}-${year}`;
+    if (isNaN(date.getTime())) return dateString;
+    return date.toLocaleDateString('en-GB');
   };
 
   const handleDownloadDocuments = () => {
-    console.log('Downloading documents for request:', id);
     if (travelRequestData?.uploadedTicketPdfPath) {
-      alert(`Placeholder: Would download/open ${travelRequestData.uploadedTicketPdfPath}`);
+      window.open(travelRequestData.uploadedTicketPdfPath, '_blank');
     } else {
       alert('No document path available for download.');
     }
@@ -272,48 +272,24 @@ const TravelRequestDetails: React.FC = () => {
 
   const handleFeedbackSubmit = () => {
     let feedbackText = '';
-    const submittingUserID = userId; 
-
     openModal(
       <div className="space-y-4">
-        <textarea
-          className="w-full p-2 border rounded"
-          placeholder="Enter your feedback..."
-          rows={4}
-          onChange={(e) => feedbackText = e.target.value}
-        />
+        <textarea className="w-full p-2 border rounded" placeholder="Enter your feedback..." rows={4} onChange={(e) => feedbackText = e.target.value} />
       </div>,
       async () => {
-        console.log('Submitting feedback:', feedbackText);
-
         try {
           const response = await fetch(`http://localhost:5030/api/TravelRequest/${id}/travelfeedback`, {
             method: 'PUT',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              feedbackText: feedbackText,
-              submittingUserId: submittingUserID,
-            }),
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ feedbackText, submittingUserId: userId }),
           });
-
-          if (!response.ok) {
-            throw new Error(`API call failed with status: ${response.status}`);
-          }
-
-          console.log('Feedback submitted successfully');
+          if (!response.ok) throw new Error(`API call failed with status: ${response.status}`);
           setFeedbackSubmitted(true);
           closeModal();
-          // Potentially update local status or re-fetch data if feedback changes status
-
         } catch (error) {
           console.error('Failed to submit feedback:', error);
-          // Optionally show an error message to the user
         }
-      },
-      'Submit Feedback',
-      'Send'
+      }, 'Submit Feedback', 'Send'
     );
   };
 
@@ -325,21 +301,42 @@ const TravelRequestDetails: React.FC = () => {
           This will mark the travel request as closed and finalized. This action cannot be undone.
         </p>
         <textarea
-          className="w-full p-2 border rounded"
+          className="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-300 focus:border-blue-500 outline-none"
           placeholder="Closing remarks (optional)..."
           rows={4}
           onChange={(e) => closingRemarks = e.target.value}
         />
       </div>,
       async () => {
-        console.log('Request Closed with remarks:', closingRemarks);
-        // TODO: API call to close request (e.g., PUT to /api/TravelRequest/{id}/close)
-        // For now, updating local state
-        setRequestClosed(true);
-        if (travelRequestData) {
-          setTravelRequestData({ ...travelRequestData, status: 'Closed' });
+        if (!currentUser || !id) {
+            setError("Cannot close request: User or Request ID is missing.");
+            return;
         }
-        closeModal();
+
+        const CLOSED_STATUS_ID = 10;
+        const payload = {
+          requestId: id,
+          newStatusId: CLOSED_STATUS_ID,
+          userId: parseInt(currentUser.userId, 10),
+          comments: closingRemarks,
+          actionType: "CloseRequest"
+        };
+        
+        try {
+            const response = await axios.put(`http://localhost:5030/api/TravelRequest/${id}/updatestatus`, payload);
+
+            if (response.data.isSuccess) {
+                setRequestClosed(true);
+                alert('Request closed successfully!');
+                // await fetchTravelRequest();
+                closeModal();
+            } else {
+                setError(response.data.errorMessages?.join(', ') || 'Failed to close the request.');
+            }
+        } catch (err) {
+            console.error('Error closing request:', err);
+            setError(axios.isAxiosError(err) ? err.message : 'An unexpected error occurred.');
+        }
       },
       'Finalize request',
       'Confirm'
@@ -347,117 +344,55 @@ const TravelRequestDetails: React.FC = () => {
   };
 
   const handleApproveSubmit = async () => {
-    if (!userId) {
-      alert("User ID not found. Cannot approve.");
-      return;
-    }
+    if (!userId) return;
     let comment = '';
     openModal(
       <div className="space-y-4">
-        <textarea
-          className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          placeholder="Add approval comments (optional)"
-          rows={4}
-          onChange={(e) => comment = e.target.value}
-        />
+        <textarea className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Add approval comments (optional)" rows={4} onChange={(e) => comment = e.target.value}/>
       </div>,
       async () => {
         try {
           const response = await fetch(`http://localhost:5030/api/Approvals/${id}/manager/approve`, {
             method: 'PUT',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              approvingUserId: userId,
-              comments: comment
-            })
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ approvingUserId: userId, comments: comment })
           });
           const responseData = await response.json();
-          if (!response.ok || !responseData.isSuccess) {
-            throw new Error(responseData.errorMessages?.join(', ') || 'Approval failed');
-          }
-          console.log('Request approved with comment:', comment, responseData);
+          if (!response.ok || !responseData.isSuccess) throw new Error(responseData.errorMessages?.join(', ') || 'Approval failed');
           setActionTaken(true);
-          
-          // Re-fetch to get the latest status
-          const updatedResponse = await fetch(`http://localhost:5030/api/TravelRequest/${id}`);
-          const updatedData = await updatedResponse.json();
-          if (updatedData.isSuccess && updatedData.result) {
-              const apiData = updatedData.result;
-              setTravelRequestData(prev => ({
-                 ...(prev as ComponentTravelRequest),
-                 status: apiData.currentStatusName as ComponentTravelRequest['status'],
-                 // You might want to update other fields if approval changes them
-              }));
-          }
+          await fetchTravelRequest();
           closeModal();
         } catch (error) {
-          console.error('Error approving request:', error);
           alert(`Failed to approve request: ${error instanceof Error ? error.message : String(error)}`);
         }
-      },
-      'Approve Travel Request',
-      'Confirm Approval'
+      }, 'Approve Travel Request', 'Confirm Approval'
     );
   };
 
   const handleRejectSubmit = async () => {
-    if (!userId) {
-      alert("User ID not found. Cannot reject.");
-      return;
-    }
+    if (!userId) return;
     let comment = '';
     openModal(
       <div className="space-y-4">
-        <textarea
-          className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          placeholder="Add rejection reason (required)"
-          rows={4}
-          onChange={(e) => comment = e.target.value}
-        />
+        <textarea className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Add rejection reason (required)" rows={4} onChange={(e) => comment = e.target.value} />
       </div>,
       async () => {
-        if (!comment.trim()) {
-          alert('Please provide a rejection reason');
-          return; 
-        }
+        if (!comment.trim()) { alert('Please provide a rejection reason'); return; }
         try {
           const response = await fetch(`http://localhost:5030/api/Approvals/${id}/manager/reject`, {
             method: 'PUT',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              rejectingUserId: userId,
-              comments: comment
-            })
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ rejectingUserId: userId, comments: comment })
           });
           const responseData = await response.json();
-          if (!response.ok || !responseData.isSuccess) {
-            throw new Error(responseData.errorMessages?.join(', ') || 'Rejection failed');
-          }
-          console.log('Request rejected with reason:', comment, responseData);
+          if (!response.ok || !responseData.isSuccess) throw new Error(responseData.errorMessages?.join(', ') || 'Rejection failed');
           setActionTaken(true);
-
-          // Re-fetch to get the latest status
-          const updatedResponse = await fetch(`http://localhost:5030/api/TravelRequest/${id}`);
-          const updatedData = await updatedResponse.json();
-          if (updatedData.isSuccess && updatedData.result) {
-             const apiData = updatedData.result;
-              setTravelRequestData(prev => ({
-                 ...(prev as ComponentTravelRequest),
-                 status: apiData.currentStatusName as ComponentTravelRequest['status'],
-              }));
-          }
+          await fetchTravelRequest();
           closeModal();
         } catch (error) {
-          console.error('Error rejecting request:', error);
           alert(`Failed to reject request: ${error instanceof Error ? error.message : String(error)}`);
         }
-      },
-      'Reject Travel Request',
-      'Confirm Rejection'
+      }, 'Reject Travel Request', 'Confirm Rejection'
     );
   };
 
@@ -475,12 +410,7 @@ const TravelRequestDetails: React.FC = () => {
         <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
         <h3 className="text-xl font-semibold mb-2 text-red-700">Error Loading Request</h3>
         <p className="text-red-600 mb-6">{error}</p>
-        <button
-          className="btn-primary"
-          onClick={() => navigate('/travel-requests')}
-        >
-          Back to Travel Requests
-        </button>
+        <button className="btn-primary" onClick={() => navigate('/travel-requests')}>Back to Travel Requests</button>
       </div>
     );
   }
@@ -488,15 +418,7 @@ const TravelRequestDetails: React.FC = () => {
     return (
       <div className="card my-8 p-8 text-center">
         <h3 className="text-xl font-semibold mb-4">Travel Request Not Found</h3>
-        <p className="text-muted-foreground mb-6">
-          The travel request you're looking for could not be found or loaded.
-        </p>
-        <button
-          className="btn-primary"
-          onClick={() => navigate('/travel-requests')}
-        >
-          Back to Travel Requests
-        </button>
+        <button className="btn-primary" onClick={() => navigate('/travel-requests')}>Back to Travel Requests</button>
       </div>
     );
   }
@@ -508,110 +430,58 @@ const TravelRequestDetails: React.FC = () => {
   const isAdmin = role === 'admin';
   const isManager = role === 'manager';
 
-  const showFeedbackButton = isEmployee &&
-    travelRequestData.status === 'Returned' &&
-    !feedbackSubmitted;
-
-  const showCloseRequestButton = isAdmin &&
-    travelRequestData.status === 'Returned' && 
-    !requestClosed;
-
-  const showManagerActionButtons = isManager &&
-    travelRequestData.status === 'PendingReview' && 
-    !actionTaken;
+  const showFeedbackButton = isEmployee && travelRequestData.status === 'Returned' && !feedbackSubmitted;
+  const showCloseRequestButton = isAdmin && travelRequestData.status === 'Returned' && !requestClosed;
+  const showManagerActionButtons = isManager && travelRequestData.status === 'PendingReview' && !actionTaken;
 
   return (
     <div className="space-y-6 animate-fadeIn">
-      <ConfirmationModal
-        isOpen={isOpen}
-        title={title}
-        content={content}
-        onClose={closeModal}
-        buttons={buttons}
-      />
+      <ConfirmationModal isOpen={isOpen} title={title} content={content} onClose={closeModal} buttons={buttons} />
 
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div className="flex items-center gap-4">
-          <button
-            onClick={() => navigate(-1)}
-            className="inline-flex items-center justify-center p-2 rounded-full bg-gray-200 hover:bg-gray-300 text-gray-600 transition-colors"
-            aria-label="Go back"
-          >
+          <button onClick={() => navigate(-1)} className="inline-flex items-center justify-center p-2 rounded-full bg-gray-200 hover:bg-gray-300 text-gray-600 transition-colors" aria-label="Go back">
             <ChevronLeft className="h-5 w-5" />
           </button>
           <div>
             <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-3 flex-wrap">
               {travelRequestData.id}
-              {travelRequestData.status && (
-                <span 
-                  className={`px-3 py-1.5 rounded-full text-xs font-semibold tracking-wide ${statusBadgeClasses}`}
-                >
-                  {displayStatusName}
-                </span>
-              )}
+              {travelRequestData.status && (<span className={`px-3 py-1.5 rounded-full text-xs font-semibold tracking-wide ${statusBadgeClasses}`}>{displayStatusName}</span>)}
             </h2>
             <p className="text-sm text-gray-500 mt-1">
-              {travelRequestData.destination || travelRequestData.purpose || 'Travel Details'} • {formatDate(travelRequestData.outboundDepartureDate)} to {formatDate(travelRequestData.returnArrivalDate || travelRequestData.returnDepartureDate)}
+              {travelRequestData.destination || travelRequestData.purpose} • {formatDate(travelRequestData.outboundDepartureDate)} to {formatDate(travelRequestData.returnArrivalDate || travelRequestData.returnDepartureDate)}
             </p>
           </div>
         </div>
 
-        {/* Action Buttons */}
         <div className="flex flex-wrap gap-3 md:ml-auto">
           {showCloseRequestButton && ( 
-            <button
-              className="btn-secondary flex items-center"
-              onClick={handleCloseRequest}
-            >
+            <button className="btn-secondary flex items-center" onClick={handleCloseRequest}>
               <Lock className="h-4 w-4 mr-2" />
               Finalize Request
             </button>
           )}
           {showFeedbackButton && ( 
-            <button
-              className="btn-secondary flex items-center"
-              onClick={handleFeedbackSubmit}
-            >
+            <button className="btn-secondary flex items-center" onClick={handleFeedbackSubmit}>
               <MessageSquare className="h-4 w-4 mr-2" />
               Submit Feedback
             </button>
           )}
-          <button
-            className="btn-primary flex items-center"
-            onClick={handleDownloadDocuments}
-            disabled={!travelRequestData.uploadedTicketPdfPath}
-          >
+          <button className="btn-primary flex items-center" onClick={handleDownloadDocuments} disabled={!travelRequestData.uploadedTicketPdfPath}>
             <Download className="h-4 w-4 mr-2" />
             Travel Docs
           </button>
           {showManagerActionButtons && ( 
             <>
-              <button
-                className="btn-success flex items-center"
-                onClick={handleApproveSubmit}
-              >
-                <Check className="h-4 w-4 mr-2" />
-                Approve
-              </button>
-              <button
-                className="btn-danger flex items-center"
-                onClick={handleRejectSubmit}
-              >
-                <X className="h-4 w-4 mr-2" />
-                Reject
-              </button>
+              <button className="btn-success flex items-center" onClick={handleApproveSubmit}><Check className="h-4 w-4 mr-2" />Approve</button>
+              <button className="btn-danger flex items-center" onClick={handleRejectSubmit}><X className="h-4 w-4 mr-2" />Reject</button>
             </>
           )}
-          <button className="btn-secondary flex items-center">
-            <FileText className="h-4 w-4 mr-2" />
-            Export
-          </button>
+          <button className="btn-secondary flex items-center"><FileText className="h-4 w-4 mr-2" />Export</button>
         </div>
       </div>
 
-      {/* Banner and Main Content */}
       {id && <TravelInfoBanner requestId={id} />} 
-
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
           {id && <TravelInfo requestId={id} />}
