@@ -5,26 +5,7 @@ import DataTable from './DataTable';
 import { Eye, CheckCircle, XCircle } from 'lucide-react';
 
 interface TravelRequest {
-  id: string;
-  status: string;
-  travelerName: string;
-  projectCode: string;
-  travelType: string;
-  source: string;
-  destination: string;
-  travelDates: string;
-  departmentCode: string;
-  reportingManager: string;
-  departureDate: string;
-  returnDate: string | null;
-  purposeOfTravel: string;
-  isAccommodationRequired: boolean;
-  isPickupRequired: boolean;
-  isDropoffRequired: boolean;
-  comments: string;
-  isVegetarian: boolean;
-  attendedCct: boolean;
-  travelModeName: string;
+  [key: string]: any; // Allow any key-value pairs to accommodate dynamic fields
 }
 
 interface User {
@@ -35,32 +16,19 @@ interface User {
   userName: string;
 }
 
+interface Header {
+  key: string;
+  displayName: string;
+  sortable?: boolean;
+  filterable?: boolean;
+}
+
 const TravelRequests: React.FC = () => {
   const navigate = useNavigate();
   const [travelRequests, setTravelRequests] = useState<TravelRequest[]>([]);
+  const [headers, setHeaders] = useState<Header[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-
-  const headers = [
-    { key: 'id', displayName: 'Request ID', sortable: true, filterable: true },
-    { key: 'status', displayName: 'Status', sortable: true, filterable: true },
-    { key: 'travelerName', displayName: 'Traveler', sortable: true, filterable: true },
-    { key: 'projectCode', displayName: 'Project Code', sortable: true, filterable: true },
-    { key: 'travelType', displayName: 'Type', sortable: true },
-    { key: 'source', displayName: 'Source', sortable: true, filterable: true },
-    { key: 'destination', displayName: 'Destination', sortable: true, filterable: true },
-    { key: 'travelDates', displayName: 'Travel Dates', sortable: true },
-    { key: 'departmentCode', displayName: 'Department', sortable: true },
-    { key: 'reportingManager', displayName: 'Manager', sortable: true },
-    { key: 'purposeOfTravel', displayName: 'Purpose', sortable: true, filterable: true },
-    { key: 'isAccommodationRequired', displayName: 'Accommodation', sortable: true },
-    { key: 'isPickupRequired', displayName: 'Pickup', sortable: true },
-    { key: 'isDropoffRequired', displayName: 'Dropoff', sortable: true },
-    { key: 'comments', displayName: 'Comments', sortable: true, filterable: true },
-    { key: 'isVegetarian', displayName: 'Vegetarian', sortable: true },
-    { key: 'attendedCct', displayName: 'Attended CCT', sortable: true },
-    { key: 'travelModeName', displayName: 'Travel Mode', sortable: true, filterable: true },
-  ];
 
   useEffect(() => {
     const fetchTravelRequests = async () => {
@@ -79,67 +47,152 @@ const TravelRequests: React.FC = () => {
           throw new Error('User email or token not found in local storage.');
         }
 
-        const email = user.userEmail; // "advait.kumar@experionglobal.com"
+        const email = user.userEmail;
         const token = user.token;
+        const role = user.role;
 
-        const response = await fetch(
-          `http://localhost:5030/api/TravelRequest/ByProjectManager/${encodeURIComponent(email)}`,
-          {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`,
-            },
-          }
-        );
+        // Determine the API endpoint based on the user's role
+        const apiUrl =
+          role === 'admin'
+            ? 'http://localhost:5030/api/TravelRequest/travelrequests'
+            : `http://localhost:5030/api/TravelRequest/ByProjectManager/${encodeURIComponent(email)}`;
+
+        const response = await fetch(apiUrl, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+        });
 
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
 
         const data = await response.json();
-        if (data.isSuccess && Array.isArray(data.result)) {
-          const mappedData: TravelRequest[] = data.result.map((item: any) => {
-            // Convert UTC dates to IST
-            const convertUtcToIst = (utcDate: string | null): Date | null => {
-              if (!utcDate) return null;
-              const date = parseISO(utcDate);
-              const istOffset = 5.5 * 60 * 60 * 1000; // IST is UTC+5:30
-              return new Date(date.getTime() + istOffset);
-            };
 
-            const departureDateIst = convertUtcToIst(item.outboundDepartureDate);
-            const returnDateIst = convertUtcToIst(item.returnDepartureDate);
-
-            return {
-              id: item.requestId,
-              status: item.currentStatusName,
-              travelerName: item.employeeName,
-              projectCode: item.projectName,
-              travelType: item.isInternational ? 'International' : 'Domestic',
-              source: `${item.sourcePlace}, ${item.sourceCountry}`,
-              destination: `${item.destinationPlace}, ${item.destinationCountry}`,
-              travelDates: `${departureDateIst ? format(departureDateIst, 'MMM dd, yyyy') : 'N/A'} - ${
-                returnDateIst ? format(returnDateIst, 'MMM dd, yyyy') : 'N/A'
-              }`,
-              departureDate: item.outboundDepartureDate,
-              returnDate: item.returnDepartureDate,
-              departmentCode: item.duId.toString(),
-              reportingManager: item.projectManagerName,
-              purposeOfTravel: item.purposeOfTravel,
-              isAccommodationRequired: item.isAccommodationRequired,
-              isPickupRequired: item.isPickupRequired,
-              isDropoffRequired: item.isDropoffRequired,
-              comments: item.comments || 'N/A',
-              isVegetarian: item.isVegetarian,
-              attendedCct: item.attendedCct,
-              travelModeName: item.travelModeName,
-            };
-          });
-          setTravelRequests(mappedData);
+        // Handle response based on the role
+        let travelRequestData: any[];
+        if (role === 'admin') {
+          if (!Array.isArray(data)) {
+            throw new Error('Invalid API response format: Expected an array for admin role');
+          }
+          travelRequestData = data;
         } else {
-          throw new Error('Invalid API response format');
+          if (!data.isSuccess || !Array.isArray(data.result)) {
+            throw new Error('Invalid API response format');
+          }
+          travelRequestData = data.result;
         }
+
+        // Define the priority fields in the specified order
+        const priorityFields = [
+          { key: 'requestId', displayName: 'Request ID', sortable: true, filterable: true },
+          { key: 'currentStatusName', displayName: 'Status', sortable: true, filterable: false },
+          { key: 'travelType', displayName: 'Type', sortable: true, filterable: false },
+          { key: 'isRoundTrip', displayName: 'Trip Type', sortable: true, filterable: true },
+          { key: 'employeeName', displayName: 'Traveler', sortable: true, filterable: true },
+          { key: 'destination', displayName: 'Destination', sortable: true, filterable: true },
+          { key: 'source', displayName: 'Source', sortable: true, filterable: true },
+          { key: 'outboundDepartureDate', displayName: 'Outbound Departure', sortable: true, filterable: true },
+          { key: 'outboundArrivalDate', displayName: 'Outbound Arrival', sortable: true, filterable: true },
+          { key: 'returnDepartureDate', displayName: 'Inbound Departure', sortable: true, filterable: true },
+          { key: 'returnArrivalDate', displayName: 'Inbound Arrival', sortable: true, filterable: true },
+          { key: 'duId', displayName: 'Department', sortable: true, filterable: true },
+          { key: 'purposeOfTravel', displayName: 'Purpose', sortable: true, filterable: true },
+          { key: 'comments', displayName: 'Comments', sortable: true, filterable: true },
+        ];
+
+        // Dynamically generate headers for remaining fields
+        const dynamicHeaders: Header[] = [];
+        const sampleItem = travelRequestData[0];
+        if (sampleItem) {
+          const priorityKeys = new Set(priorityFields.map(field => field.key));
+          const excludedKeys = new Set([
+            'isPickupRequired',
+            'isDropoffRequired',
+            'pickupPlace',
+            'dropoffPlace',
+            'isVegetarian',
+            'attendedCct',
+            'travelAgencyName',
+            'totalExpense',
+            'uploadedTicketPdfPath',
+            'createdAt',
+            'updatedAt',
+            'outboundDepartureDate',
+            'returnDepartureDate',
+            'isInternational',
+            'sourcePlace',
+            'sourceCountry',
+            'destinationPlace',
+            'destinationCountry'
+          ]);
+
+          // Add remaining fields from the API response
+          Object.keys(sampleItem).forEach((key) => {
+            // Skip fields that are in priorityFields, excluded, or shouldn't be displayed
+            if (priorityKeys.has(key) || excludedKeys.has(key)) {
+              return;
+            }
+
+            let displayName = key
+              .replace(/([A-Z])/g, ' $1')
+              .replace(/^./, (str) => str.toUpperCase())
+              .trim();
+
+            // Customize display names for specific fields
+            if (key === 'projectName') displayName = 'Project Code';
+            if (key === 'travelModeName') displayName = 'Travel Mode';
+            if (key === 'projectManagerName') displayName = 'Manager';
+
+            dynamicHeaders.push({
+              key,
+              displayName,
+              sortable: true,
+              filterable: true,
+            });
+          });
+
+          // Add remaining derived fields
+          dynamicHeaders.unshift(
+            { key: 'travelDates', displayName: 'Travel Dates', sortable: true, filterable: false }
+          );
+        }
+
+        // Combine priority fields with remaining dynamic fields
+        setHeaders([...priorityFields, ...dynamicHeaders]);
+
+        const mappedData: TravelRequest[] = travelRequestData.map((item: any) => {
+          // Convert UTC dates to IST
+          const convertUtcToIst = (utcDate: string | null): Date | null => {
+            if (!utcDate) return null;
+            const date = parseISO(utcDate);
+            const istOffset = 5.5 * 60 * 60 * 1000; // IST is UTC+5:30
+            return new Date(date.getTime() + istOffset);
+          };
+
+          const departureDateIst = convertUtcToIst(item.outboundDepartureDate);
+          const returnDateIst = convertUtcToIst(item.returnDepartureDate);
+
+          return {
+            ...item,
+            id: item.requestId,
+            travelType: item.isInternational ? 'International' : 'Domestic',
+            isRoundTrip: item.isRoundTrip ? 'Round Trip' : 'One Way',
+            source: item.sourcePlace && item.sourceCountry ? `${item.sourcePlace}, ${item.sourceCountry}` : 'N/A',
+            destination: item.destinationPlace && item.destinationCountry ? `${item.destinationPlace}, ${item.destinationCountry}` : 'N/A',
+            travelDates: departureDateIst && returnDateIst 
+              ? `${format(departureDateIst, 'MMM dd, yyyy')} - ${format(returnDateIst, 'MMM dd, yyyy')}` 
+              : 'N/A',
+            departureDate: item.outboundDepartureDate,
+            returnDate: item.returnDepartureDate,
+            comments: item.comments || 'N/A',
+            departmentCode: item.duId ? item.duId.toString() : 'N/A',
+          };
+        });
+
+        setTravelRequests(mappedData);
       } catch (err: any) {
         setError(err.message || 'Failed to fetch travel requests. Please try again later.');
         console.error('Error fetching travel requests:', err);
@@ -152,7 +205,8 @@ const TravelRequests: React.FC = () => {
     fetchTravelRequests();
   }, []);
 
-  const getStatusColor = (status: string): string => {
+  const getStatusColor = (status: string | undefined): string => {
+    if (!status) return 'bg-gray-100 text-gray-800';
     switch (status.toLowerCase()) {
       case 'pendingreview':
         return 'bg-yellow-100 text-yellow-800';
@@ -165,6 +219,11 @@ const TravelRequests: React.FC = () => {
       default:
         return 'bg-gray-100 text-gray-800';
     }
+  };
+
+  const getTripTypeColor = (tripType: string | undefined): string => {
+    if (!tripType) return 'bg-gray-100 text-gray-800';
+    return tripType === 'Round Trip' ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800';
   };
 
   const handleRowClick = (item: TravelRequest) => {
@@ -205,7 +264,7 @@ const TravelRequests: React.FC = () => {
       headers={headers}
       data={travelRequests}
       title="Travel Requests"
-      searchableFields={['travelerName', 'destination', 'id', 'projectCode', 'source', 'purposeOfTravel', 'comments', 'travelModeName']}
+      searchableFields={headers.filter(h => h.filterable !== false).map(h => h.key)}
       statusOptions={['PendingReview', 'DUApproved', 'OptionSelected', 'Rejected']}
       typeOptions={['Domestic', 'International']}
       dateFilterKey="departureDate"
@@ -215,6 +274,7 @@ const TravelRequests: React.FC = () => {
       getTypeColor={(type: string) =>
         type === 'Domestic' ? 'bg-primary/10 text-primary' : 'bg-secondary/10 text-secondary'
       }
+      getTripTypeColor={getTripTypeColor}
       renderActions={(item: TravelRequest) => (
         <div className="flex items-center justify-end gap-1.5">
           <button
@@ -227,7 +287,7 @@ const TravelRequests: React.FC = () => {
           >
             <Eye size={18} />
           </button>
-          {['PendingReview', 'DUApproved', 'OptionSelected'].includes(item.status) && (
+          {['PendingReview', 'DUApproved', 'OptionSelected'].includes(item.currentStatusName) && (
             <>
               <button
                 className="p-1.5 text-green-600 hover:text-green-800 hover:bg-green-100 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-green-400"
