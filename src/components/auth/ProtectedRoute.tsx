@@ -16,12 +16,16 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles 
   }
 
   const user = JSON.parse(userString);
+  const role = user.role;
 
   // Check if user has required role
-  if (!allowedRoles.includes(user.role)) {
-    // Redirect to appropriate dashboard based on user's role
-    const dashboardPath = `/${user.role}/dashboard`;
-    return <Navigate to={dashboardPath} replace />;
+  if (!allowedRoles.includes(role)) {
+    // Redirect based on role like login page
+    if (role === 'Admin') {
+      return <Navigate to="/admin/dashboard" replace />;
+    } else {
+      return <Navigate to="/manager/dashboard" replace />;
+    }
   }
 
   return <>{children}</>;

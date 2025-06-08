@@ -23,35 +23,78 @@ const Login: React.FC = () => {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
+  // const handleSubmit = (e: React.FormEvent) => {
+  //   e.preventDefault();
+  //   setError('');
 
-    const user = users.find(
-      u => u.email === formData.email && u.password === formData.password && u.isActive
-    );
+  //   const user = users.find(
+  //     u => u.email === formData.email && u.password === formData.password && u.isActive
+  //   );
 
-    if (!user) {
-      setError('Invalid credentials or inactive account');
+  //   if (!user) {
+  //     setError('Invalid credentials or inactive account');
+  //     return;
+  //   }
+
+  //   // Store user info in localStorage (in production, use proper session management)
+  //   localStorage.setItem('user', JSON.stringify(user));
+
+  //   // Redirect based on role
+  //   switch (user.role) {
+  //     case 'admin':
+  //       navigate('/admin/dashboard');
+  //       break;
+  //     case 'manager':
+  //       navigate('/manager/dashboard');
+  //       break;
+  //     case 'employee':
+  //       navigate('/employee/dashboard');
+  //       break;
+  //   }
+  // };
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setError('');
+
+  try {
+    const response = await fetch('http://localhost:5030/api/Auth/Login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(formData)
+    });
+
+    const data = await response.json();
+
+    if (!response.ok || !data.isSuccess) {
+      setError(data.errorMessages?.[0] || 'Login failed');
       return;
     }
 
-    // Store user info in localStorage (in production, use proper session management)
-    localStorage.setItem('user', JSON.stringify(user));
+    const { access_token, user_id, user_name, role_name } = data.result;
 
-    // Redirect based on role
-    switch (user.role) {
-      case 'admin':
+    // Save the token and user info in localStorage
+        localStorage.setItem('user', JSON.stringify({
+        token: access_token,
+        userId: user_id,
+        userName: user_name,
+         role: role_name.toLowerCase() 
+      }));
+
+
+          // Navigate based on role
+      if (role_name === 'Admin') {
         navigate('/admin/dashboard');
-        break;
-      case 'manager':
+      } else {
         navigate('/manager/dashboard');
-        break;
-      case 'employee':
-        navigate('/employee/dashboard');
-        break;
-    }
-  };
+      }
+
+  } catch (err) {
+    console.error(err);
+    setError('Something went wrong. Please try again later.');
+  }
+};
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
