@@ -254,11 +254,14 @@ const TravelRequestDetails: React.FC = () => {
   };
 
   const handleDownloadDocuments = () => {
-    if (travelRequestData?.uploadedTicketPdfPath) {
-      window.open(travelRequestData.uploadedTicketPdfPath, '_blank');
-    } else {
-      alert('No document path available for download.');
+    if (!travelRequestData?.uploadedTicketPdfPath || !id) {
+        alert('No document path available for download.');
+        return;
     }
+
+    const downloadUrl = `http://localhost:5030/api/TravelRequest/${id}/downloadticket`;
+
+    window.open(downloadUrl, '_blank');
   };
 
   const handleFeedbackSubmit = () => {
