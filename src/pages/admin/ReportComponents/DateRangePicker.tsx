@@ -52,9 +52,7 @@ const DateRangePicker: React.FC<DateRangePickerProps> = ({
   const formatDisplayDate = (dateString: string): string => {
     if (!dateString) return '';
     const date = new Date(dateString);
-    // Ensuring the input 'dateString' which is yyyy-mm-dd is parsed correctly
-    // by potentially accounting for timezone issues if not already UTC.
-    // For 'en-US' toLocaleDateString, it's usually fine.
+
     return date.toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
