@@ -76,6 +76,10 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId }) => {
   const [isUploadTicketsFileModalOpen, setIsUploadTicketsFileModalOpen] = useState(false);
   const [isEditModeDUHead, setIsEditModeDUHead] = useState(false);
 
+  // NEW: State to track which radio button is selected before submitting
+  const [pendingSelectedOptionId, setPendingSelectedOptionId] = useState<string | null>(null);
+
+
   const [isLoadingStatus, setIsLoadingStatus] = useState(true);
   const [isLoadingOptions, setIsLoadingOptions] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -211,13 +215,20 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId }) => {
         const response = await axios.delete<{ isSuccess: boolean, errorMessages?: string[] }>(`${API_BASE_URL}/travelrequests/${requestId}/ticketoptions/${optionId}`);
         if (response.data.isSuccess) { await fetchTicketOptions(requestId); }
         else { setError(response.data.errorMessages?.join(', ') || 'Failed to delete option.'); }
-      } catch (err) {
+      } catch (err)
+      {
         console.error("Error deleting option:", err);
         setError(axios.isAxiosError(err) ? err.message : 'An error occurred while deleting option.');
       } finally { setIsLoadingOptions(false); }
     }, 'Delete Option');
   };
 
+  // NEW: Handler for radio button changes in SelectTicketView. Only updates local state.
+  const handlePendingSelectionChange = (optionId: string) => {
+    setPendingSelectedOptionId(optionId);
+  };
+  
+  // MODIFIED: This function is now only called by the confirmation handler below. Its internal logic remains the same.
   const handleSelectOption = async (optionIdString: string) => {
     if ((currentUser?.role !== 'manager' && currentUser?.role !== 'duhead') || !requestId) return;
     const optionId = parseInt(optionIdString, 10);
@@ -228,7 +239,11 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId }) => {
     setIsLoadingOptions(true);
     try {
       const response = await axios.put<{ isSuccess: boolean, errorMessages?: string[] }>(`${API_BASE_URL}/travelrequests/${requestId}/ticketoptions/${optionId}/select`, payload);
-      if (response.data.isSuccess) { await fetchTicketOptions(requestId); }
+      if (response.data.isSuccess) { 
+        await fetchTravelRequestData(); 
+        setPendingSelectedOptionId(null); // Clear pending selection on success
+        setIsEditModeDUHead(false);
+      }
       else { setError(response.data.errorMessages?.join(', ') || 'Failed to select option.'); }
     } catch (err) {
       console.error("Error selecting option:", err);
@@ -236,7 +251,16 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId }) => {
     } finally { setIsLoadingOptions(false); }
   };
 
-  // Child UploadTicketView passes the full UITicketOption
+  // NEW: Handler for the "Upload Selected Options" button in SelectTicketView
+  const handleConfirmSelectionByApprover = async () => {
+    if (!pendingSelectedOptionId) {
+        setError("Please select an option before uploading.");
+        return;
+    }
+    // Call the function that makes the API call.
+    await handleSelectOption(pendingSelectedOptionId);
+  };
+
   const handleInitiateEditOption = (uiOptionToEdit: UITicketOption) => {
     const apiOption = ticketOptionsFromApi.find(opt => opt.optionId.toString() === uiOptionToEdit.id);
     if (apiOption) {
@@ -327,34 +351,129 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId }) => {
     }
   };
 
-  // Handler for Admin finalizing provided options
-  const handleFinalizeOptionsUploadByAdmin = async () => {
+  // MODIFICATION 1: Functionality for Admin to clear all ticket options
+  const handleClearAllOptionsByAdmin = async () => {
     if (ticketOptionsFromApi.length === 0) {
-      setError("Please add at least one ticket option before finalizing.");
+      setError("There are no ticket options to clear.");
       return;
     }
-    openConfirmModal("Finalize and submit these ticket options for selection?", async () => {
-      console.log("Admin finalizing ticket options - API call to update TR status needed");
-      setError("Admin Finalize Options API call not yet implemented.");
-    }, "Submit Ticket Options");
+    openConfirmModal("Are you sure you want to delete ALL ticket options?", async () => {
+      setIsLoadingOptions(true);
+      try {
+        const response = await axios.delete(`${API_BASE_URL}/travelrequests/${requestId}/ticketoptions/all`);
+        if (response.data.isSuccess) {
+          await fetchTicketOptions(requestId); // Refresh the list
+        } else {
+          setError(response.data.errorMessages?.join(', ') || "Failed to clear all options.");
+        }
+      } catch (err) {
+        console.error("Error clearing all options:", err);
+        setError(axios.isAxiosError(err) ? err.message : 'An error occurred while clearing options.');
+      } finally {
+        setIsLoadingOptions(false);
+      }
+    }, "Clear All Options");
   };
 
-  // Handler for DU Head (or Manager) approving a selected option
-  const handleApproveSelectedOptionByApprover = async () => {
+  // MODIFICATION 3: Functionality for DU Head to approve the selected option and update TR status
+  const handleApproveTicketByDUHead = async () => {
     const selectedOption = ticketOptionsFromApi.find(opt => opt.isSelected);
     if (!selectedOption) {
       setError("No ticket option is selected for approval.");
       return;
     }
-    const newStatus = currentUser?.role === 'duhead' ? 'DU Head Approved' : 'Manager Final Approved';
-    openConfirmModal(`Approve the selected ticket option and set status to "${newStatus}"?`, async () => {
-      console.log(`${currentUser?.role} approving selected tickets - API call to update TR status needed`);
-      // Example: await axios.put(`${API_BASE_URL}/travelrequests/${requestId}/updateStatus`, { newStatus });
-      // After successful status update:
-      // await fetchTravelRequestData(); // Re-fetch everything
-      // if (currentUser?.role === 'duhead') setIsEditModeDUHead(false);
-      setError("Approver's Finalize Selection API call not yet implemented.");
+    if (currentUser?.role !== 'duhead') return;
+
+    const newStatusId = 5; // 5 = DUApproved
+    const userId = parseInt(currentUser.userId, 10);
+    if (isNaN(userId)) {
+        setError("Invalid User ID.");
+        return;
+    }
+    
+    openConfirmModal(`Approve the selected ticket option and set status to "DU Approved"?`, async () => {
+        setIsLoadingStatus(true);
+        try {
+            const payload = {
+                requestId: requestId,
+                newStatusId: newStatusId,
+                userId: userId,
+                comments: `Ticket option ${selectedOption.optionId} approved by DU Head.`,
+                actionType: "Approve"
+            };
+
+            const response = await axios.put(`${API_BASE_URL}/TravelRequest/${requestId}/updatestatus`, payload);
+            
+            if(response.data.isSuccess) {
+                setIsEditModeDUHead(false);
+                await fetchTravelRequestData(); // Re-fetch all data to show new status
+            } else {
+                setError(response.data.errorMessages?.join(', ') || 'Failed to approve ticket option.');
+            }
+        } catch (err) {
+            console.error("Error approving ticket option:", err);
+            setError(axios.isAxiosError(err) ? err.message : 'An error occurred while approving the ticket.');
+        } finally {
+            setIsLoadingStatus(false);
+        }
     }, "Approve Ticket Option");
+  };
+
+  const handleSelectAndApproveByDUHead = async () => {
+    if (!pendingSelectedOptionId) {
+      setError("Please select an option to approve.");
+      return;
+    }
+    if (!currentUser || currentUser.role !== 'duhead') return;
+
+    const userId = parseInt(currentUser.userId, 10);
+    const optionId = parseInt(pendingSelectedOptionId, 10);
+    if (isNaN(userId) || isNaN(optionId)) {
+      setError("Invalid user or option ID.");
+      return;
+    }
+
+    setIsLoadingOptions(true);
+    setError(null);
+    try {
+      // STEP 1: Call the 'select' endpoint to update the chosen option.
+      // This is crucial to ensure the correct `SelectedTicketOptionId` is set on the Travel Request.
+      const selectPayload: SelectTicketOptionPayload = { selectingUserId: userId, comments: "Option selected by DU Head during approval." };
+      const selectResponse = await axios.put(`${API_BASE_URL}/travelrequests/${requestId}/ticketoptions/${optionId}/select`, selectPayload);
+
+      // If the first step fails, stop here.
+      if (!selectResponse.data.isSuccess) {
+        throw new Error(selectResponse.data.errorMessages?.join(', ') || 'Failed to select the ticket option.');
+      }
+
+      // STEP 2: Immediately call the 'updatestatus' endpoint to finalize the approval.
+      const approvePayload = {
+        requestId: requestId,
+        newStatusId: 5, // 5 = DUApproved
+        userId: userId,
+        comments: `Ticket option ${optionId} approved by DU Head.`,
+        actionType: "Approve"
+      };
+      const approveResponse = await axios.put(`${API_BASE_URL}/TravelRequest/${requestId}/updatestatus`, approvePayload);
+      
+      if (approveResponse.data.isSuccess) {
+        // SUCCESS: Both API calls worked. Refresh everything.
+        await fetchTravelRequestData();
+        setPendingSelectedOptionId(null);
+        setIsEditModeDUHead(false);
+      } else {
+         throw new Error(approveResponse.data.errorMessages?.join(', ') || 'The option was selected, but failed to update status to DU Approved.');
+      }
+
+    } catch (err) {
+      console.error("Error during DU Head select and approve process:", err);
+      const errorData = (err as any).response?.data;
+      setError(errorData?.errorMessages?.join(', ') || (err as Error).message || 'An error occurred during the approval process.');
+      // It's a good idea to refresh data even on failure to show the user the current state.
+      await fetchTravelRequestData();
+    } finally {
+      setIsLoadingOptions(false);
+    }
   };
 
   const renderContent = () => {
@@ -383,7 +502,6 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId }) => {
   };
 
   const renderAdminContent = (status: string) => {
-    // Admin uploads actual tickets after DU Head approves selection
     if (status === 'DUApproved') {
       return (
         <SelectedView
@@ -394,15 +512,27 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId }) => {
         />
       );
     }
-    if (['OptionSelected', 'TicketDispatched', 'InTransit', 'Returned', 'Closed'].includes(status)) {
+
+    if (['TicketsDispatched', 'InTransit', 'Returned', 'Closed'].includes(status)) {
       return (
         <SelectedView
           ticketOptions={uiTicketOptions}
           onDownloadTickets={() => console.log("Admin: Download initiated for selected tickets")}
+          buttons={['downloadTickets']}
           customButtons={[]}
         />
       );
     }
+    
+    if (status === 'OptionSelected') {
+      return (
+        <SelectedView
+          ticketOptions={uiTicketOptions}
+          customButtons={[]}
+        />
+      );
+    }
+
     if (status === 'Verified' || status === 'OptionsListed') {
       return (
         <UploadTicketView
@@ -417,25 +547,34 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId }) => {
           onSaveEdit={() => handleSaveEdit()}
           onCancelEdit={() => { setEditingOptionApiItem(null); setEditText(''); }}
           onChangeEditText={setEditText}
-          onUploadOptions={handleFinalizeOptionsUploadByAdmin} 
+          onUploadOptions={handleClearAllOptionsByAdmin} 
           customButtons={[]}
         />
       );
     }
+
+    // Default fallback message
     return <StatusMessage title="Awaiting Action" message={`Request status: ${status}. Options management may be pending or completed.`} icon={<Clock className="h-6 w-6" />} bgColor="bg-gray-50" borderColor="border-gray-200" iconColor="text-gray-500" titleColor="text-gray-800" textColor="text-gray-700" />;
   };
 
-  const renderDUHeadContent = (status: string) => {
-    if (status === 'OptionSelected') {
-      if (isEditModeDUHead) {
-        return (
-          <SelectTicketView
-            ticketOptions={uiTicketOptions}
-            onSelectOption={handleSelectOption}
-            onUploadOptions={handleApproveSelectedOptionByApprover}
-          />
-        );
-      }
+    const renderDUHeadContent = (status: string) => {
+    // This logic handles when the DU Head can select/change and approve.
+    // It applies if the status is `OptionsListed` (DU Head is the first approver) 
+    // or `OptionSelected` (DU Head is changing the manager's selection).
+    if (status === 'OptionsListed' || (status === 'OptionSelected' && isEditModeDUHead)) {
+      return (
+        <SelectTicketView
+          ticketOptions={uiTicketOptions}
+          onSelectOption={handlePendingSelectionChange}
+          // MODIFIED: Use the new, powerful handler for the DU Head's upload action.
+          onUploadOptions={handleSelectAndApproveByDUHead}
+          selectedOptionId={pendingSelectedOptionId}
+        />
+      );
+    }
+
+    // This logic handles the view after a selection is made and the DU Head is not in edit mode.
+    if (status === 'OptionSelected' && !isEditModeDUHead) {
       const selectedViewButtons: ('downloadTickets' | 'uploadTickets' | 'confirmTicketOption')[] = [];
       const canConfirm = uiTicketOptions.some(o => o.selected);
       if (canConfirm) {
@@ -446,22 +585,30 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId }) => {
         <SelectedView
           ticketOptions={uiTicketOptions}
           buttons={selectedViewButtons}
-          onConfirmTicketOption={canConfirm ? handleApproveSelectedOptionByApprover : undefined}
+          onConfirmTicketOption={canConfirm ? handleApproveTicketByDUHead : undefined}
           customButtons={[
             {
-              label: isEditModeDUHead ? 'View Selected' : 'Change Selection',
+              label: 'Change Selection',
               icon: <Edit size={16} />,
-              onClick: () => setIsEditModeDUHead(!isEditModeDUHead),
+              onClick: () => {
+                const currentlySelected = uiTicketOptions.find(o => o.selected);
+                if (currentlySelected) {
+                    setPendingSelectedOptionId(currentlySelected.id);
+                }
+                setIsEditModeDUHead(true);
+              },
               className: 'bg-blue-500 text-white hover:bg-blue-600',
             }
           ]}
         />
       );
     }
-    if (['DUApproved', 'TicketDispatched', 'InTransit', 'Returned', 'Closed'].includes(status)) {
+
+    if (['DUApproved', 'TicketsDispatched', 'InTransit', 'Returned', 'Closed'].includes(status)) {
       return renderEmployeeContent(status);
     }
-    return <StatusMessage title="Processing" message={`Request status: ${status}. Waiting for options or previous approvals.`} icon={<Clock className="h-6 w-6" />} bgColor="bg-indigo-50" borderColor="border-indigo-200" iconColor="text-indigo-500" titleColor="text-indigo-800" textColor="text-indigo-700" />;
+    
+    return <StatusMessage title="Processing" message={`Request status: ${status}. Waiting for previous approvals.`} icon={<Clock className="h-6 w-6" />} bgColor="bg-indigo-50" borderColor="border-indigo-200" iconColor="text-indigo-500" titleColor="text-indigo-800" textColor="text-indigo-700" />;
   };
 
   const renderManagerContent = (status: string) => {
@@ -472,8 +619,11 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId }) => {
       return (
         <SelectTicketView
           ticketOptions={uiTicketOptions}
-          onSelectOption={handleSelectOption}
-          onUploadOptions={handleApproveSelectedOptionByApprover}
+          // MODIFICATION 2: Use new handlers for delayed selection
+          onSelectOption={handlePendingSelectionChange}
+          onUploadOptions={handleConfirmSelectionByApprover}
+          // Pass pending selection to child to manage checked state. Assumes prop 'selectedOptionId' exists.
+          selectedOptionId={pendingSelectedOptionId}
         />
       );
     }
@@ -486,7 +636,7 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId }) => {
         />
       );
     }
-    if (['', 'DUApproved', 'TicketDispatched', 'InTransit', 'Returned', 'Closed'].includes(status)) {
+    if (['', 'DUApproved', 'TicketsDispatched', 'InTransit', 'Returned', 'Closed'].includes(status)) {
       return (
         <SelectedView
           ticketOptions={uiTicketOptions}
@@ -500,7 +650,7 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId }) => {
   };
 
   const renderEmployeeContent = (status: string) => {
-    if (!['OptionSelected', 'DUApproved', 'TicketDispatched', 'InTransit', 'Returned', 'Closed'].includes(status)) {
+    if (!['OptionSelected', 'DUApproved', 'TicketsDispatched', 'InTransit', 'Returned', 'Closed'].includes(status)) {
       let msg = status === 'Pending' ? "Your travel request is currently under review." : "Your travel request is being processed.";
       return <StatusMessage title={status === 'Pending' ? "Under Review" : "Processing Request"} message={msg} icon={<Clock className="h-6 w-6" />} bgColor="bg-amber-50" borderColor="border-amber-200" iconColor="text-amber-500" titleColor="text-amber-800" textColor="text-amber-700" />;
     }

@@ -6,14 +6,16 @@ interface Props {
   ticketOptions: TicketOption[];
   onSelectOption: (id: string) => void;
   onUploadOptions: () => void;
+  selectedOptionId: string | null;
 }
 
 const SelectTicketView: React.FC<Props> = ({
   ticketOptions,
   onSelectOption,
   onUploadOptions,
+  selectedOptionId,
 }) => {
-  const selectedOptions = ticketOptions.filter(option => option.selected);
+   const hasPendingSelection = selectedOptionId !== null;
 
   return (
     <div className="flex flex-col h-full">
@@ -30,66 +32,77 @@ const SelectTicketView: React.FC<Props> = ({
             <div className="text-center py-12 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
               <Ticket className="w-12 h-12 text-gray-400 mx-auto mb-3" />
               <p className="text-gray-500 text-lg">No ticket options available</p>
-              <p className="text-gray-400 text-sm">Create some options to get started</p>
+              <p className="text-gray-400 text-sm">Please wait for options to be added.</p>
             </div>
           ) : (
             <div className="space-y-3">
-              {ticketOptions.map(option => (
-                <div
-                  key={option.id}
-                  className={`group relative p-5 border-2 rounded-xl transition-all duration-300 ${
-                    option.selected
-                      ? 'bg-blue-50 border-blue-300'
-                      : 'bg-white border-gray-200 hover:border-gray-300 hover:bg-gray-50 hover:shadow-md'
-                  }`}
-                >
-                  {option.selected && (
-                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500 rounded-l-xl"></div>
-                  )}
-                  <div className="flex items-center justify-between">
-                    <label
-                      className="flex items-center gap-4 cursor-pointer flex-1 pr-24"
-                      onClick={() => onSelectOption(option.id)}
-                    >
-                      <div className="relative">
-                        <div
-                          className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
-                            option.selected
-                              ? 'border-blue-600 bg-blue-600'
-                              : 'border-gray-300 bg-white hover:border-gray-400'
-                          }`}
-                        >
-                          {option.selected && (
-                            <div className="w-2 h-2 bg-white rounded-full"></div>
-                          )}
+              {ticketOptions.map(option => {
+                // NEW: Determine if this option is the one currently selected in the UI
+                const isSelected = option.id === selectedOptionId;
+
+                return (
+                  <div
+                    key={option.id}
+                    // MODIFIED: Use the new 'isSelected' boolean for styling
+                    className={`group relative p-5 border-2 rounded-xl transition-all duration-300 ${
+                      isSelected
+                        ? 'bg-blue-50 border-blue-300'
+                        : 'bg-white border-gray-200 hover:border-gray-300 hover:bg-gray-50 hover:shadow-md'
+                    }`}
+                  >
+                    {/* MODIFIED: Use 'isSelected' to show the side bar */}
+                    {isSelected && (
+                      <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500 rounded-l-xl"></div>
+                    )}
+                    <div className="flex items-center justify-between">
+                      <label
+                        className="flex items-center gap-4 cursor-pointer flex-1 pr-24"
+                        onClick={() => onSelectOption(option.id)}
+                      >
+                        <div className="relative">
+                          <div
+                            // MODIFIED: Use 'isSelected' to style the radio button
+                            className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+                              isSelected
+                                ? 'border-blue-600 bg-blue-600'
+                                : 'border-gray-300 bg-white hover:border-gray-400'
+                            }`}
+                          >
+                            {/* MODIFIED: Use 'isSelected' to show the inner dot */}
+                            {isSelected && (
+                              <div className="w-2 h-2 bg-white rounded-full"></div>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                      <div className="flex-1">
-                        <span
-                          className={`text-base ${
-                            option.selected
-                              ? 'font-semibold text-gray-800'
-                              : 'text-gray-700 group-hover:text-gray-900'
-                          }`}
-                        >
-                          {option.description}
-                        </span>
-                      </div>
-                    </label>
+                        <div className="flex-1">
+                          <span
+                            // MODIFIED: Use 'isSelected' to style the text
+                            className={`text-base ${
+                              isSelected
+                                ? 'font-semibold text-gray-800'
+                                : 'text-gray-700 group-hover:text-gray-900'
+                            }`}
+                          >
+                            {option.description}
+                          </span>
+                        </div>
+                      </label>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
       </div>
-      {selectedOptions.length > 0 && (
+      {/* MODIFIED: Show this section based on the new 'hasPendingSelection' flag */}
+      {hasPendingSelection && (
         <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 border-t border-blue-200 mt-auto">
           <div className="flex items-center justify-between">
             <div>
               <h5 className="font-semibold text-gray-800 mb-1">Ready to Upload</h5>
               <p className="text-sm text-gray-600">
-                {selectedOptions.length} option{selectedOptions.length !== 1 ? 's' : ''} ready for upload
+                1 option ready for upload
               </p>
             </div>
             <button
