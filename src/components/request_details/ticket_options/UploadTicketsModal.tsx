@@ -1,21 +1,21 @@
-import React, { useState, useCallback, memo } from 'react';
+import React, { useState, useCallback, memo, useEffect } from 'react';
 import { X, Plus, Plane, Loader2 } from 'lucide-react';
+import axios from 'axios'; // Make sure axios is imported
 import Autocomplete from './Autocomplete';
-import FileUploader from './FileUploader'; // Assuming this is your simplified FileUploader
+import FileUploader from './FileUploader';
 
-// Interface for the data collected by the modal, including the Cloudinary URL
 export interface AirlineTicketData {
     travelAgencyName: string;
     agencyBookingCharge: number;
     totalExpense: number;
-    pdfFilePath: string | null; // Will store the Cloudinary URL
+    pdfFilePath: string | null;
     airlines: {
         name: string;
         cost: number;
     }[];
 }
 
-export interface Airline { // Local state for airline entries before conversion
+export interface Airline {
     name: string;
     cost: string;
 }
@@ -23,12 +23,8 @@ export interface Airline { // Local state for airline entries before conversion
 interface UploadTicketsModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onConfirm: (data: AirlineTicketData) => void; // Parent handles what to do with this
+    onConfirm: (data: AirlineTicketData) => void;
 }
-
-// Sample data - replace with your actual data source
-const TRAVEL_AGENCIES = ['MakeMyTrip', 'Goibibo', 'Cleartrip', 'Yatra'];
-const AIRLINE_NAMES = ['IndiGo', 'Air India', 'SpiceJet', 'Vistara'];
 
 const CLOUDINARY_CLOUD_NAME = "dnwdvq7iv";
 const CLOUDINARY_UPLOAD_PRESET = "TicketUpload";
@@ -43,7 +39,27 @@ const UploadTicketsModal: React.FC<UploadTicketsModalProps> = memo(({
     const [totalExpense, setTotalExpense] = useState<string>('');
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [airlines, setAirlines] = useState<Airline[]>([{ name: '', cost: '' }]);
-    const [isSubmitting, setIsSubmitting] = useState<boolean>(false); // For overall form submission
+    const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+
+    const [airlineOptions, setAirlineOptions] = useState<string[]>([]);
+
+    useEffect(() => {
+        const fetchAirlines = async () => {
+            try {
+                const response = await axios.get('http://localhost:5030/api/TravelRequest/airlines');
+                if (response.data.isSuccess && Array.isArray(response.data.result)) {
+                    setAirlineOptions(response.data.result);
+                }
+            } catch (error) {
+                console.error("Failed to fetch airline names:", error);
+            }
+        };
+
+        if (isOpen) {
+            fetchAirlines();
+        }
+    }, [isOpen]);
+
     const [errors, setErrors] = useState<{
         agencyName?: string;
         agencyExpense?: string;
@@ -110,7 +126,7 @@ const UploadTicketsModal: React.FC<UploadTicketsModalProps> = memo(({
         return Object.keys(newErrors).length === 0;
     }, [agencyName, agencyExpense, totalExpense, selectedFile, airlines]);
 
-    const uploadFileToCloudinary = async (file: File): Promise<string | null> => {        
+    const uploadFileToCloudinary = async (file: File): Promise<string | null> => {
         const formData = new FormData();
         formData.append("file", file);
         formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
@@ -159,9 +175,8 @@ const UploadTicketsModal: React.FC<UploadTicketsModalProps> = memo(({
         if (selectedFile) {
             fileUrl = await uploadFileToCloudinary(selectedFile);
             if (!fileUrl) {
-                // Error is already set by uploadFileToCloudinary if it fails
                 setIsSubmitting(false);
-                return; // Stop submission if file upload failed
+                return;
             }
         }
 
@@ -169,7 +184,7 @@ const UploadTicketsModal: React.FC<UploadTicketsModalProps> = memo(({
             travelAgencyName: agencyName,
             agencyBookingCharge: Number(agencyExpense),
             totalExpense: Number(totalExpense),
-            pdfFilePath: fileUrl, // Use the uploaded file URL
+            pdfFilePath: fileUrl,
             airlines: airlines.map(airline => ({
                 name: airline.name,
                 cost: Number(airline.cost)
@@ -201,17 +216,26 @@ const UploadTicketsModal: React.FC<UploadTicketsModalProps> = memo(({
                     {/* Travel Agency Details */}
                     <div className="border border-gray-200 rounded-lg p-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {/* This is the new, corrected code */}
                             <div>
                                 <label htmlFor="agencyName" className="block text-sm font-medium text-gray-700 mb-1">
                                     Travel Agency Name <span className='text-red-500'>*</span>
                                 </label>
-                                <Autocomplete
+                                <input
+                                    type="text"
+                                    id="agencyName"
                                     value={agencyName}
-                                    onChange={(value) => { setAgencyName(value); if (errors.agencyName) setErrors(prev => ({ ...prev, agencyName: undefined })); }}
-                                    options={TRAVEL_AGENCIES}
-                                    placeholder="Select or type agency name"
-                                    error={errors.agencyName}
+                                    onChange={(e) => {
+                                        setAgencyName(e.target.value);
+                                        if (errors.agencyName) setErrors(prev => ({ ...prev, agencyName: undefined }));
+                                    }}
+                                    className={`w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-1 ${errors.agencyName
+                                            ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
+                                            : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'
+                                        }`}
+                                    placeholder="Type agency name"
                                 />
+                                {errors.agencyName && <p className="mt-1 text-xs text-red-600">{errors.agencyName}</p>}
                             </div>
                             <div>
                                 <label htmlFor="agencyExpense" className="block text-sm font-medium text-gray-700 mb-1">
@@ -238,14 +262,14 @@ const UploadTicketsModal: React.FC<UploadTicketsModalProps> = memo(({
                                 <Plus size={14} className="mr-1" /> Add Airline
                             </button>
                         </div>
-                        <div className="space-y-3 max-h-40 overflow-y-auto overflow-x-hidden pr-1"> {/* Added pr-1 for scrollbar space */}
+                        <div className="space-y-3 max-h-40 overflow-visible pr-1">
                             {airlines.map((airline, index) => (
                                 <div key={index} className="flex items-start gap-3 p-3 bg-gray-50 rounded border">
                                     <div className="flex-1">
                                         <Autocomplete
                                             value={airline.name}
                                             onChange={(value) => handleAirlineChange(index, 'name', value)}
-                                            options={AIRLINE_NAMES}
+                                            options={airlineOptions}
                                             placeholder="Select or type airline name"
                                             error={errors.airlines?.[index]?.name}
                                         />
@@ -292,12 +316,8 @@ const UploadTicketsModal: React.FC<UploadTicketsModalProps> = memo(({
                         <FileUploader
                             onFileSelect={handleFileSelect}
                             selectedFile={selectedFile}
-                            // The FileUploader's internal 'onUpload' and 'isUploading' are not used here,
-                            // as the main modal's submit button handles the upload logic.
-                            // showValidation is used by FileUploader to show its own validation message if needed.
                             showValidation={!!errors.file && !selectedFile}
                         />
-                        {/* This error message is for validation errors like size, or if upload fails */}
                         {errors.file && <p className="mt-1 text-xs text-red-600">{errors.file}</p>}
                     </div>
                 </div>
