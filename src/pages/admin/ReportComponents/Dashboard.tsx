@@ -1,8 +1,34 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Briefcase, Ticket, AlertCircle, ArrowUpDown, XCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Reports from './Reports';
-import { mockTravelRequests } from '../../../data/mockData';
+
+// API Response interface
+interface ApiResponse<T> {
+  isSuccess: boolean;
+  result: T;
+  statusCode: number;
+  errorMessages: string[];
+}
+
+// API Result interfaces
+interface CountResult {
+  count: number;
+}
+
+interface TravelLegsResult {
+  todayOutboundDepartureCount: number;
+  todayReturnArrivalCount: number;
+}
+
+// Dashboard stats interface
+interface DashboardStats {
+  newRequestsCount: number;
+  ticketActionsCount: number;
+  slaBreachCount: number;
+  rejectedCount: number;
+  returnAndDepartureCount: number;
+}
 
 // Reusable MetricCard Component
 interface MetricCardProps {
@@ -13,6 +39,7 @@ interface MetricCardProps {
   bgColor: string;
   hoverColor: string;
   onClick?: () => void;
+  isLoading?: boolean;
 }
 
 const MetricCard: React.FC<MetricCardProps> = ({ 
@@ -22,7 +49,8 @@ const MetricCard: React.FC<MetricCardProps> = ({
   iconColor, 
   bgColor, 
   hoverColor,
-  onClick
+  onClick,
+  isLoading = false
 }) => {
   return (
     <div 
@@ -43,14 +71,18 @@ const MetricCard: React.FC<MetricCardProps> = ({
       
       <div className="relative">
         {/* Title */}
-        <h3 className="text-sm  text-gray-700 mb-2 font-semibold">
+        <h3 className="text-sm text-gray-700 mb-2 font-semibold">
           {title}
         </h3>
         
         {/* Value */}
         <div className="mb-2">
           <span className="text-3xl font-bold text-gray-900">
-            {value}
+            {isLoading ? (
+              <div className="animate-pulse bg-gray-300 h-8 w-12 rounded"></div>
+            ) : (
+              value
+            )}
           </span>
         </div>
       </div>
@@ -60,51 +92,100 @@ const MetricCard: React.FC<MetricCardProps> = ({
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
+  const [stats, setStats] = useState<DashboardStats>({
+    newRequestsCount: 0,
+    ticketActionsCount: 0,
+    slaBreachCount: 0,
+    rejectedCount: 0,
+    returnAndDepartureCount: 0,
+  });
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Get today's date dynamically (June 1, 2025, 04:15 PM IST)
-  const today = new Date();
-  const todayString = today.toISOString().split('T')[0]; // Format: '2025-06-01'
+  // Base API URL
+  const API_BASE_URL = 'http://localhost:5030';
 
-  // Helper function to check if a date string matches today
-  const isToday = (dateString: string) => {
-    return dateString.split('T')[0] === todayString;
+  // API fetch utility function
+  const fetchApiData = async <T,>(endpoint: string): Promise<T> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}${endpoint}`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data: ApiResponse<T> = await response.json();
+      
+      if (!data.isSuccess || data.statusCode !== 200) {
+        throw new Error(data.errorMessages.join(', ') || 'API request failed');
+      }
+      
+      return data.result;
+    } catch (error) {
+      console.error(`Error fetching ${endpoint}:`, error);
+      throw error;
+    }
   };
 
-  // Calculate counts for each card using mockTravelRequests
-  const newRequestsCount = mockTravelRequests.filter(request => 
-    isToday(request.requestDate)
-  ).length;
+  // Fetch all dashboard statistics
+  const fetchDashboardStats = async () => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      
+      const [
+        newRequestsData,
+        ticketActionsData,
+        slaBreachData,
+        rejectedData,
+        travelLegsData
+      ] = await Promise.all([
+        fetchApiData<CountResult>('/api/stats/travel-requests/count/today/new'),
+        fetchApiData<CountResult>('/api/stats/travel-requests/count/all-time/status/verified-or-duapproved'),
+        fetchApiData<CountResult>('/api/stats/travel-requests/count/sla-breached/verified-or-duapproved'),
+        fetchApiData<CountResult>('/api/stats/travel-requests/count/today/status/rejected'),
+        fetchApiData<TravelLegsResult>('/api/stats/travel-requests/count/today/travel-legs')
+      ]);
 
-  const ticketActionsCount = mockTravelRequests.filter(request => {
-    // Count requests that are currently in "Manager Approved" or "DU Head Approved" status
-    // These are requests that need ticket booking action
-    const relevantStatuses = ['Manager Approved', 'DU Head Approved'];
-    return relevantStatuses.includes(request.status);
-  }).length;
+      const returnAndDepartureCount = 
+        travelLegsData.todayOutboundDepartureCount + travelLegsData.todayReturnArrivalCount;
 
-  const rejectedCount = mockTravelRequests.filter(request => {
-    if (!request.timeline) return false;
-    const latestTimelineEntry = request.timeline
-      .filter(entry => entry.type === 'Rejected')
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
-    return latestTimelineEntry && isToday(latestTimelineEntry.date);
-  }).length;
+      setStats({
+        newRequestsCount: newRequestsData.count,
+        ticketActionsCount: ticketActionsData.count,
+        slaBreachCount: slaBreachData.count,
+        rejectedCount: rejectedData.count,
+        returnAndDepartureCount: returnAndDepartureCount,
+      });
+    } catch (error) {
+      console.error('Error fetching dashboard stats:', error);
+      setError('Failed to load dashboard statistics. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-  const returnAndDepartureCount = mockTravelRequests.filter(request => 
-    isToday(request.departureDate) || isToday(request.returnDate)
-  ).length;
+  // Fetch data on component mount
+  useEffect(() => {
+    fetchDashboardStats();
+  }, []);
+
+  // Get today's date in UTC format
+  const today = new Date();
+  const todayStringUTC = today.toISOString().split('T')[0]; // Format: '2025-06-01' (UTC date)
 
   // Handler for New Requests card click
   const handleNewRequestsClick = () => {
     const params = new URLSearchParams();
-    params.set('date', todayString);
+    params.set('date', todayStringUTC);
     navigate(`/admin/travel-requests?${params.toString()}`);
   };
 
   // Handler for Ticket Actions card click
   const handleTicketActionsClick = () => {
     const params = new URLSearchParams();
-    params.set('date', todayString);
+    params.set('date', todayStringUTC);
     params.set('status', 'Manager Approved,DU Head Approved');
     navigate(`/admin/travel-requests?${params.toString()}`);
   };
@@ -112,7 +193,7 @@ const Dashboard: React.FC = () => {
   // Handler for Rejected card click
   const handleRejectedClick = () => {
     const params = new URLSearchParams();
-    params.set('date', todayString);
+    params.set('date', todayStringUTC);
     params.set('status', 'Rejected');
     navigate(`/admin/travel-requests?${params.toString()}`);
   };
@@ -120,7 +201,7 @@ const Dashboard: React.FC = () => {
   // Handler for SLA Breach card click
   const handleSLABreachClick = () => {
     const params = new URLSearchParams();
-    params.set('date', todayString);
+    params.set('date', todayStringUTC);
     params.set('status', 'Manager Approved,Tickets Dispatched');
     navigate(`/admin/travel-requests?${params.toString()}`);
   };
@@ -134,7 +215,7 @@ const Dashboard: React.FC = () => {
     {
       icon: <Briefcase className="h-6 w-6" />,
       title: "New Requests",
-      value: newRequestsCount,
+      value: stats.newRequestsCount,
       iconColor: "text-blue-600",
       bgColor: "bg-gradient-to-br from-blue-50 to-blue-100",
       hoverColor: "from-blue-100 to-blue-150",
@@ -143,7 +224,7 @@ const Dashboard: React.FC = () => {
     {
       icon: <Ticket className="h-6 w-6" />,
       title: "Ticket Actions",
-      value: ticketActionsCount,
+      value: stats.ticketActionsCount,
       iconColor: "text-green-600",
       bgColor: "bg-gradient-to-br from-green-50 to-green-100",
       hoverColor: "from-green-100 to-green-150",
@@ -152,7 +233,7 @@ const Dashboard: React.FC = () => {
     {
       icon: <AlertCircle className="h-6 w-6" />,
       title: "SLA Breach",
-      value: 0, // Unchanged as per requirement
+      value: stats.slaBreachCount,
       iconColor: "text-orange-600",
       bgColor: "bg-gradient-to-br from-orange-50 to-orange-100",
       hoverColor: "from-orange-100 to-orange-150",
@@ -161,7 +242,7 @@ const Dashboard: React.FC = () => {
     {
       icon: <XCircle className="h-6 w-6" />,
       title: "Rejected",
-      value: rejectedCount,
+      value: stats.rejectedCount,
       iconColor: "text-red-600",
       bgColor: "bg-gradient-to-br from-red-50 to-red-100",
       hoverColor: "from-red-100 to-red-150",
@@ -170,7 +251,7 @@ const Dashboard: React.FC = () => {
     {
       icon: <ArrowUpDown className="h-6 w-6" />,
       title: "Return and Departure",
-      value: returnAndDepartureCount,
+      value: stats.returnAndDepartureCount,
       iconColor: "text-purple-600",
       bgColor: "bg-gradient-to-br from-purple-50 to-purple-100",
       hoverColor: "from-purple-100 to-purple-150",
@@ -183,6 +264,20 @@ const Dashboard: React.FC = () => {
       {/* Header */}
       <div className="text-left mb-8">
         <h1 className="text-4xl font-bold text-gray-800 mb-2">Admin Dashboard</h1>
+        {error && (
+          <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <div className="flex items-center">
+              <AlertCircle className="h-5 w-5 text-red-600 mr-2" />
+              <p className="text-red-700">{error}</p>
+              <button 
+                onClick={fetchDashboardStats}
+                className="ml-auto bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
+              >
+                Retry
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Today's Statistics Section */}
@@ -203,6 +298,7 @@ const Dashboard: React.FC = () => {
               bgColor={metric.bgColor}
               hoverColor={metric.hoverColor}
               onClick={metric.onClick}
+              isLoading={isLoading}
             />
           ))}
         </div>

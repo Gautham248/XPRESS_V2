@@ -1,72 +1,143 @@
-// // EventCard.test.tsx
-// import React from 'react';
-// import { render, screen, fireEvent } from '@testing-library/react';
-// import '@testing-library/jest-dom';
-// import EventCard from '../EventCard'; // Adjust path if necessary
+// src/pages/admin/calendar/EventCard.test.tsx
 
-// // Mock lucide-react icons to simplify testing and focus on the component logic
-// jest.mock('lucide-react', () => ({
-//   PlaneTakeoff: (props: any) => <div data-testid="plane-takeoff-icon" {...props} />,
-//   Plane: (props: any) => <div data-testid="plane-icon" {...props} />,
-// }));
+import React from 'react';
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import '@testing-library/jest-dom';
 
-// describe('EventCard', () => {
-//   const mockOnClick = jest.fn();
+import EventCard from '../EventCard'; 
+import { TravelRequest } from '../Calendar';
 
-//   beforeEach(() => {
-//     // Clear mock call history before each test
-//     mockOnClick.mockClear();
-//   });
 
-//   test('1. Renders "Departures" text and count for Departure type', () => {
-//     render(<EventCard type="Departure" count={12} onClick={mockOnClick} />);
-    
-//     expect(screen.getByText('Departures')).toBeInTheDocument();
-//     expect(screen.getByText('12')).toBeInTheDocument();
-//   });
+jest.mock('lucide-react', () => ({
+  ...jest.requireActual('lucide-react'), 
+  PlaneTakeoff: () => <div data-testid="icon-plane-takeoff" />,
+  PlaneLanding: () => <div data-testid="icon-plane-landing" />,
+}));
 
-//   test('2. Renders "Returns" text and count for Return type', () => {
-//     render(<EventCard type="Return" count={8} onClick={mockOnClick} />);
-    
-//     expect(screen.getByText('Returns')).toBeInTheDocument();
-//     expect(screen.getByText('8')).toBeInTheDocument();
-//   });
+describe('EventCard', () => {
+  
+  const mockRequests: TravelRequest[] = []; 
+  const mockOnClick = jest.fn();
 
-//   test('3. Calls onClick handler when a Departure card is clicked', () => {
-//     render(<EventCard type="Departure" count={5} onClick={mockOnClick} />);
-    
-//     const cardElement = screen.getByText('Departures').closest('div'); // Get the main clickable div
-//     if (cardElement) {
-//       fireEvent.click(cardElement);
-//     }
-    
-//     expect(mockOnClick).toHaveBeenCalledTimes(1);
-//   });
 
-//   test('4. Calls onClick handler when a Return card is clicked', () => {
-//     render(<EventCard type="Return" count={3} onClick={mockOnClick} />);
-    
-//     const cardElement = screen.getByText('Returns').closest('div'); // Get the main clickable div
-//     if (cardElement) {
-//       fireEvent.click(cardElement);
-//     }
-    
-//     expect(mockOnClick).toHaveBeenCalledTimes(1);
-//   });
+  beforeEach(() => {
+    mockOnClick.mockClear();
+  });
 
-//   test('5. Renders PlaneTakeoff icon for Departure type', () => {
-//     render(<EventCard type="Departure" count={1} onClick={mockOnClick} />);
-    
-//     expect(screen.getByTestId('plane-takeoff-icon')).toBeInTheDocument();
-//     expect(screen.queryByTestId('plane-icon')).not.toBeInTheDocument();
-//   });
+  describe('when type is "OutboundDeparture"', () => {
+    it('renders correctly with plural text for count > 1', () => {
+      render(
+        <EventCard
+          type="OutboundDeparture"
+          count={5}
+          requests={mockRequests}
+          onClick={mockOnClick}
+        />
+      );
 
-//   test('6. Renders Plane icon for Return type', () => {
-//     render(<EventCard type="Return" count={1} onClick={mockOnClick} />);
-    
-//     expect(screen.getByTestId('plane-icon')).toBeInTheDocument();
-//     expect(screen.queryByTestId('plane-takeoff-icon')).not.toBeInTheDocument();
-//     // Check for rotation class if critical (though the mock doesn't have it, so this would be a test of the mock if not careful)
-//     // For a simple test, just checking presence is often enough.
-//   });
-// });
+      // Check for the main label and count
+      expect(screen.getByText('Outbound')).toBeInTheDocument();
+      expect(screen.getByText('5')).toBeInTheDocument();
+
+      // Check for the correct icon
+      expect(screen.getByTestId('icon-plane-takeoff')).toBeInTheDocument();
+      expect(screen.queryByTestId('icon-plane-landing')).not.toBeInTheDocument();
+
+      // Check accessibility attributes (aria-label and title)
+      const cardElement = screen.getByLabelText('5 Outbound Departures');
+      expect(cardElement).toBeInTheDocument();
+      expect(cardElement).toHaveAttribute('title', '5 Outbound Departures');
+    });
+
+    it('renders correctly with singular text for count = 1', () => {
+      render(
+        <EventCard
+          type="OutboundDeparture"
+          count={1}
+          requests={mockRequests}
+          onClick={mockOnClick}
+        />
+      );
+
+      // Check accessibility label for correct pluralization
+      expect(screen.getByLabelText('1 Outbound Departure')).toBeInTheDocument();
+    });
+
+    it('calls onClick with the correct type when clicked', async () => {
+      const user = userEvent.setup();
+      render(
+        <EventCard
+          type="OutboundDeparture"
+          count={5}
+          requests={mockRequests}
+          onClick={mockOnClick}
+        />
+      );
+
+      const cardElement = screen.getByLabelText('5 Outbound Departures');
+      await user.click(cardElement);
+
+      expect(mockOnClick).toHaveBeenCalledTimes(1);
+      expect(mockOnClick).toHaveBeenCalledWith('OutboundDeparture');
+    });
+  });
+
+  describe('when type is "ReturnArrival"', () => {
+    it('renders correctly with plural text for count > 1', () => {
+      render(
+        <EventCard
+          type="ReturnArrival"
+          count={3}
+          requests={mockRequests}
+          onClick={mockOnClick}
+        />
+      );
+
+      // Check for the main label and count
+      expect(screen.getByText('Return')).toBeInTheDocument();
+      expect(screen.getByText('3')).toBeInTheDocument();
+
+      // Check for the correct icon
+      expect(screen.getByTestId('icon-plane-landing')).toBeInTheDocument();
+      expect(screen.queryByTestId('icon-plane-takeoff')).not.toBeInTheDocument();
+
+      // Check accessibility attributes (aria-label and title)
+      const cardElement = screen.getByLabelText('3 Return Arrivals');
+      expect(cardElement).toBeInTheDocument();
+      expect(cardElement).toHaveAttribute('title', '3 Return Arrivals');
+    });
+
+    it('renders correctly with singular text for count = 1', () => {
+      render(
+        <EventCard
+          type="ReturnArrival"
+          count={1}
+          requests={mockRequests}
+          onClick={mockOnClick}
+        />
+      );
+
+      // Check accessibility label for correct pluralization
+      expect(screen.getByLabelText('1 Return Arrival')).toBeInTheDocument();
+    });
+
+    it('calls onClick with the correct type when clicked', async () => {
+      const user = userEvent.setup();
+      render(
+        <EventCard
+          type="ReturnArrival"
+          count={3}
+          requests={mockRequests}
+          onClick={mockOnClick}
+        />
+      );
+
+      const cardElement = screen.getByLabelText('3 Return Arrivals');
+      await user.click(cardElement);
+
+      expect(mockOnClick).toHaveBeenCalledTimes(1);
+      expect(mockOnClick).toHaveBeenCalledWith('ReturnArrival');
+    });
+  });
+});
