@@ -272,6 +272,8 @@ const TravelRequestDetails: React.FC = () => {
 
   const handleFeedbackSubmit = () => {
     let feedbackText = '';
+    const submittingUserID = userId; 
+
     openModal(
       <div className="space-y-4">
         <textarea
@@ -281,12 +283,34 @@ const TravelRequestDetails: React.FC = () => {
           onChange={(e) => feedbackText = e.target.value}
         />
       </div>,
-      () => {
-        console.log('Feedback submitted:', feedbackText);
-        // TODO: API call to submit feedback (e.g., PUT to /api/TravelRequest/{id}/feedback)
-        setFeedbackSubmitted(true);
-        closeModal();
-        // Potentially update local status or re-fetch data if feedback changes status
+      async () => {
+        console.log('Submitting feedback:', feedbackText);
+
+        try {
+          const response = await fetch(`http://localhost:5030/api/TravelRequest/${id}/travelfeedback`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              feedbackText: feedbackText,
+              submittingUserId: submittingUserID,
+            }),
+          });
+
+          if (!response.ok) {
+            throw new Error(`API call failed with status: ${response.status}`);
+          }
+
+          console.log('Feedback submitted successfully');
+          setFeedbackSubmitted(true);
+          closeModal();
+          // Potentially update local status or re-fetch data if feedback changes status
+
+        } catch (error) {
+          console.error('Failed to submit feedback:', error);
+          // Optionally show an error message to the user
+        }
       },
       'Submit Feedback',
       'Send'

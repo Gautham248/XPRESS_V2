@@ -1,5 +1,6 @@
+// TravelInfo.tsx
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 import {
   Calendar,
   TrainFront,
@@ -12,10 +13,9 @@ import {
   Utensils,
   Clock,
   Navigation,
-  Loader2
+  Loader2,
 } from 'lucide-react';
 
-// Define interfaces for the new API response
 interface ApiTravelInfoItem {
   requestId: string;
   outboundDepartureDate: string;
@@ -39,12 +39,6 @@ interface TravelInfoApiResponse {
   errorMessages: string[];
 }
 
-// Props for the component
-interface TravelInfoProps {
-  requestId?: string;
-}
-
-// Internal state structure for the fetched and mapped travel data
 interface TravelRequestData {
   id: string;
   outboundDepartureDate: string;
@@ -53,13 +47,18 @@ interface TravelRequestData {
   returnArrivalDate: string | null;
   transportationType: string;
   requestDate: string;
-  accommodationType: string; // "Required" or "Not Required"
-  travelType: string;      // "International" or "Domestic"
+  accommodationType: string;
+  travelType: string;
   purpose: string;
-  foodPreference: string;  // "Vegetarian" or "Non-Vegetarian"
+  foodPreference: string;
   isPickUpRequired: boolean;
   isDropOffRequired: boolean;
 }
+
+interface TravelInfoProps {
+  requestId?: string;
+}
+
 
 const TravelInfo: React.FC<TravelInfoProps> = ({ requestId }) => {
   const [travelRequest, setTravelRequest] = useState<TravelRequestData | null>(null);
@@ -74,17 +73,17 @@ const TravelInfo: React.FC<TravelInfoProps> = ({ requestId }) => {
         return;
       }
 
-      try {
-        setLoading(true);
-        setError(null);
+      setLoading(true);
+      setError(null);
+      setTravelRequest(null); 
 
+      try {
         const response = await axios.get<TravelInfoApiResponse>(
           `http://localhost:5030/api/TravelRequest/travelinfo/${requestId}`
         );
 
         if (response.data.isSuccess && response.data.result && response.data.result.length > 0) {
-          const apiData = response.data.result[0]; // Assuming the first result is the one we need
-          
+          const apiData = response.data.result[0];
           const mappedData: TravelRequestData = {
             id: apiData.requestId,
             outboundDepartureDate: apiData.outboundDepartureDate,
@@ -100,28 +99,44 @@ const TravelInfo: React.FC<TravelInfoProps> = ({ requestId }) => {
             isPickUpRequired: apiData.isPickUpRequired,
             isDropOffRequired: apiData.isDropOffRequired,
           };
-          
           setTravelRequest(mappedData);
         } else {
-          const errorMsg = response.data.errorMessages?.length > 0 
-            ? response.data.errorMessages.join(', ') 
+          const errorMsg = response.data.errorMessages?.length > 0
+            ? response.data.errorMessages.join(', ')
             : (response.data.result && response.data.result.length === 0 ? 'Travel request details not found.' : 'Failed to retrieve travel data structure.');
-          throw new Error(errorMsg);
+          setError(errorMsg);
         }
-      } catch (err) {
+      } catch (err: any) {
+        let errorMessage = 'An unknown error occurred while fetching travel data.';
+
         if (axios.isAxiosError(err)) {
-          setError(`API Error: ${err.response?.status} - ${err.response?.data?.errorMessages?.join(', ') || err.response?.statusText || err.message}`);
-        } else if (err instanceof Error) {
-          setError(err.message);
-        } else {
-          setError('An unknown error occurred while fetching travel data.');
+          const axiosErr = err as AxiosError<any>;
+          if (axiosErr.response) {
+            errorMessage = axiosErr.response.data?.message || 
+                           axiosErr.response.data?.errorMessages?.join(', ') || 
+                           axiosErr.message ||
+                           "An error occurred with the server response.";
+          } else if (axiosErr.request) {
+            errorMessage = axiosErr.message || "Network error: Could not connect to server.";
+          } else {
+            errorMessage = axiosErr.message || "Error setting up request.";
+          }
+        } else if (err && typeof err.message === 'string' && err.message.trim() !== '') {
+          errorMessage = err.message;
         }
+        
+        setError(errorMessage);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchTravelData();
+    if (requestId) {
+        fetchTravelData();
+    } else {
+        setError("Request ID is not provided.");
+        setLoading(false);
+    }
   }, [requestId]);
 
   const formatDate = (dateString: string | null | undefined) => {
@@ -133,31 +148,28 @@ const TravelInfo: React.FC<TravelInfoProps> = ({ requestId }) => {
         day: 'numeric'
       });
     } catch {
-      // If dateString is present but invalid, you might want to return the original string or a specific error mark
-      return 'Invalid Date'; 
+      return 'Invalid Date';
     }
   };
 
   const getTransportationIcon = (transportation: string) => {
     switch (transportation?.toLowerCase()) {
       case "flight":
-        return <Plane className="h-4 w-4 mr-2" />;
+        return <Plane data-testid="flight-icon" className="h-4 w-4 mr-2" />;
       case "train":
-        return <TrainFront className="h-4 w-4 mr-2" />;
+        return <TrainFront data-testid="train-icon" className="h-4 w-4 mr-2" />;
       case "bus":
-        return <BusFront className="h-4 w-4 mr-2" />;
+        return <BusFront data-testid="bus-icon" className="h-4 w-4 mr-2" />;
       case "car rental":
-        return <CarTaxiFront className="h-4 w-4 mr-2" />;
-      case "other": // If API sends "Other" explicitly
-        return <Check className="h-4 w-4 mr-2" />; // Or a generic transport icon
+        return <CarTaxiFront data-testid="car-icon" className="h-4 w-4 mr-2" />;
       default:
-        return <Check className="h-4 w-4 mr-2" />; // Default icon for unspecified or unknown
+        return <Check data-testid="default-transport-icon" className="h-4 w-4 mr-2" />;
     }
   };
 
   if (loading) {
     return (
-      <div className="card relative bg-white rounded-lg px-6 py-4 flex justify-center items-center w-full min-h-[120px]">
+      <div data-testid="loading-indicator" className="card relative bg-white rounded-lg px-6 py-4 flex justify-center items-center w-full min-h-[120px]">
         <div className="flex items-center space-x-3 text-gray-500">
           <Loader2 size={24} className="animate-spin" />
           <span>Loading travel information...</span>
@@ -168,7 +180,7 @@ const TravelInfo: React.FC<TravelInfoProps> = ({ requestId }) => {
 
   if (error) {
     return (
-      <div className="card mb-6 p-4 border-red-200 bg-red-50 rounded-lg">
+      <div data-testid="error-message-container" className="card mb-6 p-4 border-red-200 bg-red-50 rounded-lg">
         <div className="text-red-600 font-medium">Error loading travel information</div>
         <div className="text-red-500 text-sm mt-1">{error}</div>
       </div>
@@ -177,17 +189,16 @@ const TravelInfo: React.FC<TravelInfoProps> = ({ requestId }) => {
 
   if (!travelRequest) {
     return (
-      <div className="card mb-6 p-4 border-gray-200 bg-gray-50 rounded-lg">
+      <div data-testid="no-data-message" className="card mb-6 p-4 border-gray-200 bg-gray-50 rounded-lg">
         <div className="text-gray-600">No travel information available for this request.</div>
       </div>
     );
   }
 
   return (
-    <div className="card mb-6 p-6 border border-gray-200 rounded-lg bg-white shadow-sm">
+    <div data-testid="travel-info-success" className="card mb-6 p-6 border border-gray-200 rounded-lg bg-white shadow-sm">
       <h3 className="text-xl font-semibold mb-6 text-gray-900">Travel Information</h3>
       
-      {/* Travel Dates Section */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
         <div className="space-y-4">
           <div>
@@ -223,9 +234,7 @@ const TravelInfo: React.FC<TravelInfoProps> = ({ requestId }) => {
         </div>
       </div>
 
-      {/* Main Travel Information */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-        {/* Column 1 */}
         <div className="space-y-4">
           <div>
             <p className="text-sm text-gray-600 mb-1 flex items-center">
@@ -250,7 +259,6 @@ const TravelInfo: React.FC<TravelInfoProps> = ({ requestId }) => {
           </div>
         </div>
         
-        {/* Column 2 */}
         <div className="space-y-4">
           <div>
             <p className="text-sm text-gray-600 mb-1 flex items-center">
@@ -276,7 +284,6 @@ const TravelInfo: React.FC<TravelInfoProps> = ({ requestId }) => {
         </div>
       </div>
 
-      {/* Conveyance Section */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
           <p className="text-sm text-gray-600 mb-1 flex items-center">

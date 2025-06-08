@@ -179,7 +179,7 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId }) => {
   };
 
   const uiTicketOptions: UITicketOption[] = mapApiToUIOptions(ticketOptionsFromApi);
-  console.log("UI Ticket Options: ", uiTicketOptions);
+  // console.log("UI Ticket Options: ", uiTicketOptions);
 
   const handleAddOption = async () => {
     if (!newOptionText.trim() || !currentUser || !requestId) return;
@@ -403,7 +403,7 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId }) => {
         />
       );
     }
-    if (status === 'Verified') {
+    if (status === 'Verified' || status === 'OptionsListed') {
       return (
         <UploadTicketView
           ticketOptions={uiTicketOptions}
