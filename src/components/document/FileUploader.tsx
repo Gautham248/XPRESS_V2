@@ -47,7 +47,7 @@ interface FileUploaderProps {
   showValidation: boolean;
   selectedFile: File | null;
   onUploadError?: (error: string) => void;
-  onRecordCreated: (record: BackendDocumentRecord, docType: DocumentType) => void;
+  onRecordCreated: (record: BackendDocumentRecord, uploadedFile: File) => void; 
 }
 
 const saveDocumentPathToBackend = async (documentUrl: string, docType: DocumentType): Promise<BackendDocumentRecord> => {
@@ -196,7 +196,7 @@ function FileUploader({
         try {
           const newRecord = await saveDocumentPathToBackend(cloudinaryData.secure_url, docType);
           // REMOVED: setUploadSuccess(true); // Parent will show toast via onRecordCreated
-          onRecordCreated(newRecord, docType);
+          onRecordCreated(newRecord, selectedFile);
         } catch (backendError: any) {
           console.error('Backend save error (POST) after cloud upload:', backendError);
           const errorMessage = `File uploaded, but DB save failed: ${backendError.message}. Try saving details or re-upload.`;

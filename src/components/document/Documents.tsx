@@ -1,24 +1,34 @@
-// Documents.tsx
-import React, { useState, useReducer, useEffect } from 'react';
+// src/components/Documents.tsx
+
+import React, { useState, useReducer, useEffect, useRef, useCallback } from 'react';
 import axios from 'axios';
-import toast, { Toaster } from 'react-hot-toast'; // Import toast
+import toast, { Toaster } from 'react-hot-toast';
+import { DocumentType, DocumentState, FormState, Action, initialState as formInitialState } from './types';
+
+// Import Components and Parsers
 import DocumentTabs from './DocumentTabs';
 import DocumentForm from './DocumentForm';
 import DocumentList from './DocumentList';
 import FileUploader, { BackendDocumentRecord } from './FileUploader';
-import { DocumentType, DocumentState, FormState, Action, initialState as formInitialState } from './types';
+import OcrProcessor from './OCRProcessor';
+import PassportParser, { ParsedPassportInfo } from './Parsers/PassportParser';
+import AadharParser, { ParsedAadhaarInfo } from './Parsers/AadharParser';
+import VisaParser, { ParsedVisaInfo } from './Parsers/VisaParser';
 
-const formReducer = (state: DocumentState, action: Action): DocumentState => { /* ... (no change) ... */ 
+// Define a union type for all possible parsed data shapes
+type ParsedInfo = ParsedPassportInfo | ParsedAadhaarInfo | ParsedVisaInfo;
+
+// Reducer function to manage form state
+const formReducer = (state: DocumentState, action: Action): DocumentState => {
   switch (action.type) {
     case 'UPDATE_FIELD':
       if (!action.field) {
-        console.warn("UPDATE_FIELD dispatched without a field name.");
         return state;
       }
       return {
         ...state,
         [action.docType]: {
-          ...state[action.docType!],
+          ...state[action.docType],
           [action.field]: action.value,
         },
       };
@@ -32,226 +42,257 @@ const formReducer = (state: DocumentState, action: Action): DocumentState => { /
   }
 };
 
+// Helper function to format dates into ISO 8601 strings for the backend
+const formatToISOString = (dateInput: string | Date | null | undefined): string | null => {
+    if (!dateInput) return null;
+    let dateObj: Date;
+    if (dateInput instanceof Date) {
+        dateObj = dateInput;
+    } else {
+        dateObj = new Date(dateInput);
+    }
+    if (isNaN(dateObj.getTime())) {
+        console.warn("Invalid date value provided for ISO conversion:", dateInput);
+        return null;
+    }
+    return dateObj.toISOString();
+};
+
 interface PendingRecordInfo {
   id: number;
-  initialRecord: BackendDocumentRecord; 
+  initialRecord: BackendDocumentRecord;
 }
 
-const parseDateSafe = (dateInput: string | Date | null | undefined): Date | null => { /* ... (no change from previous complete version) ... */ 
-    if (!dateInput) return null;
-    if (dateInput instanceof Date) return dateInput;
-    try {
-        const d = new Date(dateInput);
-        if (isNaN(d.getTime())) {
-            console.warn("Invalid date string encountered during parsing:", dateInput);
-            return null;
-        }
-        return d;
-    } catch (e) {
-        console.warn("Error parsing date string:", dateInput, e);
-        return null;
-    }
-};
-const formatToISOString = (dateInput: string | Date | null | undefined): string | null => { /* ... (no change from previous complete version) ... */ 
-    if (!dateInput) return null;
-    if (dateInput instanceof Date) {
-        if (isNaN(dateInput.getTime())) {
-            console.warn("Invalid Date object encountered for ISO conversion:", dateInput);
-            return null;
-        }
-        return dateInput.toISOString();
-    }
-    try {
-        const d = new Date(dateInput);
-        if (isNaN(d.getTime())) {
-            console.warn("Invalid date string for ISO conversion:", dateInput);
-            return null;
-        }
-        return d.toISOString();
-    } catch (e) {
-        console.warn("Error converting date string to ISO:", dateInput, e);
-        return null;
-    }
-};
+interface OcrRequest {
+  file: File;
+  docType: DocumentType;
+  record: BackendDocumentRecord;
+}
 
 function Documents() {
   const [activeTab, setActiveTab] = useState<DocumentType>('Passport');
-  const [selectedFiles, setSelectedFiles] = useState<Record<DocumentType, File | null>>({
-    Passport: null, Visa: null, Aadhar: null,
-  });
+  const [selectedFileForUpload, setSelectedFileForUpload] = useState<File | null>(null);
   const [state, dispatch] = useReducer(formReducer, formInitialState);
-  const [showValidation, setShowValidation] = useState(false);
   const [pendingFormRecords, setPendingFormRecords] = useState<Partial<Record<DocumentType, PendingRecordInfo>>>({});
+  const [ocrRequest, setOcrRequest] = useState<OcrRequest | null>(null);
+  const [rawOcrText, setRawOcrText] = useState<string | null>(null);
+  const [showFileValidation, setShowFileValidation] = useState(false);
+  const ocrCompletionHandled = useRef(false);
+
 
   const userId = 1;
+
   useEffect(() => {
-    setShowValidation(false);
+    setSelectedFileForUpload(null);
+    setOcrRequest(null);
+    setRawOcrText(null);
+    setShowFileValidation(false);
+    ocrCompletionHandled.current = false;
   }, [activeTab]);
 
-  const handleRecordCreated = (recordFromApi: BackendDocumentRecord, docType: DocumentType) => {
-    console.log(`Record created via POST for ${docType} (with Date objects):`, recordFromApi);
+  const handleRecordCreated = (record: BackendDocumentRecord, uploadedFile: File) => {
+    ocrCompletionHandled.current = false;
+    setRawOcrText(null);
+    setOcrRequest({ file: uploadedFile, docType: activeTab, record });
+    setSelectedFileForUpload(null);
+    setShowFileValidation(false);
+  };
+
+  const handleOcrComplete = (rawText: string) => {
+    if (ocrCompletionHandled.current) {
+        console.log("OCR completion callback fired a second time (ignored).");
+        return;
+    }
+    ocrCompletionHandled.current = true;
+
+    toast.success('Scan complete. Displaying parsed data...');
+    setRawOcrText(rawText);
+  };
+
+  const handleDataParsed = (parsedData: ParsedInfo) => {
+    if (!ocrRequest) return;
+    const { docType, record } = ocrRequest;
+
+    console.log(`[OCR] Parsed data received for ${docType}:`, parsedData);
+
+    dispatch({ type: 'RESET_FORM', docType });
+    Object.entries(parsedData).forEach(([key, value]) => {
+      if (value !== null && value !== undefined) {
+        dispatch({ type: 'UPDATE_FIELD', docType, field: key as keyof FormState, value });
+      }
+    });
+
     setPendingFormRecords(prev => ({
       ...prev,
-      [docType]: { id: recordFromApi.id, initialRecord: recordFromApi }
+      [docType]: { id: record.id, initialRecord: record }
     }));
-    setSelectedFiles(prev => ({ ...prev, [docType]: null }));
-    // Use toast instead of alert
-    toast.success(`Document ${docType} uploaded. Please fill details below.`);
-  };
-
-  const handleUploadError = (error: string) => {
-    console.error('FileUploader Error:', error);
-    // Use toast instead of alert
-    toast.error(`Upload Error: ${error}`);
-  };
-
-  const handleFileSelect = (file: File | null) => { /* ... (no change) ... */ 
-    setSelectedFiles((prev) => ({ ...prev, [activeTab]: file }));
-    if (file && pendingFormRecords[activeTab]) {
-        console.warn(`A new file selected for ${activeTab}, but a previous upload is pending details. The new upload will create a new record if submitted.`);
-    }
-  };
-  
-  const mapFormStateToPayloadForPut = (
-    currentFormState: FormState, 
-    docType: DocumentType,
-    initialRecord: BackendDocumentRecord 
-  ): any => { /* ... (no change from previous complete version that sends FULL object) ... */ 
-    const payloadWithIsoDates: any = {
-        ...initialRecord, 
-        uploadDate: formatToISOString(initialRecord.uploadDate) || new Date(0).toISOString(),
-        passportIssueDate: formatToISOString(initialRecord.passportIssueDate),
-        passportExpiryDate: formatToISOString(initialRecord.passportExpiryDate),
-        visaIssueDate: formatToISOString(initialRecord.visaIssueDate),
-        visaExpiryDate: formatToISOString(initialRecord.visaExpiryDate),
-    };
-    switch (docType) {
-      case 'Passport':
-        payloadWithIsoDates.passportNumber = currentFormState.passportNumber || "";
-        payloadWithIsoDates.issuingCountry = currentFormState.issuingCountry || "";
-        payloadWithIsoDates.passportIssueDate = formatToISOString(currentFormState.issueDate); 
-        payloadWithIsoDates.passportExpiryDate = formatToISOString(currentFormState.expiryDate); 
-        break;
-      case 'Visa':
-        payloadWithIsoDates.visaNumber = currentFormState.visaNumber || "";
-        payloadWithIsoDates.visaClass = currentFormState.visaClass || "";
-        payloadWithIsoDates.issuingCountry = currentFormState.issuingCountry || "";
-        payloadWithIsoDates.issuingPost = currentFormState.issuingPost || "";
-        payloadWithIsoDates.visaIssueDate = formatToISOString(currentFormState.issueDate); 
-        payloadWithIsoDates.visaExpiryDate = formatToISOString(currentFormState.expiryDate); 
-        break;
-      case 'Aadhar':
-        payloadWithIsoDates.aadharNumber = currentFormState.idNumber || "";
-        payloadWithIsoDates.aadharName = currentFormState.fullName || "";
-        break;
-    }
-    return payloadWithIsoDates;
+    setOcrRequest(null);
   };
 
   const handleSaveDetails = async (currentFormState: FormState, recordId: number, docType: DocumentType) => {
-    const pendingRecordInfo = pendingFormRecords[docType];
-    if (!pendingRecordInfo || !pendingRecordInfo.initialRecord) {
-        const errorMessage = "Error: Could not find complete pending record information. Cannot save details.";
-        console.error(errorMessage);
-        toast.error(errorMessage); // Use toast
-        throw new Error(errorMessage); 
+    const pendingRecord = pendingFormRecords[docType];
+    if (!pendingRecord) {
+        toast.error("Error: Could not find pending record information.");
+        return;
     }
 
-    console.log(`Attempting to PUT details for ${docType}, record ID ${recordId}:`, currentFormState);    
-    const payloadForApi = mapFormStateToPayloadForPut(currentFormState, docType, pendingRecordInfo.initialRecord);
-    
-    const toastId = toast.loading(`Saving ${docType} details...`); // Loading toast
+    let isExpired = false;
+    let expiryDate: Date | string | null | undefined = null;
 
-    console.log('Sending FULL PUT payload (dates as ISO strings):', JSON.stringify(payloadForApi, null, 2));
+    if (docType === 'Passport' || docType === 'Visa') {
+      expiryDate = currentFormState.expiryDate;
+    }
+
+    if (expiryDate) {
+      const dateObj = new Date(expiryDate);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      if (dateObj < today) {
+        isExpired = true;
+      }
+    }
+
+    const toastId = toast.loading(isExpired ? `Checking the expiry...` : `Saving ${docType} details...`);
 
     try {
-      const response = await axios.put(`http://localhost:5030/api/Documents/${recordId}`, payloadForApi, {
-        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-      });
-      console.log('Document details updated successfully via PUT:', response.data);
-      toast.success(`${docType} details saved successfully!`, { id: toastId }); // Update loading toast to success
-      
-      dispatch({ type: 'RESET_FORM', docType }); 
-      setPendingFormRecords(prev => { 
-        const newState = {...prev};
-        delete newState[docType];
-        return newState;
-      });
-    } catch (error) {
-      console.error(`Failed to update ${docType} details (PUT):`, error);
-      let errorMessage = `Failed to save ${docType} details.`;
-      if (axios.isAxiosError(error)) {
-          if (error.response) {
-            console.error('Backend Error Response (PUT):', { status: error.response.status, data: error.response.data, headers: error.response.headers });
-            const responseData = error.response.data;
-            errorMessage += ` Server: ${responseData?.title || responseData?.message || JSON.stringify(responseData?.errors || responseData || 'Unknown server error')}`;
-          } else if (error.request) {
-            errorMessage += ' No response from server.';
-          } else {
-            errorMessage += ` Axios setup: ${error.message}`;
-          }
-      } else if (error instanceof Error) {
-        errorMessage += ` ${error.message}`;
+      if (isExpired) {
+        await axios.delete(`http://localhost:5030/api/Documents/${recordId}/type/${docType}`);
+        toast.error(`This document is expired and cannot be saved.`, { id: toastId });
+
+      } else {
+        const payloadForApi = { ...pendingRecord.initialRecord };
+
+        if (docType === 'Passport') {
+            payloadForApi.passportNumber = currentFormState.passportNumber;
+            payloadForApi.issuingCountry = currentFormState.issuingCountry;
+            payloadForApi.passportIssueDate = currentFormState.issueDate;
+            payloadForApi.passportExpiryDate = currentFormState.expiryDate;
+        } else if (docType === 'Visa') {
+            payloadForApi.visaNumber = currentFormState.visaNumber;
+            payloadForApi.visaClass = currentFormState.visaClass;
+            payloadForApi.issuingCountry = currentFormState.issuingCountry;
+            payloadForApi.visaIssueDate = currentFormState.issueDate;
+            payloadForApi.visaExpiryDate = currentFormState.expiryDate;
+        } else if (docType === 'Aadhar') {
+            payloadForApi.aadharNumber = currentFormState.idNumber;
+            payloadForApi.aadharName = currentFormState.fullName;
+        }
+
+        const finalPayload = {
+            ...payloadForApi,
+            uploadDate: formatToISOString(payloadForApi.uploadDate),
+            passportIssueDate: formatToISOString(payloadForApi.passportIssueDate),
+            passportExpiryDate: formatToISOString(payloadForApi.passportExpiryDate),
+            visaIssueDate: formatToISOString(payloadForApi.visaIssueDate),
+            visaExpiryDate: formatToISOString(payloadForApi.visaExpiryDate),
+        };
+
+        await axios.put(`http://localhost:5030/api/Documents/${recordId}`, finalPayload);
+        toast.success(`${docType} details saved successfully!`, { id: toastId });
       }
-      toast.error(errorMessage, { id: toastId }); // Update loading toast to error
-      throw error; 
+
+      dispatch({ type: 'RESET_FORM', docType });
+      setPendingFormRecords(prev => {
+          const newState = { ...prev };
+          delete newState[docType];
+          return newState;
+      });
+      setRawOcrText(null);
+
+    } catch (error) {
+        const action = isExpired ? 'delete' : 'update';
+        console.error(`Failed to ${action} ${docType} details:`, error);
+        toast.error(`Failed to ${action} document.`, { id: toastId });
+        throw error;
     }
   };
+
+  const handleOcrCancel = useCallback(() => {
+      setOcrRequest(null);
+      ocrCompletionHandled.current = false;
+  }, []);
 
   const currentPendingRecord = pendingFormRecords[activeTab];
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto p-4 animate-[fadeIn_0.5s_ease-in]">
-      <Toaster position="top-right" reverseOrder={false} /> {/* Add Toaster component */}
+    // ✅ --- CHANGE 1: Removed `space-y-6` from this root div --- ✅
+    <div className="animate-fadeIn">
+      <Toaster position="top-right" reverseOrder={false} />
+
+      {ocrRequest && !rawOcrText && (
+        <OcrProcessor
+          fileToProcess={ocrRequest.file}
+          onComplete={handleOcrComplete}
+          onCancel={handleOcrCancel}
+        />
+      )}
+
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <h2 className="text-2xl font-semibold text-gray-800">Travel Documents</h2>
       </div>
-      <div className="bg-white rounded-lg p-6 shadow-sm">
+      
+      {/* ✅ --- CHANGE 2: Added `mt-6` here to create the space ONLY between heading and this box --- ✅ */}
+      <div className="bg-white rounded-lg p-6 shadow-sm mt-6">
         <DocumentTabs activeTab={activeTab} setActiveTab={setActiveTab} />
-        
+
         <div className="mt-6 space-y-8">
           <div>
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">Upload Document Image/PDF</h3>
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">Step 1: Upload Document</h3>
             <FileUploader
               docType={activeTab}
-              onFileSelect={handleFileSelect}
-              showValidation={showValidation}
-              selectedFile={selectedFiles[activeTab]}
-              onRecordCreated={handleRecordCreated} // Will now trigger a toast
-              onUploadError={handleUploadError}     // Will now trigger a toast
+              onFileSelect={(file) => {
+                setSelectedFileForUpload(file);
+                if (file) setShowFileValidation(false);
+              }}
+              showValidation={showFileValidation}
+              selectedFile={selectedFileForUpload}
+              onRecordCreated={handleRecordCreated}
+              onUploadError={(error) => toast.error(`Upload Error: ${error}`)}
             />
           </div>
 
           <div>
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">Document Information</h3>
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">Step 2: Verify & Save Information</h3>
+
+            {rawOcrText && (
+              <>
+                {activeTab === 'Passport' && <PassportParser rawText={rawOcrText} onDataParsed={handleDataParsed} />}
+                {activeTab === 'Visa' && <VisaParser rawText={rawOcrText} onDataParsed={handleDataParsed} />}
+                {activeTab === 'Aadhar' && <AadharParser rawText={rawOcrText} onDataParsed={handleDataParsed} />}
+              </>
+            )}
+
+            {!currentPendingRecord && !rawOcrText ? (
+                <p className="text-sm text-gray-500 my-4">
+                  Upload a document for the '{activeTab}' tab. The form will be auto-filled after a successful upload and scan.
+                </p>
+            ) : null }
             {currentPendingRecord ? (
                  <p className="text-sm text-blue-600 mb-2">
-                    Now fill in the details for the uploaded {activeTab} (Record ID: {currentPendingRecord.id}).
+                    Please verify the auto-filled details for record ID #{currentPendingRecord.id} and click save.
                  </p>
-            ) : (
-                <p className="text-sm text-gray-500 mb-2">
-                    Please upload the {activeTab} document image/PDF first to enable this form.
-                </p>
-            )}
+            ) : null }
+
             <DocumentForm
               docType={activeTab}
               formState={state[activeTab]}
               dispatch={dispatch}
               recordId={currentPendingRecord ? currentPendingRecord.id : null}
-              onSave={handleSaveDetails} // Will now trigger loading/success/error toasts
+              onSave={handleSaveDetails}
             />
           </div>
         </div>
 
         <div className="mt-8">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">Existing Documents</h3>
-            <DocumentList 
-                docType={activeTab} 
-                userId={userId}
-                key={`${activeTab}-${currentPendingRecord ? currentPendingRecord.id : 'none'}-${Object.keys(pendingFormRecords).length}`} 
-            />
+          <h3 className="text-lg font-semibold text-gray-800 mb-4">Existing Documents</h3>
+          <DocumentList
+            docType={activeTab}
+            userId={userId}
+            key={`${activeTab}-${Object.keys(pendingFormRecords).length}`}
+          />
         </div>
-      </div>               
+      </div>
     </div>
   );
 }
