@@ -1,880 +1,45 @@
-// import React, { useState, useEffect } from 'react';
-// import { useNavigate } from 'react-router-dom';
-// import { 
-//   Search, 
-//   PlusCircle,
-//   Download,
-//   ChevronLeft, 
-//   ChevronRight,
-//   ChevronDown,
-//   Calendar,
-//   Filter
-// } from 'lucide-react';
-// import DatePicker from 'react-datepicker';
-// import 'react-datepicker/dist/react-datepicker.css';
-// import { format } from 'date-fns';
-// import { mockTravelRequests, TravelRequest, getStatusColor } from '../../data/mockData';
-
-// type Column = keyof TravelRequest | 'travelDates' | 'actions';
-
-// const TravelRequests: React.FC = () => {
-//   const navigate = useNavigate();
-//   const [searchTerm, setSearchTerm] = useState('');
-//   const [currentPage, setCurrentPage] = useState(1);
-//   const [itemsPerPage, setItemsPerPage] = useState(10);
-//   const [sortBy, setSortBy] = useState<keyof TravelRequest>('requestDate');
-//   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-//   const [statusFilter, setStatusFilter] = useState<string>('All');
-//   const [typeFilter, setTypeFilter] = useState<string>('All');
-  
-//   // Table-specific states
-//   const [visibleColumns, setVisibleColumns] = useState<Column[]>(() => {
-//     const savedColumns = localStorage.getItem('travelRequestsTableColumns');
-//     return savedColumns
-//       ? JSON.parse(savedColumns)
-//       : [
-//           'id',
-//           'travelerName',
-//           'projectCode',
-//           'travelType',
-//           'source',
-//           'travelDates',
-//           'destination',
-//           'departmentCode',
-//           'reportingManager',
-//           'status',
-//           'actions',
-//         ];
-//   });
-//   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
-//   const [showTypeDropdown, setShowTypeDropdown] = useState(false);
-//   const [showColumnsDropdown, setShowColumnsDropdown] = useState(false);
-//   const [dateRange, setDateRange] = useState<[Date | null, Date | null]>([null, null]);
-//   const [startDate, endDate] = dateRange;
-
-//   const allColumns: Column[] = [
-//     'id',
-//     'travelerName',
-//     'projectCode',
-//     'travelType',
-//     'source',
-//     'travelDates',
-//     'destination',
-//     'departmentCode',
-//     'reportingManager',
-//     'status',
-//     'actions',
-//   ];
-
-//   // Persist visibleColumns to localStorage
-//   useEffect(() => {
-//     localStorage.setItem('travelRequestsTableColumns', JSON.stringify(visibleColumns));
-//   }, [visibleColumns]);
-
-//   const handleColumnToggle = (column: Column) => {
-//     if (visibleColumns.includes(column)) {
-//       setVisibleColumns(visibleColumns.filter((col) => col !== column));
-//     } else {
-//       setVisibleColumns([...visibleColumns, column]);
-//     }
-//   };
-
-//   // Filter the data (search, status, type)
-//   const filteredData = mockTravelRequests.filter(request => {
-//     const matchesSearch = 
-//       request.travelerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-//       request.destination.toLowerCase().includes(searchTerm.toLowerCase()) ||
-//       request.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-//       request.projectCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
-//       request.source.toLowerCase().includes(searchTerm.toLowerCase());
-      
-//     const matchesStatus = statusFilter === 'All' || request.status === statusFilter;
-//     const matchesType = typeFilter === 'All' || request.travelType === typeFilter;
-    
-//     return matchesSearch && matchesStatus && matchesType;
-//   });
-
-//   // Filter data by date range
-//   const dateFilteredData = filteredData.filter((request) => {
-//     if (!startDate || !endDate) return true;
-//     const departureDate = new Date(request.departureDate);
-//     return departureDate >= startDate && departureDate <= endDate;
-//   });
-
-//   // Sort the data
-//   const sortedData = [...dateFilteredData].sort((a, b) => {
-//     const aSortValue = a[sortBy];
-//     const bSortValue = b[sortBy];
-    
-//     if (sortOrder === 'asc') {
-//       if (typeof aSortValue === 'string' && typeof bSortValue === 'string') {
-//         return aSortValue.localeCompare(bSortValue);
-//       }
-//       return Number(aSortValue) - Number(bSortValue);
-//     } else {
-//       if (typeof aSortValue === 'string' && typeof bSortValue === 'string') {
-//         return bSortValue.localeCompare(aSortValue);
-//       }
-//       return Number(bSortValue) - Number(aSortValue);
-//     }
-//   });
-  
-//   // Calculate pagination
-//   const totalPages = Math.ceil(sortedData.length / itemsPerPage);
-//   const startIndex = (currentPage - 1) * itemsPerPage;
-//   const paginatedData = sortedData.slice(startIndex, startIndex + itemsPerPage);
-  
-//   const handleSort = (column: keyof TravelRequest) => {
-//     if (sortBy === column) {
-//       setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-//     } else {
-//       setSortBy(column);
-//       setSortOrder('asc');
-//     }
-//   };
-  
-//   const getSortIcon = (column: keyof TravelRequest) => {
-//     if (sortBy !== column) {
-//       return <ChevronDown className="h-4 w-4 opacity-50" />;
-//     }
-//     return sortOrder === 'asc' ? 
-//       <ChevronDown className="h-4 w-4" /> : 
-//       <ChevronDown className="h-4 w-4 transform rotate-180" />;
-//   };
-
-//   const handleRowClick = (requestId: string) => {
-//     const userString = localStorage.getItem('user');
-//     const user = userString ? JSON.parse(userString) : null;
-    
-//     if (!user) return;
-
-//     const path = window.location.pathname;
-//     let basePath = '';
-    
-//     if (user.role === 'admin') {
-//       basePath = '/admin/travel-requests';
-//     } else if (user.role === 'manager') {
-//       basePath = path.includes('team-requests') ? '/manager/team-requests' : '/manager/my-requests';
-//     } else if (user.role === 'employee') {
-//       basePath = '/employee/my-requests';
-//     }
-    
-//     navigate(`${basePath}/${requestId}`);
-//   };
-
-//   const formatDate = (date: string) => {
-//     return format(new Date(date), 'dd-MM-yyyy');
-//   };
-
-//   return (
-//     <div className="space-y-6 animate-fadeIn">
-//       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-//         <h2 className="text-2xl font-semibold">Travel Requests</h2>
-//         <button className="btn-primary flex items-center">
-//           <PlusCircle className="h-4 w-4 mr-2" />
-//           New Request
-//         </button>
-//       </div>
-      
-//       <div className="card max-w-full">
-//         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-//           <div className="relative flex-1">
-//             <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-//               <Search className="h-4 w-4 text-muted-foreground" />
-//             </div>
-//             <input
-//               type="text"
-//               placeholder="Search by traveler, destination, ID, project code, or source..."
-//               className="pl-10 pr-4 py-2 w-full rounded-md bg-muted focus:outline-none focus:ring-1 focus:ring-primary"
-//               value={searchTerm}
-//               onChange={(e) => setSearchTerm(e.target.value)}
-//             />
-//           </div>
-          
-//           <div className="flex items-center gap-3">
-//             <div className="relative">
-//               <button 
-//                 className="flex items-center justify-between px-3 py-2 bg-muted rounded-md min-w-28"
-//                 onClick={() => setShowStatusDropdown(!showStatusDropdown)}
-//               >
-//                 <div className="flex items-center">
-//                   <Filter className="h-4 w-4 mr-2 text-muted-foreground" />
-//                   <span className="text-sm">Status: {statusFilter}</span>
-//                 </div>
-//                 <ChevronDown className="h-4 w-4 ml-2 text-muted-foreground" />
-//               </button>
-//               {showStatusDropdown && (
-//                 <div className="absolute z-10 right-0 mt-1 w-40 bg-card border rounded-md shadow-elevation-3">
-//                   <div className="py-1">
-//                     {[
-//                       'All',
-//                       'Pending',
-//                       'Approved',
-//                       'Rejected',
-//                       'Completed',
-//                       'Manager Approved',
-//                       'Tickets Dispatched',
-//                       'Tickets Selected',
-//                       'DU Head Approved',
-//                       'In-transit',
-//                       'Returned',
-//                       'Closed',
-//                     ].map((status) => (
-//                       <button
-//                         key={status}
-//                         className="w-full text-left px-4 py-2 text-sm hover:bg-muted/50"
-//                         onClick={() => {
-//                           setStatusFilter(status);
-//                           setShowStatusDropdown(false);
-//                         }}
-//                       >
-//                         {status}
-//                       </button>
-//                     ))}
-//                   </div>
-//                 </div>
-//               )}
-//             </div>
-            
-//             <div className="relative">
-//               <button 
-//                 className="flex items-center justify-between px-3 py-2 bg-muted rounded-md min-w-28"
-//                 onClick={() => setShowTypeDropdown(!showTypeDropdown)}
-//               >
-//                 <div className="flex items-center">
-//                   <Filter className="h-4 w-4 mr-2 text-muted-foreground" />
-//                   <span className="text-sm">Type: {typeFilter}</span>
-//                 </div>
-//                 <ChevronDown className="h-4 w-4 ml-2 text-muted-foreground" />
-//               </button>
-//               {showTypeDropdown && (
-//                 <div className="absolute z-10 right-0 mt-1 w-40 bg-card border rounded-md shadow-elevation-3">
-//                   <div className="py-1">
-//                     {['All', 'Domestic', 'International'].map((type) => (
-//                       <button
-//                         key={type}
-//                         className="w-full text-left px-4 py-2 text-sm hover:bg-muted/50"
-//                         onClick={() => {
-//                           setTypeFilter(type);
-//                           setShowTypeDropdown(false);
-//                         }}
-//                       >
-//                         {type}
-//                       </button>
-//                     ))}
-//                   </div>
-//                 </div>
-//               )}
-//             </div>
-            
-//             <button className="flex items-center justify-center p-2 bg-muted rounded-md">
-//               <Download className="h-4 w-4 text-muted-foreground" />
-//             </button>
-//           </div>
-//         </div>
-
-//         {/* Additional Filters */}
-//         <div className="flex flex-wrap items-center gap-3 mb-4">
-//           <div className="relative">
-//             <DatePicker
-//               selectsRange
-//               startDate={startDate}
-//               endDate={endDate}
-//               onChange={(update: [Date | null, Date | null]) => {
-//                 setDateRange(update);
-//               }}
-//               placeholderText="Select date range"
-//               className="px-2.5 py-1.5 bg-gray-100 rounded-md text-sm w-56 focus:outline-none focus:ring-1 focus:ring-blue-500"
-//               isClearable
-//             />
-//           </div>
-
-//           <div className="relative">
-//             <button
-//               className="flex items-center justify-between px-2.5 py-1.5 bg-gray-100 rounded-md min-w-[120px] text-sm hover:bg-gray-200 transition-colors"
-//               onClick={() => setShowColumnsDropdown(!showColumnsDropdown)}
-//             >
-//               <div className="flex items-center">
-//                 <Filter className="h-4 w-4 mr-1.5 text-gray-500" />
-//                 <span>Columns</span>
-//               </div>
-//               <ChevronDown className="h-4 w-4 ml-1.5 text-gray-500" />
-//             </button>
-//             {showColumnsDropdown && (
-//               <div className="absolute z-10 right-0 mt-1 w-48 bg-white border border-gray-200 rounded-md shadow-lg">
-//                 <div className="py-1">
-//                   {allColumns.map((column) => (
-//                     <button
-//                       key={column}
-//                       className="w-full text-left px-3 py-1.5 text-sm hover:bg-gray-100 flex items-center"
-//                       onClick={() => handleColumnToggle(column)}
-//                     >
-//                       <input
-//                         type="checkbox"
-//                         checked={visibleColumns.includes(column)}
-//                         onChange={() => {}}
-//                         className="mr-2"
-//                       />
-//                       {column === 'actions'
-//                         ? 'Actions'
-//                         : column === 'travelDates'
-//                           ? 'Travel Dates'
-//                           : column === 'travelerName'
-//                             ? 'Traveler'
-//                             : column === 'departmentCode'
-//                               ? 'Department'
-//                               : column === 'reportingManager'
-//                                 ? 'Manager'
-//                                 : column.charAt(0).toUpperCase() + column.slice(1)}
-//                     </button>
-//                   ))}
-//                 </div>
-//               </div>
-//             )}
-//           </div>
-//         </div>
-
-//         <div className="overflow-x-auto max-w-[1150px] border border-gray-200 rounded-md">
-//           <table className="w-full">
-//             <thead>
-//               <tr className="border-b">
-//                 {visibleColumns.includes('id') && (
-//                   <th 
-//                     className="text-left py-3 px-4 font-medium text-muted-foreground cursor-pointer hover:text-foreground whitespace-nowrap"
-//                     onClick={() => handleSort('id')}
-//                   >
-//                     <div className="flex items-center">
-//                       <span>Request ID</span>
-//                       {getSortIcon('id')}
-//                     </div>
-//                   </th>
-//                 )}
-//                 {visibleColumns.includes('travelerName') && (
-//                   <th 
-//                     className="text-left py-3 px-4 font-medium text-muted-foreground cursor-pointer hover:text-foreground whitespace-nowrap"
-//                     onClick={() => handleSort('travelerName')}
-//                   >
-//                     <div className="flex items-center">
-//                       <span>Traveler</span>
-//                       {getSortIcon('travelerName')}
-//                     </div>
-//                   </th>
-//                 )}
-//                 {visibleColumns.includes('projectCode') && (
-//                   <th 
-//                     className="text-left py-3 px-4 font-medium text-muted-foreground cursor-pointer hover:text-foreground whitespace-nowrap"
-//                     onClick={() => handleSort('projectCode')}
-//                   >
-//                     <div className="flex items-center">
-//                       <span>Project Code</span>
-//                       {getSortIcon('projectCode')}
-//                     </div>
-//                   </th>
-//                 )}
-//                 {visibleColumns.includes('travelType') && (
-//                   <th 
-//                     className="text-left py-3 px-4 font-medium text-muted-foreground cursor-pointer hover:text-foreground whitespace-nowrap"
-//                     onClick={() => handleSort('travelType')}
-//                   >
-//                     <div className="flex items-center">
-//                       <span>Type</span>
-//                       {getSortIcon('travelType')}
-//                     </div>
-//                   </th>
-//                 )}
-//                 {visibleColumns.includes('source') && (
-//                   <th 
-//                     className="text-left py-3 px-4 font-medium text-muted-foreground cursor-pointer hover:text-foreground whitespace-nowrap"
-//                     onClick={() => handleSort('source')}
-//                   >
-//                     <div className="flex items-center">
-//                       <span>Source</span>
-//                       {getSortIcon('source')}
-//                     </div>
-//                   </th>
-//                 )}
-//                 {visibleColumns.includes('travelDates') && (
-//                   <th 
-//                     className="text-left py-3 px-4 font-medium text-muted-foreground cursor-pointer hover:text-foreground whitespace-nowrap"
-//                     onClick={() => handleSort('departureDate')}
-//                   >
-//                     <div className="flex items-center">
-//                       <span>Travel Dates</span>
-//                       {getSortIcon('departureDate')}
-//                     </div>
-//                   </th>
-//                 )}
-//                 {visibleColumns.includes('destination') && (
-//                   <th 
-//                     className="text-left py-3 px-4 font-medium text-muted-foreground cursor-pointer hover:text-foreground whitespace-nowrap"
-//                     onClick={() => handleSort('destination')}
-//                   >
-//                     <div className="flex items-center">
-//                       <span>Destination</span>
-//                       {getSortIcon('destination')}
-//                     </div>
-//                   </th>
-//                 )}
-//                 {visibleColumns.includes('departmentCode') && (
-//                   <th 
-//                     className="text-left py-3 px-4 font-medium text-muted-foreground cursor-pointer hover:text-foreground whitespace-nowrap"
-//                     onClick={() => handleSort('departmentCode')}
-//                   >
-//                     <div className="flex items-center">
-//                       <span>Department</span>
-//                       {getSortIcon('departmentCode')}
-//                     </div>
-//                   </th>
-//                 )}
-//                 {visibleColumns.includes('reportingManager') && (
-//                   <th 
-//                     className="text-left py-3 px-4 font-medium text-muted-foreground cursor-pointer hover:text-foreground whitespace-nowrap"
-//                     onClick={() => handleSort('reportingManager')}
-//                   >
-//                     <div className="flex items-center">
-//                       <span>Manager</span>
-//                       {getSortIcon('reportingManager')}
-//                     </div>
-//                   </th>
-//                 )}
-//                 {visibleColumns.includes('status') && (
-//                   <th 
-//                     className="text-left py-3 px-4 font-medium text-muted-foreground cursor-pointer hover:text-foreground whitespace-nowrap"
-//                     onClick={() => handleSort('status')}
-//                   >
-//                     <div className="flex items-center">
-//                       <span>Status</span>
-//                       {getSortIcon('status')}
-//                     </div>
-//                   </th>
-//                 )}
-//                 {visibleColumns.includes('actions') && (
-//                   <th className="text-right py-3 px-4 font-medium text-muted-foreground whitespace-nowrap">
-//                     Actions
-//                   </th>
-//                 )}
-//               </tr>
-//             </thead>
-//             <tbody>
-//               {paginatedData.map((request) => (
-//                 <tr 
-//                   key={request.id} 
-//                   className="border-b last:border-0 hover:bg-muted/50 transition-colors cursor-pointer"
-//                   onClick={() => handleRowClick(request.id)}
-//                 >
-//                   {visibleColumns.includes('id') && (
-//                     <td className="py-3 px-4 font-medium whitespace-nowrap">
-//                       {request.id}
-//                     </td>
-//                   )}
-//                   {visibleColumns.includes('travelerName') && (
-//                     <td className="py-3 px-4 whitespace-nowrap">
-//                       {request.travelerName}
-//                     </td>
-//                   )}
-//                   {visibleColumns.includes('projectCode') && (
-//                     <td className="py-3 px-4 whitespace-nowrap">
-//                       {request.projectCode}
-//                     </td>
-//                   )}
-//                   {visibleColumns.includes('travelType') && (
-//                     <td className="py-3 px-4 whitespace-nowrap">
-//                       <span 
-//                         className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-//                           request.travelType === 'Domestic' 
-//                             ? 'bg-primary/10 text-primary' 
-//                             : 'bg-secondary/10 text-secondary'
-//                         }`}
-//                       >
-//                         {request.travelType}
-//                       </span>
-//                     </td>
-//                   )}
-//                   {visibleColumns.includes('source') && (
-//                     <td className="py-3 px-4 whitespace-nowrap">
-//                       {request.source}
-//                     </td>
-//                   )}
-//                   {visibleColumns.includes('travelDates') && (
-//                     <td className="py-3 px-4 whitespace-nowrap">
-//                       <div className="flex items-center">
-//                         <Calendar className="h-3 w-3 mr-1 text-muted-foreground" />
-//                         <span>
-//                           {formatDate(request.departureDate)} - {formatDate(request.returnDate)}
-//                         </span>
-//                       </div>
-//                     </td>
-//                   )}
-//                   {visibleColumns.includes('destination') && (
-//                     <td className="py-3 px-4 whitespace-nowrap">
-//                       {request.destination}
-//                     </td>
-//                   )}
-//                   {visibleColumns.includes('departmentCode') && (
-//                     <td className="py-3 px-4 whitespace-nowrap">
-//                       {request.departmentCode}
-//                     </td>
-//                   )}
-//                   {visibleColumns.includes('reportingManager') && (
-//                     <td className="py-3 px-4 whitespace-nowrap">
-//                       {request.reportingManager}
-//                     </td>
-//                   )}
-//                   {visibleColumns.includes('status') && (
-//                     <td className="py-3 px-4 whitespace-nowrap">
-//                       <span 
-//                         className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(request.status)}`}
-//                       >
-//                         {request.status}
-//                       </span>
-//                     </td>
-//                   )}
-//                   {visibleColumns.includes('actions') && (
-//                     <td className="py-3 px-4 text-right space-x-2 whitespace-nowrap">
-//                       <button 
-//                         className="text-sm text-primary hover:text-primary-light font-medium"
-//                         onClick={(e) => {
-//                           e.stopPropagation();
-//                           handleRowClick(request.id);
-//                         }}
-//                       >
-//                         View
-//                       </button>
-//                       {request.status === 'Pending' && (
-//                         <>
-//                           <button 
-//                             className="text-sm text-success hover:text-success/80 font-medium"
-//                             onClick={(e) => {
-//                               e.stopPropagation();
-//                             }}
-//                           >
-//                             Approve
-//                           </button>
-//                           <button 
-//                             className="text-sm text-error hover:text-error/80 font-medium"
-//                             onClick={(e) => {
-//                               e.stopPropagation();
-//                             }}
-//                           >
-//                             Reject
-//                           </button>
-//                         </>
-//                       )}
-//                     </td>
-//                   )}
-//                 </tr>
-//               ))}
-//             </tbody>
-//           </table>
-//         </div>
-        
-//         {paginatedData.length === 0 && (
-//           <div className="py-8 text-center">
-//             <p className="text-muted-foreground">No travel requests found.</p>
-//           </div>
-//         )}
-        
-//         <div className="flex flex-col md:flex-row items-center justify-between mt-6 gap-4">
-//           <div className="text-sm text-muted-foreground">
-//             Showing {startIndex + 1} to {Math.min(startIndex + itemsPerPage, sortedData.length)} of {sortedData.length} entries
-//           </div>
-          
-//           <div className="flex items-center space-x-2">
-//             <button 
-//               className="flex items-center justify-center p-2 rounded-md bg-muted hover:bg-muted/70 disabled:opacity-50 disabled:pointer-events-none"
-//               disabled={currentPage === 1}
-//               onClick={() => setCurrentPage(1)}
-//             >
-//               <ChevronLeft className="h-4 w-4 mr-1" />
-//               <ChevronLeft className="h-4 w-4" />
-//             </button>
-//             <button 
-//               className="flex items-center justify-center p-2 rounded-md bg-muted hover:bg-muted/70 disabled:opacity-50 disabled:pointer-events-none"
-//               disabled={currentPage === 1}
-//               onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-//             >
-//               <ChevronLeft className="h-4 w-4" />
-//             </button>
-            
-//             <div className="flex items-center space-x-1">
-//               {[...Array(Math.min(totalPages, 5))].map((_, i) => {
-//                 let pageNum;
-                
-//                 if (totalPages <= 5) {
-//                   pageNum = i + 1;
-//                 } else if (currentPage <= 3) {
-//                   pageNum = i + 1;
-//                 } else if (currentPage >= totalPages - 2) {
-//                   pageNum = totalPages - 4 + i;
-//                 } else {
-//                   pageNum = currentPage - 2 + i;
-//                 }
-                
-//                 return (
-//                   <button 
-//                     key={i}
-//                     className={`w-8 h-8 flex items-center justify-center rounded-md text-sm ${
-//                       currentPage === pageNum 
-//                         ? 'bg-primary text-white' 
-//                         : 'bg-muted hover:bg-muted/70'
-//                     }`}
-//                     onClick={() => setCurrentPage(pageNum)}
-//                   >
-//                     {pageNum}
-//                   </button>
-//                 );
-//               })}
-//             </div>
-            
-//             <button 
-//               className="flex items-center justify-center p-2 rounded-md bg-muted hover:bg-muted/70 disabled:opacity-50 disabled:pointer-events-none"
-//               disabled={currentPage === totalPages}
-//               onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-//             >
-//               <ChevronRight className="h-4 w-4" />
-//             </button>
-//             <button 
-//               className="flex items-center justify-center p-2 rounded-md bg-muted hover:bg-muted/70 disabled:opacity-50 disabled:pointer-events-none"
-//               disabled={currentPage === totalPages}
-//               onClick={() => setCurrentPage(totalPages)}
-//             >
-//               <ChevronRight className="h-4 w-4 mr-1" />
-//               <ChevronRight className="h-4 w-4" />
-//             </button>
-//           </div>
-          
-//           <div className="flex items-center space-x-2">
-//             <span className="text-sm text-muted-foreground">Show</span>
-//             <select 
-//               className="bg-muted rounded-md border-input px-2 py-1 text-sm"
-//               value={itemsPerPage}
-//               onChange={(e) => {
-//                 setItemsPerPage(Number(e.target.value));
-//                 setCurrentPage(1);
-//               }}
-//             >
-//               <option value={5}>5</option>
-//               <option value={10}>10</option>
-//               <option value={25}>25</option>
-//               <option value={50}>50</option>
-//             </select>
-//             <span className="text-sm text-muted-foreground">entries</span>
-//           </div>
-//         </div>
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default TravelRequests;
-
-
-
-// import React, { useState, useEffect } from 'react';
-// import { useNavigate } from 'react-router-dom';
-// import DataTable from './DataTable';
-// import { getStatusColor } from '../../data/mockData';
-
-// // Define the TravelRequest interface based on the API data structure
-// interface TravelRequest {
-//   id: string;
-//   travelerName: string;
-//   projectCode: string;
-//   travelType: string;
-//   source: string;
-//   destination: string;
-//   departureDate: string;
-//   returnDate: string;
-//   departmentCode?: string;
-//   reportingManager?: string;
-//   status: string;
-// }
-
-// // Define the API response interface based on RequestDataFormat.json
-// interface ApiTravelRequest {
-//   requestId: number;
-//   sourcePlace: string;
-//   sourceCountry: string;
-//   destinationPlace: string;
-//   destinationCountry: string;
-//   departureDate: string;
-//   returnDate: string;
-//   isAccommodationRequired: boolean;
-//   isPickupRequired: boolean;
-//   isDropoffRequired: boolean;
-//   pickupLocation: string;
-//   dropoffLocation: string;
-//   comments: string;
-//   purposeOfTravel: string;
-//   foodPreference: string;
-//   attendedCct: boolean;
-//   travelAgencyName: string | null;
-//   totalExpense: number | null;
-//   uploadedTicketPdfPath: string | null;
-//   createdAt: string;
-//   updatedAt: string;
-//   employeeName: string;
-//   travelTypeName: string;
-//   tripTypeName: string;
-//   projectName: string;
-//   travelModeName: string;
-//   currentStatusName: string;
-//   selectedTicketOptionName: string | null;
-// }
-
-// const TravelRequests: React.FC = () => {
-//   const navigate = useNavigate();
-//   const [travelRequests, setTravelRequests] = useState<TravelRequest[]>([]);
-//   const [isLoading, setIsLoading] = useState(true);
-//   const [error, setError] = useState<string | null>(null);
-
-//   // Fetch data from the API
-//   useEffect(() => {
-//     const fetchTravelRequests = async () => {
-//       try {
-//         setIsLoading(true);
-//         const response = await fetch('http://localhost:5171/api/TravelRequest/travel-requests');
-//         if (!response.ok) {
-//           throw new Error('Failed to fetch travel requests');
-//         }
-//         const apiData: ApiTravelRequest[] = await response.json();
-        
-//         // Map API data to TravelRequest interface
-//         const mappedData: TravelRequest[] = apiData.map((item) => ({
-//           id: item.requestId.toString(),
-//           travelerName: item.employeeName,
-//           projectCode: item.projectName,
-//           travelType: item.travelTypeName === 'Travel outside the country borders' ? 'International' : 'Domestic',
-//           source: `${item.sourcePlace}, ${item.sourceCountry}`,
-//           destination: `${item.destinationPlace}, ${item.destinationCountry}`,
-//           departureDate: item.departureDate,
-//           returnDate: item.returnDate,
-//           departmentCode: undefined, // Not provided in API data; can be updated if available
-//           reportingManager: undefined, // Not provided in API data; can be updated if available
-//           status: item.currentStatusName,
-//         }));
-
-//         setTravelRequests(mappedData);
-//       } catch (err) {
-//         setError(err instanceof Error ? err.message : 'An error occurred');
-//       } finally {
-//         setIsLoading(false);
-//       }
-//     };
-
-//     fetchTravelRequests();
-//   }, []);
-
-//   const headers = [
-//     { key: 'id', displayName: 'Request ID', sortable: true },
-//     { key: 'status', displayName: 'Status', sortable: true },
-//     { key: 'travelerName', displayName: 'Traveler', sortable: true },
-//     { key: 'projectCode', displayName: 'Project Code', sortable: true },
-//     { key: 'travelType', displayName: 'Type', sortable: true },
-//     { key: 'source', displayName: 'Source', sortable: true },
-//     { key: 'destination', displayName: 'Destination', sortable: true },
-//     { key: 'travelDates', displayName: 'Travel Dates', sortable: true },
-//     { key: 'departmentCode', displayName: 'Department', sortable: true },
-//     { key: 'reportingManager', displayName: 'Manager', sortable: true },
-//   ];
-
-//   const handleRowClick = (item: TravelRequest) => {
-//     const userString = localStorage.getItem('user');
-//     const user = userString ? JSON.parse(userString) : null;
-//     if (!user) return;
-
-//     const path = window.location.pathname;
-//     let basePath = '';
-//     if (user.role === 'admin') {
-//       basePath = '/admin/travel-requests';
-//     } else if (user.role === 'manager') {
-//       basePath = path.includes('team-requests') ? '/manager/team-requests' : '/manager/my-requests';
-//     } else if (user.role === 'employee') {
-//       basePath = '/employee/my-requests';
-//     }
-//     navigate(`${basePath}/${item.id}`);
-//   };
-
-//   if (isLoading) {
-//     return <div className="text-center py-8">Loading...</div>;
-//   }
-
-//   if (error) {
-//     return <div className="text-center py-8 text-error">Error: {error}</div>;
-//   }
-
-//   return (
-//     <DataTable
-//       headers={headers}
-//       data={travelRequests}
-//       title="Travel Requests"
-//       searchableFields={['travelerName', 'destination', 'id', 'projectCode', 'source']}
-//       statusOptions={[
-//         'Pending',
-//         'Approved',
-//         'Rejected',
-//         'Completed',
-//         'Manager Approved',
-//         'Tickets Dispatched',
-//         'Tickets Selected',
-//         'DU Head Approved',
-//         'In-transit',
-//         'Returned',
-//         'Closed',
-//         'Submitted',
-//       ]}
-//       typeOptions={['Domestic', 'International']}
-//       dateFilterKey="departureDate"
-//       newButtonLabel="New Request"
-//       newButtonPath="/create-request"
-//       getStatusColor={getStatusColor}
-//       getTypeColor={(type: string) =>
-//         type === 'Domestic' ? 'bg-primary/10 text-primary' : 'bg-secondary/10 text-secondary'
-//       }
-//       renderActions={(item: TravelRequest) => (
-//         <>
-//           <button 
-//             className="text-sm text-primary hover:text-primary-light font-medium"
-//             onClick={(e) => {
-//               e.stopPropagation();
-//               handleRowClick(item);
-//             }}
-//           >
-//             View
-//           </button>
-//           {item.status === 'Pending' && (
-//             <>
-//               <button 
-//                 className="text-sm text-success hover:text-success/80 font-medium"
-//                 onClick={(e) => e.stopPropagation()}
-//               >
-//                 Approve
-//               </button>
-//               <button 
-//                 className="text-sm text-error hover:text-error/80 font-medium"
-//                 onClick={(e) => e.stopPropagation()}
-//               >
-//                 Reject
-//               </button>
-//             </>
-//           )}
-//         </>
-//       )}
-//       onRowClick={handleRowClick}
-//     />
-//   );
-// };
-
-// export default TravelRequests;
-
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import DataTable from './DataTable'; // Assuming DataTable.tsx is in the same directory or correct path
-import { mockTravelRequests, TravelRequest, getStatusColor } from '../../data/mockData';
-import { Eye, CheckCircle, XCircle } from 'lucide-react'; // Import the icons you need
+import { format, parseISO } from 'date-fns';
+import DataTable from './DataTable';
+import { Eye, CheckCircle, XCircle } from 'lucide-react';
+
+interface TravelRequest {
+  id: string;
+  status: string;
+  travelerName: string;
+  projectCode: string;
+  travelType: string;
+  source: string;
+  destination: string;
+  travelDates: string;
+  departmentCode: string;
+  reportingManager: string;
+  departureDate: string;
+  returnDate: string | null;
+  purposeOfTravel: string;
+  isAccommodationRequired: boolean;
+  isPickupRequired: boolean;
+  isDropoffRequired: boolean;
+  comments: string;
+  isVegetarian: boolean;
+  attendedCct: boolean;
+  travelModeName: string;
+}
+
+interface User {
+  role: string;
+  token: string;
+  userEmail: string;
+  userId: number;
+  userName: string;
+}
 
 const TravelRequests: React.FC = () => {
   const navigate = useNavigate();
+  const [travelRequests, setTravelRequests] = useState<TravelRequest[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
   const headers = [
     { key: 'id', displayName: 'Request ID', sortable: true, filterable: true },
@@ -887,7 +52,120 @@ const TravelRequests: React.FC = () => {
     { key: 'travelDates', displayName: 'Travel Dates', sortable: true },
     { key: 'departmentCode', displayName: 'Department', sortable: true },
     { key: 'reportingManager', displayName: 'Manager', sortable: true },
+    { key: 'purposeOfTravel', displayName: 'Purpose', sortable: true, filterable: true },
+    { key: 'isAccommodationRequired', displayName: 'Accommodation', sortable: true },
+    { key: 'isPickupRequired', displayName: 'Pickup', sortable: true },
+    { key: 'isDropoffRequired', displayName: 'Dropoff', sortable: true },
+    { key: 'comments', displayName: 'Comments', sortable: true, filterable: true },
+    { key: 'isVegetarian', displayName: 'Vegetarian', sortable: true },
+    { key: 'attendedCct', displayName: 'Attended CCT', sortable: true },
+    { key: 'travelModeName', displayName: 'Travel Mode', sortable: true, filterable: true },
   ];
+
+  useEffect(() => {
+    const fetchTravelRequests = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        // Retrieve user data from local storage
+        const userString = localStorage.getItem('user');
+        if (!userString) {
+          throw new Error('User data not found in local storage. Please log in again.');
+        }
+
+        const user: User = JSON.parse(userString);
+        if (!user?.userEmail || !user?.token) {
+          throw new Error('User email or token not found in local storage.');
+        }
+
+        const email = user.userEmail; // "advait.kumar@experionglobal.com"
+        const token = user.token;
+
+        const response = await fetch(
+          `http://localhost:5030/api/TravelRequest/ByProjectManager/${encodeURIComponent(email)}`,
+          {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`,
+            },
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        if (data.isSuccess && Array.isArray(data.result)) {
+          const mappedData: TravelRequest[] = data.result.map((item: any) => {
+            // Convert UTC dates to IST
+            const convertUtcToIst = (utcDate: string | null): Date | null => {
+              if (!utcDate) return null;
+              const date = parseISO(utcDate);
+              const istOffset = 5.5 * 60 * 60 * 1000; // IST is UTC+5:30
+              return new Date(date.getTime() + istOffset);
+            };
+
+            const departureDateIst = convertUtcToIst(item.outboundDepartureDate);
+            const returnDateIst = convertUtcToIst(item.returnDepartureDate);
+
+            return {
+              id: item.requestId,
+              status: item.currentStatusName,
+              travelerName: item.employeeName,
+              projectCode: item.projectName,
+              travelType: item.isInternational ? 'International' : 'Domestic',
+              source: `${item.sourcePlace}, ${item.sourceCountry}`,
+              destination: `${item.destinationPlace}, ${item.destinationCountry}`,
+              travelDates: `${departureDateIst ? format(departureDateIst, 'MMM dd, yyyy') : 'N/A'} - ${
+                returnDateIst ? format(returnDateIst, 'MMM dd, yyyy') : 'N/A'
+              }`,
+              departureDate: item.outboundDepartureDate,
+              returnDate: item.returnDepartureDate,
+              departmentCode: item.duId.toString(),
+              reportingManager: item.projectManagerName,
+              purposeOfTravel: item.purposeOfTravel,
+              isAccommodationRequired: item.isAccommodationRequired,
+              isPickupRequired: item.isPickupRequired,
+              isDropoffRequired: item.isDropoffRequired,
+              comments: item.comments || 'N/A',
+              isVegetarian: item.isVegetarian,
+              attendedCct: item.attendedCct,
+              travelModeName: item.travelModeName,
+            };
+          });
+          setTravelRequests(mappedData);
+        } else {
+          throw new Error('Invalid API response format');
+        }
+      } catch (err: any) {
+        setError(err.message || 'Failed to fetch travel requests. Please try again later.');
+        console.error('Error fetching travel requests:', err);
+        setTravelRequests([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTravelRequests();
+  }, []);
+
+  const getStatusColor = (status: string): string => {
+    switch (status.toLowerCase()) {
+      case 'pendingreview':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'duapproved':
+        return 'bg-blue-100 text-blue-800';
+      case 'optionselected':
+        return 'bg-purple-100 text-purple-800';
+      case 'rejected':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
 
   const handleRowClick = (item: TravelRequest) => {
     const userString = localStorage.getItem('user');
@@ -898,43 +176,37 @@ const TravelRequests: React.FC = () => {
     let basePath = '';
     if (user.role === 'admin') {
       basePath = '/admin/travel-requests';
-    } else if (user.role === 'manager') {
+    } else {
       basePath = path.includes('team-requests') ? '/manager/team-requests' : '/manager/my-requests';
-    } else if (user.role === 'employee') {
-      basePath = '/employee/my-requests';
     }
-    navigate(`${basePath}/${item.id}`); 
+    navigate(`${basePath}/${item.id}`);
   };
 
   const handleApproveAction = (item: TravelRequest) => {
-    console.log("Approving item:", item.id);
-    // Add your approval logic here
+    console.log('Approving item:', item.id);
+    // Add your approval logic here, e.g., API call to update status
   };
 
   const handleRejectAction = (item: TravelRequest) => {
-    console.log("Rejecting item:", item.id);
-    // Add your rejection logic here
+    console.log('Rejecting item:', item.id);
+    // Add your rejection logic here, e.g., API call to update status
   };
+
+  if (loading) {
+    return <div className="text-center py-8">Loading...</div>;
+  }
+
+  if (error) {
+    return <div className="text-center py-8 text-red-600">{error}</div>;
+  }
 
   return (
     <DataTable<TravelRequest>
       headers={headers}
-      data={mockTravelRequests}
+      data={travelRequests}
       title="Travel Requests"
-      searchableFields={['travelerName', 'destination', 'id', 'projectCode', 'source']}
-      statusOptions={[
-        'Pending',
-        'Approved',
-        'Rejected',
-        'Completed',
-        'Manager Approved',
-        'Tickets Dispatched',
-        'Tickets Selected',
-        'DU Head Approved',
-        'In-transit',
-        'Returned',
-        'Closed',
-      ]}
+      searchableFields={['travelerName', 'destination', 'id', 'projectCode', 'source', 'purposeOfTravel', 'comments', 'travelModeName']}
+      statusOptions={['PendingReview', 'DUApproved', 'OptionSelected', 'Rejected']}
       typeOptions={['Domestic', 'International']}
       dateFilterKey="departureDate"
       newButtonLabel="New Request"
@@ -945,9 +217,9 @@ const TravelRequests: React.FC = () => {
       }
       renderActions={(item: TravelRequest) => (
         <div className="flex items-center justify-end gap-1.5">
-          <button 
+          <button
             className="p-1.5 text-blue-600 hover:text-blue-800 hover:bg-blue-100 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400"
-            title="View Details" // Tooltip text
+            title="View Details"
             onClick={(e) => {
               e.stopPropagation();
               handleRowClick(item);
@@ -955,24 +227,21 @@ const TravelRequests: React.FC = () => {
           >
             <Eye size={18} />
           </button>
-
-          {/* Conditionally render Approve/Reject based on status */}
-          {/* Adjust these conditions based on your application's workflow */}
-          {['Pending', 'Manager Approved', 'DU Head Approved', 'Tickets Selected'].includes(item.status) && (
+          {['PendingReview', 'DUApproved', 'OptionSelected'].includes(item.status) && (
             <>
-              <button 
+              <button
                 className="p-1.5 text-green-600 hover:text-green-800 hover:bg-green-100 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-green-400"
-                title="Approve" // Tooltip text
+                title="Approve"
                 onClick={(e) => {
                   e.stopPropagation();
-                  handleApproveAction(item); 
+                  handleApproveAction(item);
                 }}
               >
                 <CheckCircle size={18} />
               </button>
-              <button 
+              <button
                 className="p-1.5 text-red-600 hover:text-red-800 hover:bg-red-100 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-red-400"
-                title="Reject" // Tooltip text
+                title="Reject"
                 onClick={(e) => {
                   e.stopPropagation();
                   handleRejectAction(item);
@@ -982,7 +251,6 @@ const TravelRequests: React.FC = () => {
               </button>
             </>
           )}
-          {/* Edit button has been removed */}
         </div>
       )}
       onRowClick={handleRowClick}

@@ -43,7 +43,7 @@ function App() {
 
         {/* Manager Routes */}
         <Route path="/manager" element={
-          <ProtectedRoute allowedRoles={['manager']}>
+          <ProtectedRoute allowedRoles={['employee','manager','project manager','ceo','associate software engineer','vice president']}>
             <RoleLayout role="manager" />
           </ProtectedRoute>
         }>
@@ -52,6 +52,7 @@ function App() {
           <Route path="new-request" element={<CreateRequest />} />
           <Route path="team-requests" element={<TravelRequests />} />
           <Route path="team-requests/:id" element={<TravelRequestDetails />} />
+          <Route path="my-requests/:id" element={<TravelRequestDetails />} />
           <Route path="my-requests" element={<TravelRequests />} />
           <Route path="my-requests/:id" element={<TravelRequestDetails />} />
           <Route path="calendar" element={<Calendar />} />
