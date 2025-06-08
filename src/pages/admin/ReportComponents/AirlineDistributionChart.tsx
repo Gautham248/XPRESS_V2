@@ -19,7 +19,7 @@ interface TableDataItem {
   travel_type: string;
 }
 
-// === NEW: API Response interfaces
+// API Response interfaces
 interface AirlineReportItem {
   airlineName: string;
   typeOfTravel: 'Domestic' | 'International';
@@ -49,12 +49,12 @@ const AirlineDistributionChart: React.FC<AirlineDistributionChartProps> = ({
   const [travelTypeFilter, setTravelTypeFilter] = useState<TravelTypeFilter>('all');
   const [isFilterOpen, setIsFilterOpen] = useState<boolean>(false);
   
-  // === NEW: State for API data
+  // State for API data
   const [chartData, setChartData] = useState<PieChartItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  // === NEW: Fetch airline data from API
+  // Fetch airline data from API
   useEffect(() => {
     const fetchAirlineData = async () => {
       if (!startDate || !endDate) return;
@@ -224,7 +224,7 @@ const AirlineDistributionChart: React.FC<AirlineDistributionChartProps> = ({
     { value: 'Domestic', label: 'Domestic Only', icon: <MapPin className="w-4 h-4" />, count: chartData.filter(item => item.travelType === 'Domestic').length }
   ];
 
-  // === NEW: Loading and error states
+  
   if (loading) {
     return (
       <div className="bg-white rounded-lg p-6 shadow-sm">
@@ -310,7 +310,7 @@ const AirlineDistributionChart: React.FC<AirlineDistributionChartProps> = ({
         </div>
       </div>
 
-      {/* Overlay to close dropdown when clicking outside */}
+      
       {isFilterOpen && (
         <div 
           className="fixed inset-0 z-5" 

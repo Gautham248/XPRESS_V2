@@ -13,27 +13,24 @@ import Modal from './Modal';
 
 // Generic interface to cover all possible properties from API and mock data
 interface TravelRequest {
-  id?: string; // Made optional as doc status doesn't have it
+  id?: string; 
   requestDate?: string;
   status?: string;
   travelType?: 'Domestic' | 'International';
   estimatedCost?: number;
   airline?: string;
   travelAgency?: string;
-  // === CHANGE: Renamed to match new API fields for consistency
   employeeName?: string;
   employeeEmail?: string;
   department?: string;
   expiryDate?: string;
   docStatus?: string;
-  // Kept old names for compatibility with other data sources
   travelerName?: string;
   passportExpiry?: string;
   visaExpiry?: string;
   departmentCode?: string;
 }
 
-// === CHANGE: Interfaces matching the structure of your new API responses
 interface DocumentDetail {
   employeeName: string;
   employeeEmail: string;
@@ -55,7 +52,7 @@ interface VisaStatusResponse {
   expiresIn45DaysCount: number;
   expiresIn90DaysCount: number;
 }
-// End of new interfaces
+
 
 interface StatusOverviewData {
   requests: TravelRequest[];
@@ -88,9 +85,7 @@ const formatDateForInput = (date: Date): string => {
   return date.toISOString().split('T')[0];
 };
 
-// =================================================================================
-// MOCK DATA (For cards not yet powered by APIs)
-// =================================================================================
+
 
 const processingContextSampleData: TravelRequest[] = [
     { id: 'PT001', requestDate: '2025-01-10', status: 'Tickets Dispatched', travelType: 'Domestic', estimatedCost: 15000 },
@@ -98,11 +93,7 @@ const processingContextSampleData: TravelRequest[] = [
     { id: 'PT003', requestDate: '2025-03-20', status: 'Closed', travelType: 'Domestic', estimatedCost: 12000 },
 ];
 
-// === CHANGE: Removed passportSampleData and visaSampleData as they are replaced by API calls
 
-// =================================================================================
-// REACT COMPONENT
-// =================================================================================
 const Reports: React.FC = () => {
   const getInitialEndDate = (): Date => new Date();
   const getInitialStartDate = (): Date => {
@@ -116,7 +107,7 @@ const Reports: React.FC = () => {
   const [statusData, setStatusData] = useState<StatusOverviewData | null>(null);
   const [expenseData, setExpenseData] = useState<ExpenseOverviewData | null>(null);
   const [tripData, setTripData] = useState<TripDetailsData | null>(null);
-  // === CHANGE: Added state for new passport and visa data
+  
   const [passportData, setPassportData] = useState<PassportStatusResponse | null>(null);
   const [visaData, setVisaData] = useState<VisaStatusResponse | null>(null);
   
@@ -129,7 +120,7 @@ const Reports: React.FC = () => {
       setLoading(true);
       setError(null);
       const dashboardBaseUrl = 'http://localhost:5030/api/Dashboard';
-      // === CHANGE: Added base URL for document status endpoints
+    
       const docStatusBaseUrl = 'http://localhost:5030/api/document-status';
       const params = `?startDate=${startDate}&endDate=${endDate}`;
       
@@ -137,13 +128,11 @@ const Reports: React.FC = () => {
         status: `${dashboardBaseUrl}/status-overview${params}`,
         expense: `${dashboardBaseUrl}/expense-overview${params}`,
         trip: `${dashboardBaseUrl}/trip-details${params}`,
-        // === CHANGE: Added new endpoints to the list
         passport: `${docStatusBaseUrl}/passport${params}`,
         visa: `${docStatusBaseUrl}/visa${params}`,
       };
 
       try {
-        // === CHANGE: Fetch all five endpoints in parallel
         const [statusRes, expenseRes, tripRes, passportRes, visaRes] = await Promise.all([
           fetch(endpoints.status), 
           fetch(endpoints.expense), 
@@ -164,7 +153,7 @@ const Reports: React.FC = () => {
             visaRes.json(),
         ]);
         
-        // === CHANGE: Check all API responses for success
+      
         if (statusJson.isSuccess && expenseJson.isSuccess && tripJson.isSuccess && passportJson.isSuccess && visaJson.isSuccess) {
           setStatusData(statusJson.result);
           setExpenseData(expenseJson.result);
@@ -195,12 +184,7 @@ const Reports: React.FC = () => {
     fetchDashboardData();
   }, [startDate, endDate]);
 
-  // ===============================================================================
-  // LOCAL CALCULATIONS & HELPER FUNCTIONS
-  // ===============================================================================
 
-  // === CHANGE: Removed the 'calculateExpiryStatus' function as it is now handled by the backend
-  
   const filteredRequests = mockTravelRequests.filter((request: TravelRequest) => {
     const requestDate = new Date(request.requestDate!);
     return requestDate >= new Date(startDate) && requestDate <= new Date(endDate);
@@ -218,7 +202,7 @@ const Reports: React.FC = () => {
   const requestHeaders = ['ID', 'Request Date', 'Status', 'Travel Type'];
   const costHeaders = ['ID', 'Request Date', 'Status', 'Travel Type', 'Estimated Cost'];
   const tripHeaders = ['ID', 'Request Date', 'Status', 'Travel Type', 'Airline', 'Travel Agency'];
-  // === CHANGE: Updated headers to match new API data
+  
   const passportHeaders = ['Employee Name', 'Email', 'Department', 'Expiry Date', 'Status'];
   const visaHeaders = ['Employee Name', 'Email', 'Department', 'Expiry Date', 'Status'];
   const processingHeaders = ['ID', 'Request Date', 'Status', 'Travel Type'];
@@ -245,7 +229,7 @@ const Reports: React.FC = () => {
         </div>
       </div>
 
-      {/* Row 1: Cards powered by API data */}
+      
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Total Requests Card */}
         <div className="relative">
@@ -279,7 +263,7 @@ const Reports: React.FC = () => {
         </div>
       </div>
       
-      {/* === CHANGE: This entire row is now powered by API data === */}
+  
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="relative">
           <StatCard 
@@ -339,7 +323,7 @@ const Reports: React.FC = () => {
           </button>
         </div>
         
-        {/* Processing Metrics Card (still uses mock data) */}
+        {/* Processing Metrics Card*/}
         <div className="relative">
           <StatCard title="Processing Metrics" value={`${processingTimeData.avgDays} days`} subtitle="Avg Completion Time" icon={<Clock />} iconClass="text-cyan-600" iconBgClass="bg-cyan-100">
             <div className="grid grid-cols-2 gap-2 text-center">
@@ -378,7 +362,6 @@ const Reports: React.FC = () => {
                         const lowerHeader = header.toLowerCase().trim();
                         let cellValue: string | number = 'N/A';
                         
-                        // === CHANGE: Updated logic to handle all data shapes
                         if (lowerHeader === 'id') cellValue = item.id || 'N/A';
                         else if (lowerHeader === 'request date') cellValue = item.requestDate ? new Date(item.requestDate).toLocaleDateString() : 'N/A';
                         else if (lowerHeader === 'status') cellValue = item.status || item.docStatus || 'N/A';

@@ -133,7 +133,7 @@ const Dashboard: React.FC = () => {
     setError(null);
     
     try {
-      // Fetch all API endpoints concurrently
+      
       const [
         newRequestsData,
         ticketActionsData,
@@ -148,11 +148,9 @@ const Dashboard: React.FC = () => {
         fetchApiData<TravelLegsResult>('/api/stats/travel-requests/count/today/travel-legs')
       ]);
 
-      // Calculate return and departure count (sum of both outbound and return)
       const returnAndDepartureCount = 
         travelLegsData.todayOutboundDepartureCount + travelLegsData.todayReturnArrivalCount;
 
-      // Update state with fetched data
       setStats({
         newRequestsCount: newRequestsData.count,
         ticketActionsCount: ticketActionsData.count,

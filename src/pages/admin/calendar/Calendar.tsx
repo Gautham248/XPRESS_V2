@@ -1,20 +1,20 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import DatePicker from './DatePicker'; // Assuming this component exists
-import WeekView from './WeekView';     // Assuming this component exists
-import MonthView from './MonthView';   // Assuming this component exists
-import EventSidebar from './EventSidebar'; // Assuming this component exists
-import ViewToggle from './ViewToggle';   // Assuming this component exists
+import DatePicker from './DatePicker'; 
+import WeekView from './WeekView';     
+import MonthView from './MonthView';   
+import EventSidebar from './EventSidebar'; 
+import ViewToggle from './ViewToggle';   
 
 const API_BASE_URL = 'http://localhost:5030';
 
 export interface TravelRequest {
   requestId: string;
-  outboundDepartureDate: string; // Expected to be UTC ISO string e.g., "2025-06-05T23:00:00Z"
-  outboundArrivalDate: string;   // Expected to be UTC ISO string
-  returnDepartureDate: string | null; // Expected to be UTC ISO string
-  returnArrivalDate: string | null;   // Expected to be UTC ISO string
+  outboundDepartureDate: string; 
+  outboundArrivalDate: string;   
+  returnDepartureDate: string | null; 
+  returnArrivalDate: string | null;   
   employeeName: string;
   sourcePlace: string;
   sourceCountry: string;
@@ -122,7 +122,7 @@ const Calendar: React.FC = () => {
     return `${startDate}_${endDate}`;
   };
 
-  const fetchTravelRequestsForRange = async (startDate: string, endDate: string): Promise<TravelRequest[]> => {
+  const fetchTravelRequestsForRange = useCallback(async (startDate: string, endDate: string): Promise<TravelRequest[]> => {
     try {
       setError(null);
       const response = await axios.get<ApiResponse>(
@@ -144,7 +144,7 @@ const Calendar: React.FC = () => {
       }
       return [];
     }
-  };
+  }, []);
 
   const loadDataForCurrentView = useCallback(async () => {
     setLoading(true);
@@ -308,8 +308,10 @@ const Calendar: React.FC = () => {
     }
   };
 
-  const handleDateSelect = (year: number, month: number, day: number): void => {
-    const selectedFromPicker = createUTCDate(year, month, day);
+  
+  const handleDateSelect = (year: number, month: number, day?: number): void => {
+    const dayToUse = day ?? 1; // Use 1 if day is undefined
+    const selectedFromPicker = createUTCDate(year, month, dayToUse);
     setSelectedDate(selectedFromPicker);
     
     if (view === 'Month') {

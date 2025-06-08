@@ -19,11 +19,10 @@ interface TravelAgencyApiItem {
   totalExpense: number;
 }
 
-// Chart data interface (transformed from API response)
 interface BarChartItem {
-  name: string; // Will be like "TA-1 (International)" or "TA-2 (Domestic)"
-  value: number; // requestCount
-  cost?: number; // totalExpense
+  name: string; 
+  value: number; 
+  cost?: number; 
   travelType?: 'international' | 'domestic';
 }
 
@@ -71,7 +70,7 @@ const TravelAgencyBarChart: React.FC<TravelAgencyBarChartProps> = ({
         const data: TravelAgencyApiResponse = await response.json();
         
         if (data.isSuccess && data.result) {
-          // Transform API data to chart format
+          
           const transformedData: BarChartItem[] = data.result.map(item => ({
             name: `${item.travelAgencyName} (${item.travelType})`,
             value: item.requestCount,
@@ -241,14 +240,13 @@ const TravelAgencyBarChart: React.FC<TravelAgencyBarChartProps> = ({
     );
   }
 
-  // Convert chart data to table format for the ReusableTable component
   const tableHeaders = ['Agency', 'Bookings', 'Cost', 'Travel Type'];
   
-  // Calculate total bookings and total cost
+
   const totalBookings = filteredChartData.reduce((sum, item) => sum + item.value, 0);
   const totalCost = filteredChartData.reduce((sum, item) => sum + (item.cost || 0), 0);
   
-  // Format data for the table with travel type
+
   const tableData: TableDataItem[] = filteredChartData.map(item => ({
     agency: item.name, // Keep original name for table
     bookings: item.value,
