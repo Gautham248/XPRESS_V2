@@ -85,7 +85,7 @@ export const exportData = async ({
         }
         
         // Clean up value formatting for Excel
-        if (typeof value === 'string' && value.startsWith('$')) {
+        if (typeof value === 'string' && value.startsWith(' ₹')) {
           // Convert currency strings to numbers for better Excel formatting
           const numericValue = value.replace(/[$,]/g, '');
           const parsedValue = parseFloat(numericValue);
