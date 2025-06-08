@@ -196,13 +196,11 @@ const EmployeeDashboard: React.FC = () => {
     let basePath = '';
     if (user.role === 'admin') {
       basePath = '/admin/travel-requests';
-    } else if (user.role === 'manager') {
+    } else  {
       basePath = path.includes('team-requests')
         ? '/manager/team-requests'
         : '/manager/my-requests';
-    } else if (user.role === 'employee') {
-      basePath = '/employee/my-requests';
-    }
+    } 
     navigate(`${basePath}/${item.id}`);
   };
 

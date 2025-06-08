@@ -52,6 +52,7 @@ function App() {
           <Route path="new-request" element={<CreateRequest />} />
           <Route path="team-requests" element={<TravelRequests />} />
           <Route path="team-requests/:id" element={<TravelRequestDetails />} />
+          <Route path="my-requests/:id" element={<TravelRequestDetails />} />
           <Route path="my-requests" element={<TravelRequests />} />
           <Route path="my-requests/:id" element={<TravelRequestDetails />} />
           <Route path="calendar" element={<Calendar />} />
