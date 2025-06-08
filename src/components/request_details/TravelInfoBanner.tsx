@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { Briefcase, Check, Users, Plane, TrainFront, Loader2, AlertCircle } from "lucide-react";
+import { Briefcase, Check, Users, Plane, TrainFront, Loader2, AlertCircle, Phone } from "lucide-react";
 
 interface TravelRequestApiResponse {
   isSuccess: boolean;
@@ -15,6 +15,7 @@ interface TravelRequestApiResponse {
     sourceCountry: string;
     destinationPlace: string;
     destinationCountry: string;
+    phoneNumber: string;
   }>;
   statusCode: number;
   errorMessages: string[];
@@ -30,6 +31,7 @@ interface TravelRequestData {
   transportationType: string;
   source: string;
   destination: string;
+  phoneNumber: string;
 }
 
 interface TravelInfoBannerProps {
@@ -76,6 +78,7 @@ const TravelInfoBanner: React.FC<TravelInfoBannerProps> = ({
             transportationType: apiData.travelModeName,
             source: `${apiData.sourcePlace}, ${apiData.sourceCountry}`,
             destination: `${apiData.destinationPlace}, ${apiData.destinationCountry}`,
+            phoneNumber: apiData.phoneNumber
           };
           
           setTravelRequest(transformedData);
@@ -193,6 +196,17 @@ const TravelInfoBanner: React.FC<TravelInfoBannerProps> = ({
             </div>
             <div className="text-gray-600">
               {travelRequest.projectManager || '-'}
+            </div>
+          </div>
+
+          {/* Phone Number */}
+          <div>
+            <div className="text-xs text-gray-500 flex items-center mb-1">
+              <Phone size={14} className="mr-2" />
+              Contact
+            </div>
+            <div className="text-gray-600">
+              {travelRequest.phoneNumber || '-'}
             </div>
           </div>
         </div>

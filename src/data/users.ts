@@ -52,5 +52,45 @@ export const users: User[] = [
     isActive: true,
     createdAt: '2024-01-01T00:00:00Z',
     updatedAt: '2024-01-01T00:00:00Z'
+  },
+   {
+    id: '4',
+    email: 'mahesh.k@experionglobal.com',
+    password: 'mahesh123',
+    firstName: 'K',
+    lastName: 'Mahesh',
+    role: 'employee',
+    departmentNumber: 'IT-02',
+    departmentName: 'Information Technology',
+    isActive: true,
+    createdAt: '2024-01-01T00:00:00Z',
+    updatedAt: '2024-01-01T00:00:00Z'
+  },
+     {
+    id: '5',
+    email: 'riona.varghese@experionglobal.com',
+    password: 'riona123',
+    firstName: 'Riona Maria',
+    lastName: 'Varghese',
+    role: 'manager',
+    departmentNumber: 'IT-02',
+    departmentName: 'Information Technology',
+    isActive: true,
+    createdAt: '2024-01-01T00:00:00Z',
+    updatedAt: '2024-01-01T00:00:00Z'
+  },
+  
+     {
+    id: '6',
+    email: 'gautham.n@experionglobal.com',
+    password: 'gautham123',
+    firstName: 'Gautham',
+    lastName: 'Krishna',
+    role: 'admin',
+    departmentNumber: 'IT-02',
+    departmentName: 'Information Technology',
+    isActive: true,
+    createdAt: '2024-01-01T00:00:00Z',
+    updatedAt: '2024-01-01T00:00:00Z'
   }
 ];
