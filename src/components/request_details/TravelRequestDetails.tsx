@@ -73,26 +73,17 @@ export const STATUS_ORDER_ARRAY: ReadonlyArray<ComponentTravelRequest['status']>
 ] as const;
 
 // Map from index (status ID) to status name
-export const INDEX_TO_STATUS_MAP: Readonly<Record<number, ComponentTravelRequest['status']>> = {
-  1: 'PendingReview',
-  2: 'Verified',
-  3: 'OptionsListed',
-  4: 'OptionSelected',
-  5: 'DUApproved',
-  6: 'BUApproved',
-  7: 'TicketsDispatched',
-  8: 'InTransit',
-  9: 'Returned',
-  10: 'Closed',
-  11: 'Cancelled',
-  12: 'Rejected',
-  13: 'Modified'
-} as const;
+export const INDEX_TO_STATUS_MAP: Readonly<Record<number, ComponentTravelRequest['status']>> = 
+  STATUS_ORDER_ARRAY.reduce((acc, status, index) => {
+    const statusId = index + 1;
+    acc[statusId] = status;
+    return acc;
+  }, {} as Record<number, ComponentTravelRequest['status']>);
 
 // Map from status name to index (status ID)
 export const STATUS_TO_INDEX_MAP: Readonly<Record<ComponentTravelRequest['status'], number>> = 
   STATUS_ORDER_ARRAY.reduce((acc, status, index) => {
-    acc[status] = index;
+    acc[status] = index + 1;
     return acc;
   }, {} as Record<ComponentTravelRequest['status'], number>);
 
@@ -467,17 +458,17 @@ const TravelRequestDetails: React.FC = () => {
               Submit Feedback
             </button>
           )}
+          {showManagerActionButtons && ( 
+            <>
+              <button className="bg-secondary rounded-md px-4 text-white flex items-center" onClick={handleApproveSubmit}><Check className="h-4 w-4 mr-2" />Approve</button>
+              <button className="bg-red-600 rounded-md px-4 text-white flex items-center" onClick={handleRejectSubmit}><X className="h-4 w-4 mr-2" />Reject</button>
+            </>
+          )}
           <button className="btn-primary flex items-center" onClick={handleDownloadDocuments} disabled={!travelRequestData.uploadedTicketPdfPath}>
             <Download className="h-4 w-4 mr-2" />
             Travel Docs
           </button>
-          {showManagerActionButtons && ( 
-            <>
-              <button className="btn-success flex items-center" onClick={handleApproveSubmit}><Check className="h-4 w-4 mr-2" />Approve</button>
-              <button className="btn-danger flex items-center" onClick={handleRejectSubmit}><X className="h-4 w-4 mr-2" />Reject</button>
-            </>
-          )}
-          <button className="btn-secondary flex items-center"><FileText className="h-4 w-4 mr-2" />Export</button>
+          <button className="btn-accent flex items-center"><FileText className="h-4 w-4 mr-2" />Export</button>
         </div>
       </div>
 

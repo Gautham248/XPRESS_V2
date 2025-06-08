@@ -119,7 +119,7 @@ const UploadTicketView: React.FC<Props> = ({
                             Option {index + 1}
                           </span>
                         </div>
-                        <p className="text-gray-700 leading-relaxed">{option.description}</p>
+                        <p className="text-gray-700 leading-relaxed whitespace-pre-line">{option.description}</p>
                       </div>
                       <div className="flex gap-2 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                         <button

@@ -37,20 +37,17 @@ const SelectTicketView: React.FC<Props> = ({
           ) : (
             <div className="space-y-3">
               {ticketOptions.map(option => {
-                // NEW: Determine if this option is the one currently selected in the UI
                 const isSelected = option.id === selectedOptionId;
 
                 return (
                   <div
                     key={option.id}
-                    // MODIFIED: Use the new 'isSelected' boolean for styling
                     className={`group relative p-5 border-2 rounded-xl transition-all duration-300 ${
                       isSelected
                         ? 'bg-blue-50 border-blue-300'
                         : 'bg-white border-gray-200 hover:border-gray-300 hover:bg-gray-50 hover:shadow-md'
                     }`}
                   >
-                    {/* MODIFIED: Use 'isSelected' to show the side bar */}
                     {isSelected && (
                       <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500 rounded-l-xl"></div>
                     )}
@@ -61,14 +58,12 @@ const SelectTicketView: React.FC<Props> = ({
                       >
                         <div className="relative">
                           <div
-                            // MODIFIED: Use 'isSelected' to style the radio button
                             className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
                               isSelected
                                 ? 'border-blue-600 bg-blue-600'
                                 : 'border-gray-300 bg-white hover:border-gray-400'
                             }`}
                           >
-                            {/* MODIFIED: Use 'isSelected' to show the inner dot */}
                             {isSelected && (
                               <div className="w-2 h-2 bg-white rounded-full"></div>
                             )}
@@ -76,8 +71,7 @@ const SelectTicketView: React.FC<Props> = ({
                         </div>
                         <div className="flex-1">
                           <span
-                            // MODIFIED: Use 'isSelected' to style the text
-                            className={`text-base ${
+                            className={`text-base whitespace-pre-line ${
                               isSelected
                                 ? 'font-semibold text-gray-800'
                                 : 'text-gray-700 group-hover:text-gray-900'
@@ -95,7 +89,6 @@ const SelectTicketView: React.FC<Props> = ({
           )}
         </div>
       </div>
-      {/* MODIFIED: Show this section based on the new 'hasPendingSelection' flag */}
       {hasPendingSelection && (
         <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 border-t border-blue-200 mt-auto">
           <div className="flex items-center justify-between">

@@ -61,7 +61,7 @@ const SelectedView: React.FC<Props> = ({
                     <span className="text-sm text-green-600 font-medium">Selected Ticket</span>
                   </div>
                 )}
-                {option.description}
+                <p className="whitespace-pre-line">{option.description}</p>
               </div>
             </div>
           ))}
