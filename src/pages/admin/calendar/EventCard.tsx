@@ -74,9 +74,8 @@ const EventCard: React.FC<EventCardProps> = ({ type, count, requests, onClick })
 };
 
 
-// --- Demo Component (Updated for new types and props) ---
 const EventCardDemo = () => {
-  // Dummy travel requests for demo - ensure TravelRequest interface matches your actual definition
+ 
   const demoOutboundRequests: TravelRequest[] = Array.from({ length: 3 }, (_, i) => ({
     requestId: `OB${i + 1}`,
     employeeName: `Employee ${String.fromCharCode(65 + i)}`, // A, B, C
@@ -107,7 +106,7 @@ const EventCardDemo = () => {
 
   const handleCardClick = (type: 'OutboundDeparture' | 'ReturnArrival') => {
     console.log(`Card clicked! Type: ${type}`);
-    // Here you might also want to access the 'requests' associated with this card if needed for further action
+    
   };
 
   return (
@@ -144,6 +143,5 @@ const EventCardDemo = () => {
   );
 };
 
-// To use the demo, you might render <EventCardDemo /> somewhere in your app temporarily.
-// export default EventCardDemo; // For demoing purposes
-export default EventCard; // For actual use in your application
+
+export default EventCard;

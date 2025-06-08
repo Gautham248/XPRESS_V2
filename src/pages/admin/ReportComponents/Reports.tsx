@@ -53,6 +53,9 @@ interface VisaStatusResponse {
   expiresIn90DaysCount: number;
 }
 
+interface ProcessingTimeResponse {
+  averageProcessingTimeDays: number;
+}
 
 interface StatusOverviewData {
   requests: TravelRequest[];
@@ -85,14 +88,11 @@ const formatDateForInput = (date: Date): string => {
   return date.toISOString().split('T')[0];
 };
 
-
-
 const processingContextSampleData: TravelRequest[] = [
     { id: 'PT001', requestDate: '2025-01-10', status: 'Tickets Dispatched', travelType: 'Domestic', estimatedCost: 15000 },
     { id: 'PT002', requestDate: '2025-02-15', status: 'In-transit', travelType: 'International', estimatedCost: 45000 },
     { id: 'PT003', requestDate: '2025-03-20', status: 'Closed', travelType: 'Domestic', estimatedCost: 12000 },
 ];
-
 
 const Reports: React.FC = () => {
   const getInitialEndDate = (): Date => new Date();
@@ -110,6 +110,7 @@ const Reports: React.FC = () => {
   
   const [passportData, setPassportData] = useState<PassportStatusResponse | null>(null);
   const [visaData, setVisaData] = useState<VisaStatusResponse | null>(null);
+  const [processingTimeData, setProcessingTimeData] = useState<ProcessingTimeResponse | null>(null);
   
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -122,6 +123,7 @@ const Reports: React.FC = () => {
       const dashboardBaseUrl = 'http://localhost:5030/api/Dashboard';
     
       const docStatusBaseUrl = 'http://localhost:5030/api/document-status';
+      const processingTimeBaseUrl = 'http://localhost:5030/api/ProcessingTime';
       const params = `?startDate=${startDate}&endDate=${endDate}`;
       
       const endpoints = {
@@ -130,36 +132,40 @@ const Reports: React.FC = () => {
         trip: `${dashboardBaseUrl}/trip-details${params}`,
         passport: `${docStatusBaseUrl}/passport${params}`,
         visa: `${docStatusBaseUrl}/visa${params}`,
+        processingTime: `${processingTimeBaseUrl}/average-review-to-dispatch${params}`,
       };
 
       try {
-        const [statusRes, expenseRes, tripRes, passportRes, visaRes] = await Promise.all([
+        const [statusRes, expenseRes, tripRes, passportRes, visaRes, processingTimeRes] = await Promise.all([
           fetch(endpoints.status), 
           fetch(endpoints.expense), 
           fetch(endpoints.trip),
           fetch(endpoints.passport),
           fetch(endpoints.visa),
+          fetch(endpoints.processingTime),
         ]);
 
-        if (!statusRes.ok || !expenseRes.ok || !tripRes.ok || !passportRes.ok || !visaRes.ok) {
+        if (!statusRes.ok || !expenseRes.ok || !tripRes.ok || !passportRes.ok || !visaRes.ok || !processingTimeRes.ok) {
           throw new Error('Network response was not ok. Please check the API server.');
         }
 
-        const [statusJson, expenseJson, tripJson, passportJson, visaJson] = await Promise.all([
+        const [statusJson, expenseJson, tripJson, passportJson, visaJson, processingTimeJson] = await Promise.all([
             statusRes.json(),
             expenseRes.json(),
             tripRes.json(),
             passportRes.json(),
             visaRes.json(),
+            processingTimeRes.json(),
         ]);
         
       
-        if (statusJson.isSuccess && expenseJson.isSuccess && tripJson.isSuccess && passportJson.isSuccess && visaJson.isSuccess) {
+        if (statusJson.isSuccess && expenseJson.isSuccess && tripJson.isSuccess && passportJson.isSuccess && visaJson.isSuccess && processingTimeJson.isSuccess) {
           setStatusData(statusJson.result);
           setExpenseData(expenseJson.result);
           setTripData(tripJson.result);
           setPassportData(passportJson.result);
           setVisaData(visaJson.result);
+          setProcessingTimeData(processingTimeJson.result);
         } else {
           const errorMessages = [
             ...(statusJson.errorMessages || []), 
@@ -167,6 +173,7 @@ const Reports: React.FC = () => {
             ...(tripJson.errorMessages || []),
             ...(passportJson.errorMessages || []),
             ...(visaJson.errorMessages || []),
+            ...(processingTimeJson.errorMessages || []),
           ].filter(Boolean).join(' ');
           throw new Error(errorMessages || 'An unknown API error occurred.');
         }
@@ -177,6 +184,7 @@ const Reports: React.FC = () => {
         setTripData(null);
         setPassportData(null);
         setVisaData(null);
+        setProcessingTimeData(null);
       } finally {
         setLoading(false);
       }
@@ -191,9 +199,9 @@ const Reports: React.FC = () => {
   });
 
   const getSimplifiedProcessingMetrics = () => {
-    return { avgDays: 1, slaBreachCount: 1, withinSLA: 3 };
+    return { avgDays: processingTimeData?.averageProcessingTimeDays ?? 0 };
   };
-  const processingTimeData = getSimplifiedProcessingMetrics();
+  const processingMetrics = getSimplifiedProcessingMetrics();
 
   const openModal = (title: string, data: TravelRequest[], headers: string[]) => 
     setModalData({ title, data, headers });
@@ -323,16 +331,15 @@ const Reports: React.FC = () => {
           </button>
         </div>
         
-        {/* Processing Metrics Card*/}
-        <div className="relative">
-          <StatCard title="Processing Metrics" value={`${processingTimeData.avgDays} days`} subtitle="Avg Completion Time" icon={<Clock />} iconClass="text-cyan-600" iconBgClass="bg-cyan-100">
-            <div className="grid grid-cols-2 gap-2 text-center">
-              <div className="bg-cyan-50 py-2 rounded"><span className="text-xs text-gray-600">Within SLA</span><p className="font-semibold text-cyan-600">{processingTimeData.withinSLA}</p></div>
-              <div className="bg-red-50 py-2 rounded"><span className="text-xs text-gray-600">SLA Breach</span><p className="font-semibold text-red-600">{processingTimeData.slaBreachCount}</p></div>
-            </div>
-          </StatCard>
-          <button onClick={() => openModal('Processing Metrics Details', processingContextSampleData, processingHeaders)} className="absolute top-5 left-[200px] p-1 rounded-full hover:bg-gray-100 z-20" aria-label="View detailed processing metrics"><ExternalLink className="h-5 w-5 text-gray-600" /></button>
-        </div>
+        {/* Processing Metrics Card - Simplified without redundant content */}
+        <StatCard 
+          title="Processing Metrics" 
+          value={`${processingMetrics.avgDays} days`} 
+          subtitle="Avg Completion Time" 
+          icon={<Clock />} 
+          iconClass="text-cyan-600" 
+          iconBgClass="bg-cyan-100"
+        />
       </div>
 
       {/* Row 3: Charts */}

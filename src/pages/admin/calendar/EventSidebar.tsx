@@ -1,4 +1,4 @@
-// src/pages/admin/calendar/EventSidebar.tsx
+
 import React from 'react';
 import { TravelEvent, TravelRequest } from './Calendar'; // Import main types
 import { NavigateFunction } from 'react-router-dom';
@@ -41,7 +41,7 @@ const EventSidebar: React.FC<EventSidebarProps> = ({
     title = "All Events for Selected Date";
   }
 
-  // FIX #1: Modify the formatDate function to use UTC
+  
   const formatDate = (dateString: string | null | undefined): string => {
     if (!dateString) return 'N/A';
     const options: Intl.DateTimeFormatOptions = {
@@ -51,9 +51,9 @@ const EventSidebar: React.FC<EventSidebarProps> = ({
       hour: '2-digit', 
       minute: '2-digit', 
       hour12: true,
-      timeZone: 'UTC' // This is the crucial fix
+      timeZone: 'UTC' 
     };
-    // Append 'UTC' to the string for clarity
+    
     return new Date(dateString).toLocaleDateString('en-US', options) + ' UTC';
   };
 
@@ -79,14 +79,14 @@ const EventSidebar: React.FC<EventSidebarProps> = ({
 
   return (
     <div className="lg:flex-[0.35] bg-white rounded-lg shadow-sm p-4 sm:p-6 h-full max-h-[calc(100vh-150px)] overflow-y-auto">
-      {/* FIX #2: Modify the header to display the date in UTC */}
+   
       <h2 className="text-xl sm:text-2xl font-semibold text-gray-800 mb-1">
         {selectedDate.toLocaleDateString('en-US', { 
           weekday: 'long', 
           year: 'numeric', 
           month: 'long', 
           day: 'numeric',
-          timeZone: 'UTC' // This ensures the header shows the correct UTC date
+          timeZone: 'UTC' 
         })}
       </h2>
       <p className="text-lg font-medium text-blue-600 mb-4">{title}</p>

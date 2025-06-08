@@ -19,10 +19,9 @@ const MonthView: React.FC<MonthViewProps> = ({
   const monthDays: DayInfo[] = getDaysForMonth(currentDate.getUTCFullYear(), currentDate.getUTCMonth());
   const weekdayNames: string[] = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-  // --- FIX #1: Create today's date in UTC for correct comparison ---
+  // Create today's date in UTC for correct comparison
   const today = new Date();
   const todayUTC = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()));
-
 
   const getEventCounts = (events: TravelEvent[]): { OutboundDeparture: number; ReturnArrival: number } => {
     const counts = {
@@ -47,7 +46,7 @@ const MonthView: React.FC<MonthViewProps> = ({
           </div>
         ))}
         {monthDays.map((dayInfo: DayInfo, index: number) => {
-          // --- FIX #2: Create the date for each cell in UTC ---
+          // Create the date for each cell in UTC
           const date = new Date(Date.UTC(dayInfo.year, dayInfo.month, dayInfo.day));
           
           const events = getEventsForDate(date);
@@ -59,20 +58,39 @@ const MonthView: React.FC<MonthViewProps> = ({
 
           const isToday = date.getTime() === todayUTC.getTime();
 
+          // Enhanced styling with clear light blue borders
+          let cellClasses = `h-16 flex flex-col p-1 rounded-md cursor-pointer relative transition-all duration-200 `;
+
+          if (isSelected) {
+            // Selected date: prominent light blue border and background
+            cellClasses += `bg-blue-100 border-3 border-blue-500 shadow-lg`;
+          } else if (isToday) {
+            // Today: lighter blue border with subtle background
+            cellClasses += `bg-blue-50 border-2 border-blue-300 shadow-md`;
+          } else if (dayInfo.currentMonth) {
+            // Current month days: normal styling
+            cellClasses += `bg-white border border-gray-200 shadow-sm hover:bg-gray-50 hover:shadow-md hover:border-gray-300`;
+          } else {
+            // Previous/next month days: muted styling
+            cellClasses += `bg-gray-100 border border-gray-200 opacity-50`;
+          }
+
           return (
             <div
               key={`month-day-${index}`}
-              className={`h-16 flex flex-col p-1 rounded-md cursor-pointer relative
-                ${dayInfo.currentMonth ? 'bg-white border border-gray-200 shadow-sm' : 'bg-gray-100 opacity-50'}
-                ${isSelected ? 'bg-blue-100 border-2 border-blue-400' : ''}
-                ${isToday && !isSelected ? 'bg-blue-50' : ''}
-                hover:bg-gray-200 hover:shadow-sm hover:border hover:border-gray-300 transition-all duration-200`}
+              className={cellClasses}
               onClick={() => onDayCellClick(dayInfo)}
             >
               <span
-                className={`text-gray-800 text-center ${
-                  !dayInfo.currentMonth ? 'text-gray-400 opacity-50 font-light' : 'font-medium'
-                } ${isToday ? 'font-bold text-blue-600' : ''}`}
+                className={`text-center text-sm ${
+                  !dayInfo.currentMonth 
+                    ? 'text-gray-400 opacity-50 font-light' 
+                    : isSelected 
+                      ? 'font-bold text-blue-700' 
+                      : isToday 
+                        ? 'font-bold text-blue-600' 
+                        : 'font-medium text-gray-800'
+                }`}
               >
                 {dayInfo.day}
               </span>

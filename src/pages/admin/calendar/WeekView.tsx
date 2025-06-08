@@ -16,7 +16,7 @@ const WeekView: React.FC<WeekViewProps> = ({
   onDayCellClick,
 }) => {
   const startOfWeek = new Date(currentDate);
-  startOfWeek.setUTCDate(currentDate.getUTCDate() - currentDate.getUTCDay()); // Already correct (uses UTC)
+  startOfWeek.setUTCDate(currentDate.getUTCDate() - currentDate.getUTCDay());
 
   const weekDays: DayInfo[] = Array.from({ length: 7 }, (_, i) => {
     const dayDate = new Date(startOfWeek);
@@ -29,7 +29,7 @@ const WeekView: React.FC<WeekViewProps> = ({
     };
   });
 
-  // --- FIX #1: Create today's date in UTC for correct comparison ---
+  // Create today's date in UTC for correct comparison
   const today = new Date();
   const todayUTC = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()));
 
@@ -38,13 +38,12 @@ const WeekView: React.FC<WeekViewProps> = ({
   };
 
   const renderEventCardsForDay = (dayInfo: DayInfo): JSX.Element[] => {
-    // --- FIX #2: Create the date for each cell in UTC ---
+    // Create the date for each cell in UTC
     const dayDate = new Date(Date.UTC(dayInfo.year, dayInfo.month, dayInfo.day));
     
     const events = getEventsForDate(dayDate);
     const eventCards: JSX.Element[] = [];
     
-    // ... rest of the function is fine
     const outboundDepartures = events.filter(e => e.type === 'OutboundDeparture');
     const returnArrivals = events.filter(e => e.type === 'ReturnArrival');
 
@@ -78,30 +77,54 @@ const WeekView: React.FC<WeekViewProps> = ({
     <div className="h-[calc(100vh-250px)] min-h-[384px]">
       <div className="grid grid-cols-7 gap-1 sm:gap-2 h-full">
         {weekDays.map((dayInfo: DayInfo, index: number) => {
-          // Create the date in UTC here too for comparisons
+          // Create the date in UTC for comparisons
           const dayDate = new Date(Date.UTC(dayInfo.year, dayInfo.month, dayInfo.day));
           
           const isSelected = selectedDate && selectedDate.getTime() === dayDate.getTime();
-          const isToday = todayUTC.getTime() === dayDate.getTime();
+          const isToday = dayDate.getTime() === todayUTC.getTime();
 
+          // Enhanced header styling with better contrast
           let headerClasses = `text-center text-xs sm:text-sm font-medium py-2 `;
-          headerClasses += isToday ? 'text-blue-600' : 'text-gray-600';
-
-          let dayCellClasses = `flex-1 p-1 sm:p-2 rounded-md cursor-pointer transition-all duration-200 overflow-y-auto bg-white border border-gray-200`;
           if (isSelected) {
-            dayCellClasses += ` border-2 border-blue-500 ring-2 ring-blue-300 bg-white`;
+            headerClasses += 'text-blue-700 font-bold';
           } else if (isToday) {
-            dayCellClasses += ` !border-2 !border-blue-500 bg-blue-50`;
+            headerClasses += 'text-blue-600 font-bold';
           } else {
-            dayCellClasses += ` hover:bg-gray-100`;
+            headerClasses += 'text-gray-600';
+          }
+
+          // Enhanced day cell styling with distinct borders
+          let dayCellClasses = `flex-1 p-1 sm:p-2 rounded-md cursor-pointer transition-all duration-200 overflow-y-auto `;
+          
+          if (isSelected) {
+            // Selected date: prominent blue border and background
+            dayCellClasses += `bg-blue-50 border-2 border-blue-500 shadow-lg`;
+          } else if (isToday) {
+            // Today: light blue border with subtle background
+            dayCellClasses += `bg-blue-25 border-2 border-blue-300 shadow-md`;
+          } else {
+            // Regular dates: light border with hover effects
+            dayCellClasses += `bg-white border border-gray-300 hover:bg-gray-50 hover:border-gray-400 hover:shadow-sm`;
+          }
+
+          // Container styling for the entire day column
+          let containerClasses = `flex flex-col h-full rounded-lg shadow-sm `;
+          if (isSelected) {
+            containerClasses += `bg-blue-100 border-3 border-blue-400 shadow-lg`;
+          } else if (isToday) {
+            containerClasses += `bg-blue-50 border-2 border-blue-300 shadow-md`;
+          } else {
+            containerClasses += `bg-gray-50 border border-gray-200`;
           }
 
           return (
-            <div key={index} className="flex flex-col h-full bg-gray-50 rounded-lg">
+            <div key={index} className={containerClasses}>
               <div className={headerClasses}>
                 <div>{dayDate.toLocaleDateString('en-US', { weekday: 'short', timeZone: 'UTC' })}</div>
                 <div
-                  className={`text-lg font-semibold mt-1 cursor-pointer ${isSelected ? 'text-blue-700' : ''}`}
+                  className={`text-lg font-semibold mt-1 cursor-pointer ${
+                    isSelected ? 'text-blue-700' : isToday ? 'text-blue-600' : 'text-gray-800'
+                  }`}
                   onClick={() => handleDayClick(dayInfo)}
                 >
                   {dayInfo.day}
