@@ -250,6 +250,20 @@ const validateTravelLocationsConsistency = (state: TravelRequestState): string |
   return null;
 };
 
+// Utility function to get user ID from localStorage
+const getUserIdFromLocalStorage = (): number | null => {
+  try {
+    const userString = localStorage.getItem('user');
+    if (userString) {
+      const user = JSON.parse(userString);
+      return user.userId || null;
+    }
+    return null;
+  } catch (error) {
+    console.error('Error parsing user from localStorage:', error);
+    return null;
+  }
+};
 
 const SuccessPopup: React.FC<{ message: string; onClose: () => void }> = ({ message, onClose }) => {
   useEffect(() => {
@@ -297,23 +311,10 @@ const TravelRequestContext = createContext<TravelRequestContextType | undefined>
 
 interface TravelRequestProviderProps {
   children: ReactNode;
-  userId?: number; 
 }
-// const userString = localStorage.getItem('user');
-//   let userId;
- 
-//   if (userString) {
-//     const user = JSON.parse(userString);
-//     userId = user.userId;
-//   } else {
-//     console.log('No user found in localStorage.');
-//   }
-
-
 
 export const TravelRequestProvider: React.FC<TravelRequestProviderProps> = ({
   children,
-  userId =1,
 }) => {
   const [state, dispatch] = useReducer(travelRequestReducer, initialState);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -393,6 +394,14 @@ export const TravelRequestProvider: React.FC<TravelRequestProviderProps> = ({
     if (validationError) {
       setSubmitError(validationError);
       console.error("Form validation failed:", validationError);
+      return;
+    }
+
+    // Get userId from localStorage
+    const userId = getUserIdFromLocalStorage();
+    if (!userId) {
+      setSubmitError('User not found. Please log in again.');
+      console.error('No user found in localStorage.');
       return;
     }
 
