@@ -31,7 +31,6 @@ const LINEAR_PROGRESSION_STATUSES = [
   'OptionsListed',
   'OptionSelected',
   'DUApproved',
-  // 'BUApproved' is skipped
   'TicketDispatched',
   'InTransit',
   'Returned',
@@ -46,7 +45,6 @@ const STATUS_DISPLAY_PROPERTIES: Record<string, { displayName: string; icon: Rea
   OptionsListed: { displayName: 'Options Provided', icon: <Check className="h-4 w-4" /> },
   OptionSelected: { displayName: 'Option Confirmed', icon: <Check className="h-4 w-4" /> },
   DUApproved: { displayName: 'DU Approval', icon: <Check className="h-4 w-4" /> },
-  // BUApproved is removed from display properties
   TicketDispatched: { displayName: 'Ticket Issued', icon: <Check className="h-4 w-4" /> },
   InTransit: { displayName: 'In Transit', icon: <Check className="h-4 w-4" /> },
   Returned: { displayName: 'Returned', icon: <Check className="h-4 w-4" /> },
@@ -86,17 +84,9 @@ const ApprovalTimeline: React.FC<ApprovalTimelineProps> = ({ requestId }) => {
       setLoading(true);
       setError(null);
       try {
-        const token = localStorage.getItem('jwtToken');
-        if (!token) {
-          throw new Error('No token found. Please log in again.');
-        }
         const response = await axios.get<{ isSuccess: boolean; result: ApiTravelRequestTimelineData; errorMessages?: string[] }>(
-          `${API_BASE_URL}/TravelRequest/${requestId}/timeline`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
+          `${API_BASE_URL}/TravelRequest/${requestId}/timeline`
+          // Remove headers for authentication
         );
         if (response.data.isSuccess && response.data.result) {
           setTravelRequestData(response.data.result);
@@ -109,10 +99,6 @@ const ApprovalTimeline: React.FC<ApprovalTimelineProps> = ({ requestId }) => {
           setError(
             `API Error: ${err.response?.status} - ${err.response?.data?.errorMessages?.join(', ') || err.response?.statusText || err.message}`
           );
-          if (err.response?.status === 401) {
-            localStorage.removeItem('jwtToken');
-            window.location.href = '/login';
-          }
         } else if (err instanceof Error) {
           setError(`An unexpected error occurred: ${err.message}`);
         } else {
