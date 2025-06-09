@@ -7,11 +7,6 @@ import { mockTravelRequests } from '../../../data/mockData';
 import DateRangePicker from './DateRangePicker';
 import Modal from './Modal';
 
-// =================================================================================
-// TYPE DEFINITIONS
-// =================================================================================
-
-// Generic interface to cover all possible properties from API and mock data
 interface TravelRequest {
   id?: string; 
   requestDate?: string;
@@ -54,7 +49,11 @@ interface VisaStatusResponse {
 }
 
 interface ProcessingTimeResponse {
-  averageProcessingTimeDays: number;
+  averageDays: number;
+  averageHours: number;
+  averageMinutes: number;
+  readableFormat: string;
+  totalRequestsCalculated: number;
 }
 
 interface StatusOverviewData {
@@ -88,11 +87,6 @@ const formatDateForInput = (date: Date): string => {
   return date.toISOString().split('T')[0];
 };
 
-const processingContextSampleData: TravelRequest[] = [
-    { id: 'PT001', requestDate: '2025-01-10', status: 'Tickets Dispatched', travelType: 'Domestic', estimatedCost: 15000 },
-    { id: 'PT002', requestDate: '2025-02-15', status: 'In-transit', travelType: 'International', estimatedCost: 45000 },
-    { id: 'PT003', requestDate: '2025-03-20', status: 'Closed', travelType: 'Domestic', estimatedCost: 12000 },
-];
 
 const Reports: React.FC = () => {
   const getInitialEndDate = (): Date => new Date();
@@ -197,11 +191,6 @@ const Reports: React.FC = () => {
     const requestDate = new Date(request.requestDate!);
     return requestDate >= new Date(startDate) && requestDate <= new Date(endDate);
   });
-
-  const getSimplifiedProcessingMetrics = () => {
-    return { avgDays: processingTimeData?.averageProcessingTimeDays ?? 0 };
-  };
-  const processingMetrics = getSimplifiedProcessingMetrics();
 
   const openModal = (title: string, data: TravelRequest[], headers: string[]) => 
     setModalData({ title, data, headers });
@@ -331,10 +320,10 @@ const Reports: React.FC = () => {
           </button>
         </div>
         
-        {/* Processing Metrics Card - Simplified without redundant content */}
+        {/* Processing Metrics Card - Updated to show readable format */}
         <StatCard 
           title="Processing Metrics" 
-          value={`${processingMetrics.avgDays} days`} 
+          value={processingTimeData?.readableFormat ?? 'N/A'} 
           subtitle="Avg Completion Time" 
           icon={<Clock />} 
           iconClass="text-cyan-600" 
