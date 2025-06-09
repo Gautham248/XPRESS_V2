@@ -14,12 +14,13 @@ import {
   CheckCircle,
   FileText,
   User,
-  X, // 1. ADDED: Import the 'X' icon for the modal's close button
+  X,
+  Edit, // Added Edit icon
 } from 'lucide-react';
 import { format, parseISO, differenceInDays } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { getStatusColor } from '../../data/mockData';
-
+ 
 // --- Interfaces are unchanged ---
 interface TravelRequest {
   id: string;
@@ -51,7 +52,7 @@ interface TravelRequest {
     details?: string;
   }>;
 }
-
+ 
 interface Document {
   id: string;
   documentType: string;
@@ -64,25 +65,25 @@ interface Document {
   fullName?: string;
   visaClass?: string;
 }
-
+ 
 interface UserDocuments {
   userId: string;
   userName: string;
   documents: Document[];
 }
-
+ 
 const EmployeeDashboard: React.FC = () => {
   const navigate = useNavigate();
-
+ 
   // State for travel requests and documents
   const [travelRequests, setTravelRequests] = useState<TravelRequest[]>([]);
   const [userDocuments, setUserDocuments] = useState<UserDocuments | null>(null);
   const [documentsLoading, setDocumentsLoading] = useState(true);
   const [documentsError, setDocumentsError] = useState<string | null>(null);
-  
-  // 2. ADDED: State to manage which document is being previewed
+ 
+  // State to manage which document is being previewed
   const [selectedDocForPreview, setSelectedDocForPreview] = useState<Document | null>(null);
-
+ 
   // Get user data from local storage
   const userString = localStorage.getItem('user');
   const user = userString ? JSON.parse(userString) : null;
@@ -93,7 +94,7 @@ const EmployeeDashboard: React.FC = () => {
     department: user?.userDU,
     photo: '',
   };
-
+ 
   // Fetch documents from API
   useEffect(() => {
     const fetchUserDocuments = async () => {
@@ -103,11 +104,11 @@ const EmployeeDashboard: React.FC = () => {
         setDocumentsLoading(false);
         return;
       }
-
+ 
       try {
         setDocumentsLoading(true);
         setDocumentsError(null);
-
+ 
         const response = await axios.get(
           `http://localhost:5030/api/Documents/User/${user.userId}`,
           {
@@ -120,9 +121,9 @@ const EmployeeDashboard: React.FC = () => {
         const apiDocuments = Array.isArray(response.data)
           ? response.data
           : response.data.documents || response.data.result || [];
-
+ 
         if (apiDocuments && apiDocuments.length > 0) {
-          
+         
           const mappedDocuments = apiDocuments.map((apiDoc: any) => ({
             id: String(apiDoc.id),
             documentType: apiDoc.idType,
@@ -134,15 +135,15 @@ const EmployeeDashboard: React.FC = () => {
             fullName: apiDoc.fullName,
             visaClass: apiDoc.visaClass,
           }));
-
+ 
           const newUserDocuments = {
             userId: user.userId,
             userName: user.userName,
             documents: mappedDocuments,
           };
-
+ 
           setUserDocuments(newUserDocuments);
-          
+         
         } else {
           setUserDocuments({
             userId: user.userId,
@@ -157,10 +158,10 @@ const EmployeeDashboard: React.FC = () => {
         setDocumentsLoading(false);
       }
     };
-
+ 
     fetchUserDocuments();
 }, []);
-
+ 
   // Fetch travel requests from API
   useEffect(() => {
     const fetchTravelRequests = async () => {
@@ -169,7 +170,7 @@ const EmployeeDashboard: React.FC = () => {
         setTravelRequests([]);
         return;
       }
-
+ 
       try {
         const response = await fetch(
           `http://localhost:5030/api/TravelRequest/ByUser/${user.userId}`,
@@ -181,7 +182,7 @@ const EmployeeDashboard: React.FC = () => {
           }
         );
         const data = await response.json();
-
+ 
         if (data.isSuccess) {
           const mappedRequests = data.result.map((trip: any) => ({
             id: trip.requestId,
@@ -190,7 +191,7 @@ const EmployeeDashboard: React.FC = () => {
               ? 'Domestic'
               : 'International',
             departureDate: trip.outboundDepartureDate,
-            returnDate: trip.returnDepartureDate || '', 
+            returnDate: trip.returnDepartureDate || '',
             source: 'Unknown',
             destination: trip.destination,
             purpose: trip.purposeOfTravel,
@@ -198,7 +199,7 @@ const EmployeeDashboard: React.FC = () => {
             estimatedCost: 0,
             transportationType: 'Unknown',
             accommodationType: 'Unknown',
-            requestDate: trip.outboundDepartureDate, 
+            requestDate: trip.outboundDepartureDate,
             departmentCode: currentUser.department,
             managerName: 'Unknown',
             reportingManager: 'Unknown',
@@ -215,15 +216,15 @@ const EmployeeDashboard: React.FC = () => {
         setTravelRequests([]);
       }
     };
-
+ 
     fetchTravelRequests();
   }, []);
-
+ 
   // Filter travel requests based on user (no status filter)
   const filteredRequests = travelRequests.filter(
     (request) => request.travelerName === currentUser.name
   );
-
+ 
   // Document expiry alerts
   const documentAlerts = userDocuments?.documents
     ? userDocuments.documents
@@ -235,7 +236,7 @@ const EmployeeDashboard: React.FC = () => {
         }))
         .filter((alert) => alert.daysUntilExpiry <= 45)
     : [];
-
+ 
   // SLA alerts for delayed requests
   const slaAlerts = filteredRequests
     .filter(
@@ -247,12 +248,12 @@ const EmployeeDashboard: React.FC = () => {
       id: request.id,
       message: `Request ${request.id} delayed at ${request.status} stage`,
     }));
-
+ 
   const handleRowClick = (item: TravelRequest) => {
     const userString = localStorage.getItem('user');
     const user = userString ? JSON.parse(userString) : null;
     if (!user) return;
-
+ 
     const path = window.location.pathname;
     let basePath = '';
     if (user.role === 'admin') {
@@ -261,10 +262,22 @@ const EmployeeDashboard: React.FC = () => {
       basePath = path.includes('team-requests')
         ? '/manager/team-requests'
         : '/manager/my-requests';
-    } 
+    }
     navigate(`${basePath}/${item.id}`);
   };
-
+ 
+  // Edit button handler - placeholder for now
+  const handleEditClick = (e: React.MouseEvent, request: TravelRequest) => {
+    e.stopPropagation(); // Prevent row click
+    // TODO: Add edit functionality here
+    console.log('Edit clicked for request:', request.id);
+  };
+ 
+  // Check if edit button should be disabled
+  const isEditDisabled = (status: string) => {
+    return status === 'Returned' || status === 'Closed';
+  };
+ 
   const getIconComponent = (iconName: string) => {
     switch (iconName) {
       case 'Briefcase': return Briefcase;
@@ -274,7 +287,7 @@ const EmployeeDashboard: React.FC = () => {
       default: return Briefcase;
     }
   };
-
+ 
   const getIconBackgroundColor = (iconName: string) => {
     switch (iconName) {
       case 'Briefcase': return 'bg-blue-500';
@@ -284,11 +297,11 @@ const EmployeeDashboard: React.FC = () => {
       default: return 'bg-blue-500';
     }
   };
-
+ 
   // Navigation handlers for the buttons
   const handleNewRequestClick = () => { navigate('/manager/new-request'); };
   const handleUploadDocumentsClick = () => { navigate('/manager/documents'); };
-
+ 
   // Helper function to get document display info
   const getDocumentDisplayInfo = (doc: Document) => {
     switch (doc.documentType) {
@@ -318,7 +331,7 @@ const EmployeeDashboard: React.FC = () => {
         };
     }
   };
-
+ 
   return (
     <div className="container mx-auto p-6 space-y-6">
       {/* Header Section */}
@@ -333,13 +346,13 @@ const EmployeeDashboard: React.FC = () => {
           </div>
         </div>
         <div className="flex space-x-4 mt-4 md:mt-0">
-          <button 
+          <button
             onClick={handleNewRequestClick}
             className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
           >
             New Travel Request
           </button>
-          <button 
+          <button
             onClick={handleUploadDocumentsClick}
             className="border border-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-100"
           >
@@ -347,7 +360,7 @@ const EmployeeDashboard: React.FC = () => {
           </button>
         </div>
       </div>
-
+ 
       {/* Active Travel Requests */}
       <div className="card bg-white shadow-sm p-6 rounded-lg">
         <div className="flex items-center justify-between mb-6">
@@ -362,27 +375,12 @@ const EmployeeDashboard: React.FC = () => {
             <table className="w-full">
               <thead>
                 <tr className="border-b">
-                  <th className="text-left py-3 px-4 font-medium text-gray-500">ID</th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-500 w-16">Edit</th>
                   <th className="text-left py-3 px-4 font-medium text-gray-500">Destination</th>
                   <th className="text-left py-3 px-4 font-medium text-gray-500">Travel Dates</th>
                   <th className="text-left py-3 px-4 font-medium text-gray-500">Purpose</th>
                   <th className="text-left py-3 px-4 font-medium text-gray-500">Status</th>
                   <th className="text-right py-3 px-4 font-medium text-gray-500">Actions</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-500">
-                    Destination
-                  </th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-500">
-                    Travel Dates
-                  </th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-500">
-                    Purpose
-                  </th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-500">
-                    Status
-                  </th>
-                  {/* <th className="text-right py-3 px-4 font-medium text-gray-500">
-                    Actions
-                  </th> */}
                 </tr>
               </thead>
               <tbody>
@@ -392,7 +390,20 @@ const EmployeeDashboard: React.FC = () => {
                     className="border-b last:border-0 hover:bg-gray-50 cursor-pointer"
                     onClick={() => handleRowClick(trip)}
                   >
-                    <td className="py-3 px-4">{trip.id}</td>
+                    <td className="py-3 px-4">
+                      <button
+                        onClick={(e) => handleEditClick(e, trip)}
+                        disabled={isEditDisabled(trip.status)}
+                        className={`p-2 rounded-md transition-colors ${
+                          isEditDisabled(trip.status)
+                            ? 'text-gray-400 bg-gray-100 cursor-not-allowed'
+                            : 'text-blue-600 hover:text-blue-800 hover:bg-blue-50'
+                        }`}
+                        title={isEditDisabled(trip.status) ? 'Cannot edit closed or returned requests' : 'Edit request'}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </button>
+                    </td>
                     <td className="py-3 px-4">{trip.destination}</td>
                     <td className="py-3 px-4">
                       {trip.departureDate ? format(parseISO(trip.departureDate), 'MMM dd') : 'N/A'} -{' '}
@@ -409,14 +420,6 @@ const EmployeeDashboard: React.FC = () => {
                     <td className="py-3 px-4 text-right">
                       <button className="text-sm text-blue-600 hover:text-blue-800">View Details</button>
                     </td>
-                    {/* <td className="py-3 px-4 text-right">
-                      <button className="text-sm text-blue-600 hover:text-blue-800">
-                        View Details
-                      </button>
-                      {['DUApproved', 'Verified', 'Closed'].includes(trip.status) && (
-                        <button className="text-sm text-blue-600 hover:text-blue-800 ml-2">Add Subtrip</button>
-                      )}
-                    </td> */}
                   </tr>
                 ))}
               </tbody>
@@ -424,13 +427,13 @@ const EmployeeDashboard: React.FC = () => {
           </div>
         )}
       </div>
-
+ 
       {/* Document Repository */}
       <div className="card bg-white shadow-sm p-6 rounded-lg">
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-lg font-semibold">Document Repository</h3>
         </div>
-        
+       
         {documentsLoading ? (
           <div className="text-center py-6">
             <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -440,8 +443,8 @@ const EmployeeDashboard: React.FC = () => {
           <div className="text-center py-6">
             <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-2" />
             <p className="text-red-600">{documentsError}</p>
-            <button 
-              onClick={() => window.location.reload()} 
+            <button
+              onClick={() => window.location.reload()}
               className="text-blue-600 hover:text-blue-800 mt-2"
             >
               Retry
@@ -452,9 +455,8 @@ const EmployeeDashboard: React.FC = () => {
             {userDocuments.documents.map((doc) => {
               const displayInfo = getDocumentDisplayInfo(doc);
               const daysUntilExpiry = doc.expiryDate ? differenceInDays(parseISO(doc.expiryDate), new Date()) : null;
-              
+             
               return (
-                // 3. MODIFIED: Make this whole div clickable
                 <div
                   key={doc.id}
                   className="border rounded-lg p-4 flex items-start space-x-3 hover:shadow-md hover:border-blue-500 transition-all cursor-pointer"
@@ -487,7 +489,7 @@ const EmployeeDashboard: React.FC = () => {
           </p>
         )}
       </div>
-
+ 
       {/* Travel Policy Snapshot */}
       <div className="card bg-white shadow-sm p-6 rounded-lg">
         <h3 className="text-lg font-semibold mb-4">Travel Policy</h3>
@@ -495,48 +497,42 @@ const EmployeeDashboard: React.FC = () => {
           <div className="flex items-center space-x-2">
             <FileText className="h-5 w-5 text-gray-500" />
             <a href="https://experiontechnologies.sharepoint.com/sites/QualityManagementSystem/Quality%20Management%20System/Forms/AllItems.aspx?id=%2Fsites%2FQualityManagementSystem%2FQuality%20Management%20System%2F04%2EPolicies%2FPL03%20Travel%20Policy%2Epdf&parent=%2Fsites%2FQualityManagementSystem%2FQuality%20Management%20System%2F04%2EPolicies" className="text-blue-600 hover:text-blue-800" target='blank'>
-              Experion Travel Policy 
+              Experion Travel Policy
             </a>
           </div>
-          {/* <div className="flex items-center space-x-2">
-            <CheckCircle className="h-5 w-5 text-green-600" />
-            <span className="text-sm text-gray-500">
-              Last acknowledged on 12-Jul-2025
-            </span>
-          </div> */}
         </div>
       </div>
-
-      {/* 4. ADDED: The Preview Modal JSX at the end of the main div */}
+ 
+      {/* Preview Modal */}
       {selectedDocForPreview && (
-         <div 
+         <div
             className="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center p-4"
-            onClick={() => setSelectedDocForPreview(null)} // Close modal on background click
+            onClick={() => setSelectedDocForPreview(null)}
          >
-          <div 
+          <div
             className="relative bg-white rounded-lg p-3 max-w-4xl w-full max-h-[90vh] overflow-auto"
-            onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside modal
+            onClick={(e) => e.stopPropagation()}
           >
-            <button 
-                className="absolute top-3 right-3 p-1 bg-white rounded-full shadow-md text-gray-800 hover:text-red-500 transition-colors z-10" 
-                onClick={() => setSelectedDocForPreview(null)} 
+            <button
+                className="absolute top-3 right-3 p-1 bg-white rounded-full shadow-md text-gray-800 hover:text-red-500 transition-colors z-10"
+                onClick={() => setSelectedDocForPreview(null)}
                 aria-label="Close preview"
             >
               <X className="w-6 h-6" />
             </button>
             <div className="pt-8 h-full">
               {selectedDocForPreview.documentUrl.toLowerCase().endsWith('.pdf') ? (
-                <iframe 
-                    src={`${selectedDocForPreview.documentUrl}#view=FitH`} 
-                    title={`${selectedDocForPreview.documentType} Preview`} 
-                    className="w-full rounded" 
-                    style={{ minHeight: '500px', height: 'calc(90vh - 4rem)' }} 
+                <iframe
+                    src={`${selectedDocForPreview.documentUrl}#view=FitH`}
+                    title={`${selectedDocForPreview.documentType} Preview`}
+                    className="w-full rounded"
+                    style={{ minHeight: '500px', height: 'calc(90vh - 4rem)' }}
                 />
               ) : (
-                <img 
-                    src={selectedDocForPreview.documentUrl} 
-                    alt={`${selectedDocForPreview.documentType} Preview`} 
-                    className="max-w-full max-h-[calc(90vh-4rem)] object-contain mx-auto" 
+                <img
+                    src={selectedDocForPreview.documentUrl}
+                    alt={`${selectedDocForPreview.documentType} Preview`}
+                    className="max-w-full max-h-[calc(90vh-4rem)] object-contain mx-auto"
                 />
               )}
             </div>
@@ -546,5 +542,6 @@ const EmployeeDashboard: React.FC = () => {
     </div>
   );
 };
-
+// New dashboard
+ 
 export default EmployeeDashboard;
