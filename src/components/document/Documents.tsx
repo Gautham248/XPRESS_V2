@@ -1,11 +1,9 @@
-// src/components/Documents.tsx
 
 import React, { useState, useReducer, useRef, useCallback } from 'react';
 import axios from 'axios';
 import toast, { Toaster } from 'react-hot-toast';
 import { DocumentType, DocumentState, FormState, Action, initialState as formInitialState } from './types';
 
-// Import Components and Parsers
 import DocumentTabs from './DocumentTabs';
 import DocumentForm from './DocumentForm';
 import DocumentList from './DocumentList';
@@ -15,10 +13,8 @@ import PassportParser, { ParsedPassportInfo } from './Parsers/PassportParser';
 import AadharParser, { ParsedAadhaarInfo } from './Parsers/AadharParser';
 import VisaParser, { ParsedVisaInfo } from './Parsers/VisaParser';
 
-// Define a union type for all possible parsed data shapes
 type ParsedInfo = ParsedPassportInfo | ParsedAadhaarInfo | ParsedVisaInfo;
 
-// Reducer function to manage form state
 const formReducer = (state: DocumentState, action: Action): DocumentState => {
   switch (action.type) {
     case 'UPDATE_FIELD':
@@ -42,7 +38,6 @@ const formReducer = (state: DocumentState, action: Action): DocumentState => {
   }
 };
 
-// Helper function to format dates into ISO 8601 strings for the backend
 const formatToISOString = (dateInput: string | Date | null | undefined): string | null => {
     if (!dateInput) return null;
     let dateObj: Date;
@@ -223,15 +218,13 @@ function Documents() {
 
   return (
     <div className="animate-fadeIn">
-      {/* ✅ --- CHANGE START: Added containerStyle to move toasts down --- ✅ */}
       <Toaster 
         position="top-right" 
         reverseOrder={false}
         containerStyle={{
-          top: 80, // Pushes the notifications down by 80px
+          top: 80,
         }}
       />
-      {/* ✅ --- CHANGE END --- ✅ */}
 
       {ocrRequest && !rawOcrText && (
         <OcrProcessor

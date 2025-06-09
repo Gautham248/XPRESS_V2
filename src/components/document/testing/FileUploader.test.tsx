@@ -1,14 +1,12 @@
-// src/components/FileUploader.test.tsx
 
 import React from 'react';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom';
 import axios from 'axios';
-import FileUploader, { BackendDocumentRecord } from '../FileUploader'; // Import type for clarity
+import FileUploader, { BackendDocumentRecord } from '../FileUploader'; 
 import { DocumentType } from '../types';
 
-// Mocks for dependencies
 jest.mock('lucide-react', () => ({
   X: (props: React.ComponentProps<'div'>) => <div data-testid="x-icon" {...props} />,
 }));
@@ -17,7 +15,6 @@ const mockedAxios = axios as jest.Mocked<typeof axios>;
 global.fetch = jest.fn();
 window.URL.createObjectURL = jest.fn(() => 'blob:http://localhost/mock-preview-url');
 
-// Define the type for our props object for better type safety in tests
 type TestProps = {
   userId: number | undefined;
   docType: DocumentType;
@@ -29,9 +26,8 @@ type TestProps = {
 };
 
 describe('FileUploader Component', () => {
-  // ✅ --- FIX: Added the required 'userId' prop --- ✅
   const defaultProps: TestProps = {
-    userId: 1, // Added a default userId
+    userId: 1, 
     docType: 'Passport' as const,
     onFileSelect: jest.fn(),
     showValidation: false,
@@ -63,22 +59,18 @@ describe('FileUploader Component', () => {
     const invalidFile = new File(['some content'], 'document.txt', { type: 'text/plain' });
     const input = screen.getByTestId('file-input');
 
-    // Use fireEvent for direct event simulation
     fireEvent.change(input, {
       target: {
         files: [invalidFile],
       },
     });
 
-    // Wait for the visual error message to appear
     const errorMessage = await screen.findByTestId('error-message');
     
-    // Assert the error message is correct
     expect(errorMessage).toHaveTextContent(
       'Please select a valid file (PDF, JPG, PNG)'
     );
 
-    // Assert the parent component was correctly notified of the invalid selection
     expect(defaultProps.onFileSelect).toHaveBeenCalledWith(null);
   });
 
@@ -102,17 +94,14 @@ describe('FileUploader Component', () => {
     });
     mockedAxios.post.mockResolvedValueOnce({ data: mockBackendResponse });
 
-    // Render with a file selected so the "Upload" button is enabled.
     render(<FileUploader {...defaultProps} selectedFile={file} />);
 
     await user.click(screen.getByRole('button', { name: /upload file/i }));
 
-    // Wait for the final "success" callback to be fired.
     await waitFor(() => {
       expect(defaultProps.onRecordCreated).toHaveBeenCalledTimes(1);
     }, { timeout: 2000 });
 
-    // Assert what it was called with.
     expect(defaultProps.onRecordCreated).toHaveBeenCalledWith(
       expect.objectContaining({ id: 99, userId: 1 }), // Check for userId as well
       file
@@ -136,7 +125,6 @@ describe('FileUploader Component', () => {
     render(<FileUploader {...defaultProps} selectedFile={file} />);
     await user.click(screen.getByRole('button', { name: /upload file/i }));
 
-    // Wait for the onUploadError callback to be fired.
     await waitFor(() => {
         expect(defaultProps.onUploadError).toHaveBeenCalledWith(
           expect.stringContaining('Database connection lost')

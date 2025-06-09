@@ -20,10 +20,7 @@ interface OcrProcessorProps {
 const OcrProcessor: React.FC<OcrProcessorProps> = ({ fileToProcess, onComplete, onCancel }) => {
 
   useEffect(() => {
-    // <<< FIX START >>>
-    // This flag will be used to signal to the async process if it has been cancelled.
     let isCancelled = false;
-    // <<< FIX END >>>
 
     let tesseractWorker: Worker | null = null;
     const toastId = toast.loading('Initializing OCR Engine...', { position: 'bottom-center' });
@@ -33,10 +30,7 @@ const OcrProcessor: React.FC<OcrProcessorProps> = ({ fileToProcess, onComplete, 
         toast.loading('Loading OCR Model...', { id: toastId, position: 'bottom-center' });
         tesseractWorker = await createWorker('eng', 1, {
             logger: m => {
-                // <<< FIX START >>>
-                // Before updating the toast, check if the process has been cancelled.
                 if (isCancelled) return;
-                // <<< FIX END >>>
                 if (m.status === 'recognizing text' && typeof m.progress === 'number') {
                     const progress = Math.round(m.progress * 100);
                     toast.loading(`Scanning Document: ${progress}%`, { id: toastId, position: 'bottom-center' });
@@ -47,10 +41,7 @@ const OcrProcessor: React.FC<OcrProcessorProps> = ({ fileToProcess, onComplete, 
         let extractedRawText = '';
 
         if (fileToProcess.type === 'application/pdf') {
-          // <<< FIX START >>>
-          // Check for cancellation before starting a potentially long process
           if (isCancelled) return;
-          // <<< FIX END >>>
           toast.loading('Processing PDF...', { id: toastId, position: 'bottom-center' });
           const arrayBuffer = await fileToProcess.arrayBuffer();
           const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
@@ -62,10 +53,7 @@ const OcrProcessor: React.FC<OcrProcessorProps> = ({ fileToProcess, onComplete, 
 
           let fullOcrText = '';
           for (let i = 1; i <= numPages; i++) {
-             // <<< FIX START >>>
-            // Check for cancellation within the loop
             if (isCancelled) return;
-            // <<< FIX END >>>
             toast.loading(`Rendering PDF Page ${i}/${numPages}`, { id: toastId, position: 'bottom-center' });
             const page = await pdf.getPage(i);
             const viewport = page.getViewport({ scale: 2.0 });
@@ -90,13 +78,10 @@ const OcrProcessor: React.FC<OcrProcessorProps> = ({ fileToProcess, onComplete, 
             throw new Error('Unsupported file type.');
         }
 
-        // <<< FIX START >>>
-        // This is the most crucial check. Do not proceed if the component has unmounted.
         if (isCancelled) {
           console.log("OCR process was cancelled before completion. Aborting callback.");
           return;
         }
-        // <<< FIX END >>>
 
         console.log('[OCR] Raw extracted text from OcrProcessor:', `\n--- START TEXT ---\n${extractedRawText}\n--- END TEXT ---`);
 
@@ -110,18 +95,14 @@ const OcrProcessor: React.FC<OcrProcessorProps> = ({ fileToProcess, onComplete, 
         onComplete(extractedRawText);
 
       } catch (error: any) {
-        // <<< FIX START >>>
-        // Also check here. Don't show an error for a process that was intentionally cancelled.
         if (isCancelled) {
           console.log("OCR process was cancelled, ignoring error from aborted process:", error);
           return;
         }
-        // <<< FIX END >>>
         console.error("OCR Error:", error);
         toast.error(`OCR Scan Failed: ${error.message}`, { id: toastId, position: 'bottom-center' });
         onCancel();
       } finally {
-        // The worker for the zombie process will be terminated here eventually.
         if (tesseractWorker) {
           await tesseractWorker.terminate();
         }
@@ -131,12 +112,8 @@ const OcrProcessor: React.FC<OcrProcessorProps> = ({ fileToProcess, onComplete, 
     runOcr();
 
     return () => {
-      // <<< FIX START >>>
-      // When the component unmounts (due to StrictMode or navigation),
-      // set the flag to true. The running async function will see this and stop.
       isCancelled = true;
       console.log('Cleanup triggered: OCR process marked as cancelled.');
-      // <<< FIX END >>>
 
       toast.dismiss(toastId);
       if (tesseractWorker) {
