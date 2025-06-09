@@ -448,16 +448,16 @@ const EmployeeDashboard: React.FC = () => {
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <FileText className="h-5 w-5 text-gray-500" />
-            <a href="#" className="text-blue-600 hover:text-blue-800">
-              Experion Travel Policy v3.1
+            <a href="https://experiontechnologies.sharepoint.com/sites/QualityManagementSystem/Quality%20Management%20System/Forms/AllItems.aspx?id=%2Fsites%2FQualityManagementSystem%2FQuality%20Management%20System%2F04%2EPolicies%2FPL03%20Travel%20Policy%2Epdf&parent=%2Fsites%2FQualityManagementSystem%2FQuality%20Management%20System%2F04%2EPolicies" className="text-blue-600 hover:text-blue-800" target='blank'>
+              Experion Travel Policy 
             </a>
           </div>
-          <div className="flex items-center space-x-2">
+          {/* <div className="flex items-center space-x-2">
             <CheckCircle className="h-5 w-5 text-green-600" />
             <span className="text-sm text-gray-500">
               Last acknowledged on 12-Jul-2025
             </span>
-          </div>
+          </div> */}
         </div>
       </div>
     </div>
