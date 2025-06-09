@@ -18,9 +18,12 @@ import TicketComponent from './ticket_options/TicketOptionsComponent';
 import TravelInfoBanner from './TravelInfoBanner';
 import { useModal } from './confirmation_modal/hooks/useModal';
 import ConfirmationModal from './confirmation_modal/ConfirmationModal';
+import JSZip from 'jszip';
+import { saveAs } from 'file-saver';
 
 export interface ComponentTravelRequest {
   id: string;
+  userId: number; // ADDED: To store the employee's user ID for document fetching
   outboundDepartureDate: string;
   returnDepartureDate: string;
   outboundArrivalDate?: string;
@@ -56,6 +59,7 @@ export interface ComponentTravelRequest {
            'Returned' | 'Closed' | 'Cancelled' | 'Rejected' | 'Modified';
 }
 
+// ... (rest of the interfaces and maps remain the same)
 export const STATUS_ORDER_ARRAY: ReadonlyArray<ComponentTravelRequest['status']> = [
   'PendingReview',     // Index 0
   'Verified',          // Index 1
@@ -72,7 +76,6 @@ export const STATUS_ORDER_ARRAY: ReadonlyArray<ComponentTravelRequest['status']>
   'Modified'           // Index 12
 ] as const;
 
-// Map from index (status ID) to status name
 export const INDEX_TO_STATUS_MAP: Readonly<Record<number, ComponentTravelRequest['status']>> = 
   STATUS_ORDER_ARRAY.reduce((acc, status, index) => {
     const statusId = index + 1;
@@ -80,7 +83,6 @@ export const INDEX_TO_STATUS_MAP: Readonly<Record<number, ComponentTravelRequest
     return acc;
   }, {} as Record<number, ComponentTravelRequest['status']>);
 
-// Map from status name to index (status ID)
 export const STATUS_TO_INDEX_MAP: Readonly<Record<ComponentTravelRequest['status'], number>> = 
   STATUS_ORDER_ARRAY.reduce((acc, status, index) => {
     acc[status] = index + 1;
@@ -153,6 +155,7 @@ const TravelRequestDetails: React.FC = () => {
   const [travelRequestData, setTravelRequestData] = useState<ComponentTravelRequest | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
   const [actionTaken, setActionTaken] = useState(false);
@@ -173,67 +176,70 @@ const TravelRequestDetails: React.FC = () => {
   }
 
   const fetchTravelRequest = useCallback(async () => {
+    // ... (rest of the function is the same until the `setTravelRequestData` call)
     if (!id) {
-      setError("Travel Request ID is missing.");
-      setIsLoading(false);
-      return;
-    }
-    
-    setIsLoading(true);
-    setError(null);
-    try {
-      const response = await fetch(`http://localhost:5030/api/TravelRequest/${id}`);
-      if (!response.ok) {
-        let errorMsg = `Failed to fetch travel request: ${response.statusText}`;
-        try {
-          const errorData = await response.json();
-          errorMsg = errorData.errorMessages?.join(', ') || errorMsg;
-        } catch (e) {}
-        throw new Error(errorMsg);
+        setError("Travel Request ID is missing.");
+        setIsLoading(false);
+        return;
       }
-      const data = await response.json();
-      const apiData = data.result; 
-
-      if (data.isSuccess && apiData) {
-        const statusName = INDEX_TO_STATUS_MAP[apiData.currentStatusId] || 'PendingReview';
-        
-        setTravelRequestData({
-          id: apiData.requestId,
-          outboundDepartureDate: apiData.outboundDepartureDate,
-          returnDepartureDate: apiData.returnDepartureDate,
-          purpose: apiData.purposeOfTravel,
-          submissionDate: apiData.createdAt,
-          transportation: apiData.travelModeName,
-          destination: apiData.destinationPlace,
-          sourcePlace: apiData.sourcePlace,
-          sourceCountry: apiData.sourceCountry,
-          destinationCountry: apiData.destinationCountry,
-          outboundArrivalDate: apiData.outboundArrivalDate,
-          returnArrivalDate: apiData.returnArrivalDate,
-          isAccommodationRequired: apiData.isAccommodationRequired,
-          isPickUpRequired: apiData.isPickupRequired,
-          isDropOffRequired: apiData.isDropoffRequired,
-          pickupPlace: apiData.pickupPlace,
-          dropoffPlace: apiData.dropoffPlace,
-          comments: apiData.comments,
-          isVegetarian: apiData.isVegetarian,
-          attendedCct: apiData.attendedCct,
-          travelAgencyName: apiData.travelAgencyName,
-          totalExpense: apiData.totalExpense,
-          uploadedTicketPdfPath: apiData.uploadedTicketPdfPath,
-          updatedAt: apiData.updatedAt,
-          employeeName: apiData.employeeName,
-          isInternational: apiData.isInternational,
-          isRoundTrip: apiData.isRoundTrip,
-          projectName: apiData.projectName,
-          selectedTicketOptionId: apiData.selectedTicketOptionId,
-          createdAt: apiData.createdAt,
-          currentStatusId: apiData.currentStatusId,
-          status: statusName
-        });
-      } else {
-        throw new Error(data.errorMessages?.join(', ') || 'Travel request data not found or invalid format.');
-      }
+      
+      setIsLoading(true);
+      setError(null);
+      try {
+        const response = await fetch(`http://localhost:5030/api/TravelRequest/${id}`);
+        if (!response.ok) {
+          let errorMsg = `Failed to fetch travel request: ${response.statusText}`;
+          try {
+            const errorData = await response.json();
+            errorMsg = errorData.errorMessages?.join(', ') || errorMsg;
+          } catch (e) {}
+          throw new Error(errorMsg);
+        }
+        const data = await response.json();
+        const apiData = data.result; 
+  
+        if (data.isSuccess && apiData) {
+          const statusName = INDEX_TO_STATUS_MAP[apiData.currentStatusId] || 'PendingReview';
+          
+          // MODIFIED: Capture the userId from the API response
+          setTravelRequestData({
+            id: apiData.requestId,
+            userId: apiData.userId, // ADDED: Assuming your API response includes `userId`
+            outboundDepartureDate: apiData.outboundDepartureDate,
+            returnDepartureDate: apiData.returnDepartureDate,
+            purpose: apiData.purposeOfTravel,
+            submissionDate: apiData.createdAt,
+            transportation: apiData.travelModeName,
+            destination: apiData.destinationPlace,
+            sourcePlace: apiData.sourcePlace,
+            sourceCountry: apiData.sourceCountry,
+            destinationCountry: apiData.destinationCountry,
+            outboundArrivalDate: apiData.outboundArrivalDate,
+            returnArrivalDate: apiData.returnArrivalDate,
+            isAccommodationRequired: apiData.isAccommodationRequired,
+            isPickUpRequired: apiData.isPickupRequired,
+            isDropOffRequired: apiData.isDropoffRequired,
+            pickupPlace: apiData.pickupPlace,
+            dropoffPlace: apiData.dropoffPlace,
+            comments: apiData.comments,
+            isVegetarian: apiData.isVegetarian,
+            attendedCct: apiData.attendedCct,
+            travelAgencyName: apiData.travelAgencyName,
+            totalExpense: apiData.totalExpense,
+            uploadedTicketPdfPath: apiData.uploadedTicketPdfPath,
+            updatedAt: apiData.updatedAt,
+            employeeName: apiData.employeeName,
+            isInternational: apiData.isInternational,
+            isRoundTrip: apiData.isRoundTrip,
+            projectName: apiData.projectName,
+            selectedTicketOptionId: apiData.selectedTicketOptionId,
+            createdAt: apiData.createdAt,
+            currentStatusId: apiData.currentStatusId,
+            status: statusName
+          });
+        } else {
+          throw new Error(data.errorMessages?.join(', ') || 'Travel request data not found or invalid format.');
+        }
     } catch (err) {
       console.error('Error fetching travel request:', err);
       setError(err instanceof Error ? err.message : String(err));
@@ -253,15 +259,95 @@ const TravelRequestDetails: React.FC = () => {
     return date.toLocaleDateString('en-GB');
   };
 
-  const handleDownloadDocuments = () => {
-    if (!travelRequestData?.uploadedTicketPdfPath || !id) {
-        alert('No document path available for download.');
+  const handleDownloadDocumentsAsZip = async () => {
+    const requestId = id;
+    const employeeUserId = travelRequestData?.userId;
+
+    if (!requestId || !employeeUserId) {
+        alert('Cannot download documents: Missing request or user information.');
         return;
     }
 
-    const downloadUrl = `http://localhost:5030/api/TravelRequest/${id}/downloadticket`;
+    setIsDownloading(true);
 
-    window.open(downloadUrl, '_blank');
+    try {
+        let documentUrls: { url: string, docData: any }[] = [];
+
+        // 1. Add the main travel ticket if it exists
+        if (travelRequestData.uploadedTicketPdfPath) {
+            documentUrls.push({
+                url: `http://localhost:5030/api/TravelRequest/${requestId}/downloadticket`,
+                docData: { idType: 'TravelTicket', id: requestId, documentPath: travelRequestData.uploadedTicketPdfPath }
+            });
+        }
+
+        // 2. Fetch the list of other user documents
+        const response = await fetch(`http://localhost:5030/api/Documents/User/${employeeUserId}`);
+        if (response.ok) {
+            const userDocuments = await response.json();
+            if (userDocuments && userDocuments.length > 0) {
+                userDocuments.forEach((doc: any) => {
+                    // Assuming doc.documentPath is the full URL to the file
+                    documentUrls.push({ url: doc.documentPath, docData: doc });
+                });
+            }
+        } else {
+            console.error(`Failed to fetch user documents list: ${response.statusText}`);
+        }
+        
+        if (documentUrls.length === 0) {
+            alert('No documents are available for download for this request.');
+            setIsDownloading(false);
+            return;
+        }
+
+        // Helper to create a user-friendly filename
+        const getFriendlyFilename = (doc: any) => {
+            const extension = doc.documentPath.split('.').pop() || 'file';
+            let name = `${doc.idType}-${doc.id}`; // Fallback name
+            if (doc.idType === 'TravelTicket') {
+                name = `TravelTicket-${doc.id}`;
+            } else if (doc.idType === 'Passport' && doc.passportNumber) {
+                name = `Passport-${doc.passportNumber}`;
+            } else if (doc.idType === 'Visa' && doc.visaNumber) {
+                name = `Visa-${doc.issuingCountry}-${doc.visaNumber}`;
+            } else if (doc.idType === 'Aadhar' && doc.aadharName) {
+                name = `Aadhar-${doc.aadharName.replace(/\s/g, '_')}`;
+            }
+            return `${name}.${extension}`;
+        };
+
+        // 3. Fetch the actual file content (as blobs) for all URLs in parallel
+        const filePromises = documentUrls.map(docInfo =>
+            fetch(docInfo.url)
+                .then(res => {
+                    if (!res.ok) throw new Error(`Failed to download ${docInfo.url}`);
+                    return res.blob();
+                })
+                .then(blob => ({
+                    name: getFriendlyFilename(docInfo.docData),
+                    blob: blob
+                }))
+        );
+
+        const files = await Promise.all(filePromises);
+
+        // 4. Create a zip file
+        const zip = new JSZip();
+        files.forEach(file => {
+            zip.file(file.name, file.blob);
+        });
+
+        // 5. Generate the zip and trigger the download
+        const zipBlob = await zip.generateAsync({ type: 'blob' });
+        saveAs(zipBlob, `TravelDocs-${requestId}.zip`);
+
+    } catch (err) {
+        console.error('Error creating zip file:', err);
+        alert('An error occurred while preparing the documents for download. Please check the console for details.');
+    } finally {
+        setIsDownloading(false);
+    }
   };
 
   const handleFeedbackSubmit = () => {
@@ -428,6 +514,11 @@ const TravelRequestDetails: React.FC = () => {
   const showCloseRequestButton = isAdmin && travelRequestData.status === 'Returned' && !requestClosed;
   const showManagerActionButtons = isManager && travelRequestData.status === 'PendingReview' && !actionTaken;
 
+  // MODIFIED: The disabled logic for the button can now be simpler, as the handler checks for all docs.
+  // We can disable it if there's no data loaded at all, or if we know for sure there are no docs.
+  // For simplicity, keeping the original logic is also fine. The handler will alert the user.
+  const areAnyDocumentsAvailable = travelRequestData.uploadedTicketPdfPath || (travelRequestData.userId > 0);
+
   return (
     <div className="space-y-6 animate-fadeIn">
       <ConfirmationModal isOpen={isOpen} title={title} content={content} onClose={closeModal} buttons={buttons} />
@@ -467,10 +558,23 @@ const TravelRequestDetails: React.FC = () => {
               <button className="bg-red-600 rounded-md px-4 text-white flex items-center" onClick={handleRejectSubmit}><X className="h-4 w-4 mr-2" />Reject</button>
             </>
           )}
-          <button className="btn-primary flex items-center" onClick={handleDownloadDocuments} disabled={!travelRequestData.uploadedTicketPdfPath}>
-            <Download className="h-4 w-4 mr-2" />
-            Travel Docs
-          </button>
+          <button 
+          className="btn-primary flex items-center" 
+          onClick={handleDownloadDocumentsAsZip} 
+          disabled={!areAnyDocumentsAvailable || isDownloading}
+        >
+          {isDownloading ? (
+            <>
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              Zipping...
+            </>
+          ) : (
+            <>
+              <Download className="h-4 w-4 mr-2" />
+              Travel Docs
+            </>
+          )}
+        </button>
           <button className="btn-accent flex items-center"><FileText className="h-4 w-4 mr-2" />Export</button>
         </div>
       </div>
