@@ -459,6 +459,16 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId }) => {
     }
   };
 
+  const handleDownloadTicket = () => {
+    if (!requestId) {
+      setError("Cannot download ticket: Request ID is missing.");
+      return;
+    }
+    const downloadUrl = `${API_BASE_URL}/TravelRequest/${requestId}/downloadticket`;
+    
+    window.open(downloadUrl, '_blank');
+  };
+
   const renderContent = () => {
     if (isLoadingStatus || !currentUser) {
       return <div className="flex justify-center items-center h-full"><Loader2 className="h-8 w-8 animate-spin text-blue-500" /> <span className="ml-2">Loading request details...</span></div>;
@@ -500,7 +510,7 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId }) => {
       return (
         <SelectedView
           ticketOptions={uiTicketOptions}
-          onDownloadTickets={() => console.log("Admin: Download initiated for selected tickets")}
+          onDownloadTickets={handleDownloadTicket}
           buttons={['downloadTickets']}
           customButtons={[]}
         />
@@ -607,7 +617,7 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId }) => {
       return (
         <SelectedView
           ticketOptions={uiTicketOptions}
-          onDownloadTickets={() => console.log("Manager: Download initiated")}
+          onDownloadTickets={handleDownloadTicket}
           customButtons={[]}
         />
       );
@@ -616,7 +626,7 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId }) => {
       return (
         <SelectedView
           ticketOptions={uiTicketOptions}
-          onDownloadTickets={() => console.log("Manager: Download initiated")}
+          onDownloadTickets={handleDownloadTicket}
           buttons={['downloadTickets']}
           customButtons={[]}
         />
