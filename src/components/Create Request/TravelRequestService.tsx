@@ -1,4 +1,5 @@
 import axios, { AxiosError } from 'axios';
+import { Nullable } from 'vitest';
 
 export interface Location {
   country: string;
@@ -52,7 +53,7 @@ interface TravelRequestCreateDTO {
   destinationPlace: string;
   destinationCountry: string;
   outboundDepartureDate: string; 
-  outboundArrivalDate: string;   
+  outboundArrivalDate: string | null;   
   returnDepartureDate?: string;  
   returnArrivalDate?: string;    
   isAccommodationRequired: boolean;
@@ -128,9 +129,9 @@ class TravelRequestService {
     const outboundDeparture = combineDateAndTime(state.outboundDepartureDate, state.outboundDepartureTime);
     
     
-    const outboundArrival = state.outboundArrivalDate 
-      ? combineDateAndTime(state.outboundArrivalDate, state.outboundArrivalTime)
-      : outboundDeparture; 
+   const outboundArrival = state.outboundArrivalDate 
+  ? combineDateAndTime(state.outboundArrivalDate, state.outboundArrivalTime)
+  : null; 
 
     let returnDeparture: Date | undefined;
     let returnArrival: Date | undefined;
@@ -171,7 +172,7 @@ class TravelRequestService {
       destinationPlace: state.destination.city,
       destinationCountry: state.destination.country,
       outboundDepartureDate: outboundDeparture.toISOString(),
-      outboundArrivalDate: outboundArrival.toISOString(),
+      outboundArrivalDate: outboundArrival ? outboundArrival.toISOString() : null,
       returnDepartureDate: returnDeparture?.toISOString(),
       returnArrivalDate: returnArrival?.toISOString(),
       isAccommodationRequired: state.requiresAccommodation,
