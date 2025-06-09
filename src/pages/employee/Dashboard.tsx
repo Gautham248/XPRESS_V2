@@ -172,6 +172,21 @@ const EmployeeDashboard: React.FC = () => {
                   <th className="text-left py-3 px-4 font-medium text-gray-500">Purpose</th>
                   <th className="text-left py-3 px-4 font-medium text-gray-500">Status</th>
                   <th className="text-right py-3 px-4 font-medium text-gray-500">Actions</th>
+                  {/* <th className="text-left py-3 px-4 font-medium text-gray-500">
+                    Destination
+                  </th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-500">
+                    Travel Dates
+                  </th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-500">
+                    Purpose
+                  </th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-500">
+                    Status
+                  </th> */}
+                  {/* <th className="text-right py-3 px-4 font-medium text-gray-500">
+                    Actions
+                  </th> */}
                 </tr>
               </thead>
               <tbody>
