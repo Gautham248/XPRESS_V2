@@ -1,16 +1,15 @@
-// FileUploader.tsx
+
 import React, { useState, useRef } from 'react';
 import axios from 'axios';
 import { DocumentType } from './types';
 import { X } from 'lucide-react';
 
-// BackendDocumentRecord now uses Date | null for date fields
 export interface BackendDocumentRecord {
   id: number;
   idType: string;
-  userId: number;
+  userId: number|undefined;
   documentPath: string;
-  uploadDate: Date; // Date object in frontend state after parsing
+  uploadDate: Date; 
   createdBy: number;
   passportNumber?: string | null;
   passportIssueDate?: Date | null;
@@ -42,19 +41,20 @@ const parseDateString = (dateInput: string | Date | null | undefined): Date | nu
 };
 
 interface FileUploaderProps {
+  userId: number| undefined;
   docType: DocumentType;
   onFileSelect: (file: File | null) => void;
   showValidation: boolean;
   selectedFile: File | null;
   onUploadError?: (error: string) => void;
-  onRecordCreated: (record: BackendDocumentRecord, docType: DocumentType) => void;
+  onRecordCreated: (record: BackendDocumentRecord, uploadedFile: File) => void; 
 }
 
-const saveDocumentPathToBackend = async (documentUrl: string, docType: DocumentType): Promise<BackendDocumentRecord> => {
+const saveDocumentPathToBackend = async (documentUrl: string, docType: DocumentType, userId: number | undefined): Promise<BackendDocumentRecord> => {
   try {
     const apiPayload = {
       idType: docType.charAt(0).toUpperCase() + docType.slice(1),
-      userId: 1, 
+      userId: userId, 
       documentPath: documentUrl,
       uploadDate: new Date().toISOString(),
       createdBy: 1, 
@@ -70,13 +70,13 @@ const saveDocumentPathToBackend = async (documentUrl: string, docType: DocumentT
       aadharNumber: "",
       aadharName: "", 
     };
-    console.log('Sending POST payload:', JSON.stringify(apiPayload, null, 2));
+    
     const response = await axios.post<any>(
         'http://localhost:5030/api/Documents', 
         apiPayload, 
         { headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }, timeout: 15000 }
     );
-    console.log('Backend RAW POST response:', response.data);
+    
     const rawData = response.data;
     if (!rawData || typeof rawData.id === 'undefined') {
       throw new Error('Backend response did not include an ID for the created record.');
@@ -89,14 +89,12 @@ const saveDocumentPathToBackend = async (documentUrl: string, docType: DocumentT
         visaIssueDate: parseDateString(rawData.visaIssueDate),
         visaExpiryDate: parseDateString(rawData.visaExpiryDate),
     };
-    console.log('Processed POST response (dates as Date objects):', processedRecord);
+    
     return processedRecord;
   } catch (error) {
-    console.error('Backend save error (POST):', error);
     let errorMessage = 'Unknown server error during POST';
      if (axios.isAxiosError(error)) {
       if (error.response) {
-        console.error('Full error response (POST):', { status: error.response.status, data: error.response.data, headers: error.response.headers });
         errorMessage = `Server error (${error.response.status})`;
         const responseData = error.response.data;
         if (responseData) {
@@ -119,6 +117,7 @@ const saveDocumentPathToBackend = async (documentUrl: string, docType: DocumentT
 };
 
 function FileUploader({ 
+  userId,
   docType, 
   onFileSelect, 
   showValidation, 
@@ -133,7 +132,7 @@ function FileUploader({
   const [showPreview, setShowPreview] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const validateFile = (file: File): string | null => { /* ... (no change) ... */ 
+  const validateFile = (file: File): string | null => { 
     const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'];
     if (!allowedTypes.includes(file.type)) {
       return 'Please select a valid file (PDF, JPG, PNG)';
@@ -144,7 +143,7 @@ function FileUploader({
     return null;
   };
 
-  const handleFileSelection = (file: File) => { /* ... (no change, but ensure setUploadSuccess(false) is there if you re-add it) ... */ 
+  const handleFileSelection = (file: File) => {
     const validationError = validateFile(file);
     if (validationError) {
       setUploadError(validationError);
@@ -153,25 +152,44 @@ function FileUploader({
       return;
     }
     setUploadError(null);
-    // setUploadSuccess(false); // Ensure this if re-adding local success
     onFileSelect(file);
     const url = URL.createObjectURL(file);
     setPreviewURL(file.type === 'application/pdf' ? `${url}#view=FitH` : url);
   };
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => { /* ... (no change) ... */ 
+  
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => { 
     const file = e.target.files?.[0];
-    if (file) handleFileSelection(file);
-    else { onFileSelect(null); setPreviewURL(null); }
+    if (file) {
+      handleFileSelection(file);
+    } else { 
+      onFileSelect(null); 
+      setPreviewURL(null); 
+    }
   };
-  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => { /* ... (no change) ... */ e.preventDefault(); e.stopPropagation(); setIsDragOver(true); };
-  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => { /* ... (no change) ... */ e.preventDefault(); e.stopPropagation(); setIsDragOver(false); };
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => { /* ... (no change) ... */ 
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => { 
     e.preventDefault(); e.stopPropagation(); setIsDragOver(false);
     const files = e.dataTransfer.files;
-    if (files.length > 0) handleFileSelection(files[0]);
+    if (files.length > 0) {
+      handleFileSelection(files[0]);
+    }
   };
-  const handleDragAreaClick = () => { /* ... (no change) ... */ fileInputRef.current?.click(); };
-  const handlePreview = () => { /* ... (no change) ... */ if (selectedFile && previewURL) setShowPreview(true); };
+  
+  
+  const handleRemoveFile = (e: React.MouseEvent) => {
+    e.stopPropagation(); 
+    onFileSelect(null);
+    setPreviewURL(null);
+    setUploadError(null);
+    if (fileInputRef.current) {
+        fileInputRef.current.value = ''; 
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => { e.preventDefault(); e.stopPropagation(); setIsDragOver(true); };
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => { e.preventDefault(); e.stopPropagation(); setIsDragOver(false); };
+  const handleDragAreaClick = () => { fileInputRef.current?.click(); };
+  const handlePreview = () => { if (selectedFile && previewURL) setShowPreview(true); };
 
   const handleUpload = async () => {
     if (!selectedFile) {
@@ -180,7 +198,6 @@ function FileUploader({
     }
     setIsUploading(true);
     setUploadError(null);
-    // REMOVED: setUploadSuccess(false);
 
     try {
       const formData = new FormData();
@@ -194,21 +211,19 @@ function FileUploader({
       if (cloudinaryData.secure_url) {
         setPreviewURL(selectedFile.type === 'application/pdf' ? `${cloudinaryData.secure_url}#view=FitH` : cloudinaryData.secure_url);
         try {
-          const newRecord = await saveDocumentPathToBackend(cloudinaryData.secure_url, docType);
-          // REMOVED: setUploadSuccess(true); // Parent will show toast via onRecordCreated
-          onRecordCreated(newRecord, docType);
+          const newRecord = await saveDocumentPathToBackend(cloudinaryData.secure_url, docType, userId);
+          onRecordCreated(newRecord, selectedFile);
         } catch (backendError: any) {
-          console.error('Backend save error (POST) after cloud upload:', backendError);
           const errorMessage = `File uploaded, but DB save failed: ${backendError.message}. Try saving details or re-upload.`;
           setUploadError(errorMessage);
-          onUploadError?.(errorMessage); // Notify parent of specific DB error
+          onUploadError?.(errorMessage);
         }
       } else {
-        setUploadError("Failed to upload file to cloud. Please try again.");
-        onUploadError?.("Cloudinary upload failed");
+        const cloudError = cloudinaryData.error?.message || "Cloudinary upload failed";
+        setUploadError(`Failed to upload file to cloud: ${cloudError}. Please try again.`);
+        onUploadError?.(`Cloudinary upload failed: ${cloudError}`);
       }
     } catch (error: any) {
-      console.error('Upload process error:', error);
       const generalErrorMessage = `Upload failed: ${error.message}. Please try again.`;
       setUploadError(generalErrorMessage);
       onUploadError?.(generalErrorMessage);
@@ -219,8 +234,8 @@ function FileUploader({
 
   return (
     <div className="space-y-6">
-      {/* ... (input, drag-drop area, file details, preview modal - no change) ... */}
-      <input ref={fileInputRef} type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={handleFileChange} disabled={isUploading} className="hidden" />
+      <input data-testid="file-input" ref={fileInputRef} type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={handleFileChange} disabled={isUploading} className="hidden" />
+      
       <div
         onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop} onClick={handleDragAreaClick}
         className={`relative border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-all duration-200 ${
@@ -246,28 +261,30 @@ function FileUploader({
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <div className="flex-shrink-0"><svg className="w-8 h-8 text-blue-500" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" /></svg></div>
-              <div><p className="text-sm font-medium text-gray-900">{selectedFile.name}</p><p className="text-xs text-gray-500">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</p></div>
-            </div><button onClick={handlePreview} className="px-3 py-1 text-sm text-blue-600 hover:text-blue-800 font-medium">Preview</button>
+              <div><p className="text-sm font-medium text-gray-900 truncate max-w-[200px] md:max-w-xs">{selectedFile.name}</p><p className="text-xs text-gray-500">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</p></div>
+            </div>
+           
+            <div className="flex items-center space-x-2">
+                <button onClick={handlePreview} className="px-3 py-1 text-sm text-blue-600 hover:text-blue-800 font-medium">Preview</button>
+                <button onClick={handleRemoveFile} className="p-1.5 text-red-500 hover:text-red-700 rounded-full hover:bg-red-100 transition-colors" aria-label="Remove file">
+                    <X size={20} />
+                </button>
+            </div>
           </div>
         </div>
       )}
 
-      {/* Validation Error */}
       {showValidation && !selectedFile && !uploadError && (
         <div className="bg-red-50 border border-red-200 rounded-md p-3">
           <div className="text-sm text-red-700">Please select a file to upload</div>
         </div>
       )}
 
-      {/* Upload Error is still useful here */}
       {uploadError && (
-        <div className="bg-red-50 border border-red-200 rounded-md p-3">
+        <div data-testid="error-message" className="bg-red-50 border border-red-200 rounded-md p-3">
           <div className="text-sm text-red-700">{uploadError}</div>
         </div>
       )}
-
-      {/* REMOVED Local Upload Success Message */}
-      {/* {uploadSuccess && !uploadError && ( ... )} */}
 
       {showPreview && previewURL && selectedFile && (
          <div className="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center p-4">

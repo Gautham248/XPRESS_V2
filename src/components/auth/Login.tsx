@@ -72,7 +72,7 @@ const handleSubmit = async (e: React.FormEvent) => {
       return;
     }
 
-    const { access_token, user_id, user_name, role_name,user_email } = data.result;
+    const { access_token, user_id, user_name, role_name,user_email,user_du } = data.result;
 
     // Save the token and user info in localStorage
         localStorage.setItem('user', JSON.stringify({
@@ -80,6 +80,7 @@ const handleSubmit = async (e: React.FormEvent) => {
         userId: user_id,
         userName: user_name,
         userEmail : user_email,
+        userDU: user_du,
          role: role_name.toLowerCase() 
       }));
 
