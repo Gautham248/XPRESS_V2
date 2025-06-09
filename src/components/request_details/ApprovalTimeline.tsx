@@ -183,8 +183,8 @@ const ApprovalTimeline: React.FC<ApprovalTimelineProps> = ({ requestId }) => {
     // Adjust rawStatus if it's 'BUApproved' to the next valid status
     let adjustedStatus = rawStatus;
     if (rawStatus === 'BUApproved') {
-  adjustedStatus = 'TicketDispatched'; // Skip to the next step
-}
+      adjustedStatus = 'TicketDispatched';
+    }
 
     // Find latest completed linear event index
     const latestCompletedLinearIndex = mergedEvents
@@ -204,17 +204,6 @@ const ApprovalTimeline: React.FC<ApprovalTimelineProps> = ({ requestId }) => {
     }
 
     // Create base step for Request Submitted
-    const baseSteps: (TimelineStep & { canceled?: boolean })[] = [
-      createTimelineStep(
-        'request-submitted',
-        'PendingReview',
-        safeFormatDate(requestDate),
-        `${travelerName || 'Traveler'} submitted travel request.`,
-        { completed: true }
-      ),
-    ];
-
-    // Create steps from events
     const eventSteps = mergedEvents.map((event: ApiTimelineEvent, index: number) => {
       const isModified = event.type === 'Modified';
       const isRejectedEvent = event.type === 'Rejected';
@@ -230,7 +219,7 @@ const ApprovalTimeline: React.FC<ApprovalTimelineProps> = ({ requestId }) => {
 
       return createTimelineStep(
         event.id || `event-${index}`,
-        event.type,
+        event.type === 'Pending' ? 'PendingReview' : event.type,
         safeFormatDate(event.date),
         event.description,
         {
@@ -243,40 +232,56 @@ const ApprovalTimeline: React.FC<ApprovalTimelineProps> = ({ requestId }) => {
       );
     });
 
-    // Combine and filter out duplicates
-    let combinedSteps = [...baseSteps, ...eventSteps];
-
-    // Remove duplicate Request Submitted (Pending)
-    const submittedEventIndex = combinedSteps.findIndex(
-      step => step.status === getDisplayProperties('Pending').displayName && step.id !== 'request-submitted'
-    );
-    if (submittedEventIndex > -1 && combinedSteps[0].id === 'request-submitted') {
-      if (JSON.stringify(combinedSteps[0]) !== JSON.stringify(combinedSteps[submittedEventIndex])) {
-        combinedSteps[0] = combinedSteps[submittedEventIndex];
-        combinedSteps.splice(submittedEventIndex, 1);
-      } else {
-        combinedSteps.splice(submittedEventIndex, 1);
-      }
-    }
-
-    // Remove duplicate Approved if present
-    const approvedEvents = combinedSteps.filter(step => step.status === getDisplayProperties('Approved').displayName);
-    if (approvedEvents.length > 1) {
-      const latestApproved = approvedEvents.reduce((latest, step) => {
-        const stepDate = parse(step.date, DATE_FORMAT, new Date());
-        const latestDate = parse(latest.date, DATE_FORMAT, new Date());
-        return isValid(stepDate) && (!isValid(latestDate) || stepDate > latestDate) ? step : latest;
-      });
-      combinedSteps = combinedSteps.filter(step => step.status !== getDisplayProperties('Approved').displayName || step.id === latestApproved.id);
-    }
-
+    // Initialize timeline with all possible steps
     const finalTimeline: (TimelineStep & { canceled?: boolean })[] = [];
     const addedDisplayStatuses = new Set<string>();
 
-    combinedSteps.forEach(step => {
+    // Add steps from events, avoiding duplicates
+    eventSteps.forEach(step => {
       if (!addedDisplayStatuses.has(step.status)) {
         finalTimeline.push(step);
         addedDisplayStatuses.add(step.status);
+      } else if (step.status === getDisplayProperties('PendingReview').displayName) {
+        // Replace base step with event step for Request Submitted if it has a valid date
+        const existingIndex = finalTimeline.findIndex(s => s.status === step.status);
+        if (existingIndex !== -1) {
+          const existingDate = parse(finalTimeline[existingIndex].date, DATE_FORMAT, new Date());
+          const newDate = parse(step.date, DATE_FORMAT, new Date());
+          if (isValid(newDate) && (!isValid(existingDate) || newDate > existingDate)) {
+            finalTimeline[existingIndex] = step;
+          }
+        }
+      }
+    });
+
+    // Add all linear progression steps
+    LINEAR_PROGRESSION_STATUSES.forEach((rawStatus, index) => {
+      const displayProps = getDisplayProperties(rawStatus);
+      if (!addedDisplayStatuses.has(displayProps.displayName)) {
+        let stepStatus: 'completed' | 'active' | 'pending' = 'pending';
+        if (index <= effectiveLinearIndex) {
+          stepStatus = 'completed';
+        } else if (index === effectiveLinearIndex + 1 && !isTerminal) {
+          stepStatus = 'active';
+        }
+
+        const step = createTimelineStep(
+          `step-${rawStatus}`,
+          rawStatus,
+          stepStatus === 'completed' ? safeFormatDate(requestDate) : stepStatus === 'active' ? 'Pending' : 'Not Yet Started',
+          stepStatus === 'completed'
+            ? `${displayProps.displayName} completed.`
+            : stepStatus === 'active'
+            ? `Awaiting ${displayProps.displayName.toLowerCase()}`
+            : 'This step has not been reached.',
+          {
+            completed: stepStatus === 'completed',
+            active: stepStatus === 'active',
+            details: null,
+          }
+        );
+        finalTimeline.push(step);
+        addedDisplayStatuses.add(displayProps.displayName);
       }
     });
 
@@ -304,22 +309,16 @@ const ApprovalTimeline: React.FC<ApprovalTimelineProps> = ({ requestId }) => {
       );
     }
 
-    // Sort timeline by date and linear progression
+    // Sort timeline by LINEAR_PROGRESSION_STATUSES order
     finalTimeline.sort((a, b) => {
       const statusOrderA = LINEAR_PROGRESSION_STATUSES.indexOf(a.status.replace(' ', '') as LinearStatus);
       const statusOrderB = LINEAR_PROGRESSION_STATUSES.indexOf(b.status.replace(' ', '') as LinearStatus);
-      const dateA = parse(a.date, DATE_FORMAT, new Date());
-      const dateB = parse(b.date, DATE_FORMAT, new Date());
 
-      // Prioritize status order
-      if (statusOrderA !== -1 && statusOrderB !== -1 && statusOrderA !== statusOrderB) {
+      if (statusOrderA !== -1 && statusOrderB !== -1) {
         return statusOrderA - statusOrderB;
       }
-
-      // Fallback to date if statuses are the same or not in linear progression
-      if (isValid(dateA) && isValid(dateB)) {
-        return dateA.getTime() - dateB.getTime();
-      }
+      if (a.rejected || a.canceled) return 1;
+      if (b.rejected || b.canceled) return -1;
       return 0;
     });
 
@@ -371,7 +370,7 @@ const ApprovalTimeline: React.FC<ApprovalTimelineProps> = ({ requestId }) => {
     );
   }
 
-  return ( 
+  return (
     <div className="card mb-6 p-6 bg-white rounded-lg shadow h-full">
       <h3 className="text-lg font-semibold mb-6 text-gray-800">Travel Request Timeline</h3>
       <div className="space-y-6">
