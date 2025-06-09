@@ -1,11 +1,9 @@
-// src/components/Documents.tsx
 
 import React, { useState, useReducer, useRef, useCallback } from 'react';
 import axios from 'axios';
 import toast, { Toaster } from 'react-hot-toast';
 import { DocumentType, DocumentState, FormState, Action, initialState as formInitialState } from './types';
 
-// Import Components and Parsers
 import DocumentTabs from './DocumentTabs';
 import DocumentForm from './DocumentForm';
 import DocumentList from './DocumentList';
@@ -15,10 +13,8 @@ import PassportParser, { ParsedPassportInfo } from './Parsers/PassportParser';
 import AadharParser, { ParsedAadhaarInfo } from './Parsers/AadharParser';
 import VisaParser, { ParsedVisaInfo } from './Parsers/VisaParser';
 
-// Define a union type for all possible parsed data shapes
 type ParsedInfo = ParsedPassportInfo | ParsedAadhaarInfo | ParsedVisaInfo;
 
-// Reducer function to manage form state
 const formReducer = (state: DocumentState, action: Action): DocumentState => {
   switch (action.type) {
     case 'UPDATE_FIELD':
@@ -42,7 +38,6 @@ const formReducer = (state: DocumentState, action: Action): DocumentState => {
   }
 };
 
-// Helper function to format dates into ISO 8601 strings for the backend
 const formatToISOString = (dateInput: string | Date | null | undefined): string | null => {
     if (!dateInput) return null;
     let dateObj: Date;
@@ -71,7 +66,7 @@ interface OcrRequest {
 
 function Documents() {
   const [activeTab, setActiveTab] = useState<DocumentType>('Passport');
-  const [selectedFileForUpload, setSelectedFileForUpload] = useState<File | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<Partial<Record<DocumentType, File | null>>>({});
   const [state, dispatch] = useReducer(formReducer, formInitialState);
   const [pendingFormRecords, setPendingFormRecords] = useState<Partial<Record<DocumentType, PendingRecordInfo>>>({});
   const [ocrRequest, setOcrRequest] = useState<OcrRequest | null>(null);
@@ -92,24 +87,21 @@ function Documents() {
     currentUser = user;
   }
 
-  console.log(userId);
-  
-
-  // NOTE: The useEffect hook that cleared state on tab switch has been removed
-  // to allow state to persist across tabs.
+  const handleFileSelect = (file: File | null) => {
+    setSelectedFiles(prev => ({ ...prev, [activeTab]: file }));
+    if (file) {
+      setShowFileValidation(false);
+    }
+  };
 
   const handleRecordCreated = (record: BackendDocumentRecord, uploadedFile: File) => {
-    // When a new file is uploaded for a tab, clear any previous OCR/pending state
-    // for THAT tab to start the new flow fresh.
     setPendingFormRecords(prev => ({ ...prev, [activeTab]: undefined }));
     setRawOcrText(null);
     
-    // Set up the new OCR request
     ocrCompletionHandled.current = false;
     setOcrRequest({ file: uploadedFile, docType: activeTab, record });
     
-    // Clear the file from the uploader's view since it's now being processed
-    setSelectedFileForUpload(null); 
+    setSelectedFiles(prev => ({...prev, [activeTab]: null})); 
     setShowFileValidation(false);
   };
 
@@ -127,7 +119,6 @@ function Documents() {
     if (!ocrRequest) return;
     const { docType, record } = ocrRequest;
 
-    // Reset the form for the current docType and then populate it with parsed data
     dispatch({ type: 'RESET_FORM', docType });
     Object.entries(parsedData).forEach(([key, value]) => {
       if (value !== null && value !== undefined) {
@@ -135,12 +126,11 @@ function Documents() {
       }
     });
 
-    // Set the pending record for the form to use
     setPendingFormRecords(prev => ({
       ...prev,
       [docType]: { id: record.id, initialRecord: record }
     }));
-    setOcrRequest(null); // End the OCR request process
+    setOcrRequest(null);
   };
 
   const handleSaveDetails = async (currentFormState: FormState, recordId: number, docType: DocumentType) => {
@@ -203,7 +193,6 @@ function Documents() {
         toast.success(`${docType} details saved successfully!`, { id: toastId });
       }
 
-      // After a successful save or delete, clear the state for that document type
       dispatch({ type: 'RESET_FORM', docType });
       setPendingFormRecords(prev => {
           const newState = { ...prev };
@@ -229,7 +218,13 @@ function Documents() {
 
   return (
     <div className="animate-fadeIn">
-      <Toaster position="top-right" reverseOrder={false} />
+      <Toaster 
+        position="top-right" 
+        reverseOrder={false}
+        containerStyle={{
+          top: 80,
+        }}
+      />
 
       {ocrRequest && !rawOcrText && (
         <OcrProcessor
@@ -252,12 +247,9 @@ function Documents() {
             <FileUploader
               userId={userId}
               docType={activeTab}
-              onFileSelect={(file) => {
-                setSelectedFileForUpload(file);
-                if (file) setShowFileValidation(false);
-              }}
+              onFileSelect={handleFileSelect}
               showValidation={showFileValidation}
-              selectedFile={selectedFileForUpload}
+              selectedFile={selectedFiles[activeTab] || null}
               onRecordCreated={handleRecordCreated}
               onUploadError={(error) => toast.error(`Upload Error: ${error}`)}
             />
