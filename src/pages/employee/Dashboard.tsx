@@ -368,7 +368,7 @@ const EmployeeDashboard: React.FC = () => {
                   <th className="text-left py-3 px-4 font-medium text-gray-500">Purpose</th>
                   <th className="text-left py-3 px-4 font-medium text-gray-500">Status</th>
                   <th className="text-right py-3 px-4 font-medium text-gray-500">Actions</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-500">
+                  {/* <th className="text-left py-3 px-4 font-medium text-gray-500">
                     Destination
                   </th>
                   <th className="text-left py-3 px-4 font-medium text-gray-500">
@@ -379,7 +379,7 @@ const EmployeeDashboard: React.FC = () => {
                   </th>
                   <th className="text-left py-3 px-4 font-medium text-gray-500">
                     Status
-                  </th>
+                  </th> */}
                   {/* <th className="text-right py-3 px-4 font-medium text-gray-500">
                     Actions
                   </th> */}
