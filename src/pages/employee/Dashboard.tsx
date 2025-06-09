@@ -408,6 +408,7 @@ const EmployeeDashboard: React.FC = () => {
                     </td>
                     <td className="py-3 px-4 text-right">
                       <button className="text-sm text-blue-600 hover:text-blue-800">View Details</button>
+                    </td>
                     {/* <td className="py-3 px-4 text-right">
                       <button className="text-sm text-blue-600 hover:text-blue-800">
                         View Details
