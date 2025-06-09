@@ -71,7 +71,7 @@ type TravelRequestAction =
   | { type: 'SET_ATTENDED_CCT'; payload: boolean }
   | { type: 'RESET_FORM' };
 
-const initialState: TravelRequestState = {
+export const initialState: TravelRequestState = {
   travelType: 'domestic',
   tripType: 'roundTrip',
   source: null,
@@ -101,7 +101,7 @@ const initialState: TravelRequestState = {
   returnDate: null,
 };
 
-const travelRequestReducer = (state: TravelRequestState, action: TravelRequestAction): TravelRequestState => {
+export const travelRequestReducer = (state: TravelRequestState, action: TravelRequestAction): TravelRequestState => {
   switch (action.type) {
     case 'SET_TRAVEL_TYPE':
       const newTransportMode = action.payload === 'international' ? 'flight' : state.transportMode;
