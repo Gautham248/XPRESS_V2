@@ -5,6 +5,8 @@ import {
   FileText,
   User,
   X,
+  Edit, // Added Edit icon
+  X,
   Edit,
 } from 'lucide-react';
 import { format, parseISO, differenceInDays } from 'date-fns';
@@ -34,7 +36,7 @@ interface TravelRequest {
   priority: string;
   projectCode: string;
 }
-
+ 
 interface Document {
   id: string;
   documentType: string;
@@ -46,7 +48,7 @@ interface Document {
   fullName?: string;
   visaClass?: string;
 }
-
+ 
 interface UserDocuments {
   userId: string;
   userName: string;
@@ -316,5 +318,6 @@ const EmployeeDashboard: React.FC = () => {
     </div>
   );
 };
-
+// New dashboard
+ 
 export default EmployeeDashboard;

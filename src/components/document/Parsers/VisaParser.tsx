@@ -2,11 +2,10 @@
 
 import React, { useEffect } from 'react';
 
-// Defines the data structure this component will parse and emit
 export interface ParsedVisaInfo {
   visaNumber?: string;
   visaClass?: string;
-  issuingCountry?: string; // For visas, this is often an "Issuing Post" city
+  issuingCountry?: string; 
   issueDate?: Date | null;
   expiryDate?: Date | null;
 }
@@ -16,11 +15,9 @@ interface VisaParserProps {
   onDataParsed: (info: ParsedVisaInfo) => void;
 }
 
-// --- HELPER FUNCTION ---
 const normalizeDate = (dateStr: string | null | undefined): Date | null => {
   if (!dateStr) return null;
 
-  // Match DD/MM/YYYY or DD-MM-YYYY
   let match = dateStr.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
   if (match) {
     const day = parseInt(match[1], 10);
@@ -32,7 +29,6 @@ const normalizeDate = (dateStr: string | null | undefined): Date | null => {
     }
   }
 
-  // Match DDMMMYYYY (e.g., "31MAY2016")
   const cleanedDateStr = dateStr.replace(/\s/g, '').toUpperCase();
   const monthMap: { [key: string]: number } = {
     JAN: 0, FEB: 1, MAR: 2, APR: 3, MAY: 4, JUN: 5,
@@ -53,44 +49,30 @@ const normalizeDate = (dateStr: string | null | undefined): Date | null => {
 };
 
 
-/**
- * A robust function to parse raw OCR text into structured Visa info.
- * This version uses a targeted regex strategy that is resilient to multi-column layouts and OCR errors.
- */
 const parseVisaText = (rawText: string): ParsedVisaInfo => {
   const newInfo: ParsedVisaInfo = {};
   const text = rawText.replace(/O/g, '0');
   const lines = text.split('\n');
 
-  // --- ROBUST HEURISTIC: Decide which parsing strategy to use ---
-  // If ANY of these key US Visa terms are present, use the US parser. This is much more reliable.
   const isUSVisa = /Control\s*Number|Issuing\s*Post|Expiration\s*Date/i.test(text);
 
   if (isUSVisa) {
-    // --- STRATEGY 1: Highly Specific Regex for US Visas ---
-
-    // Finds "Control Number" then captures the long digit sequence.
     const visaNoMatch = text.match(/(?:Control\s*Number)[\s\S]*?(\d{10,})/i);
     if (visaNoMatch) newInfo.visaNumber = visaNoMatch[1];
 
-    // Finds "Issuing Post Name", captures text until it sees "Surname". This prevents it from grabbing "Control Number".
     const issuingPostMatch = text.match(/(?:Issuing\s*Post\s*Name)[\s\S]*?([A-Z\s]+?)(?=\s*Surname)/i);
     if (issuingPostMatch) newInfo.issuingCountry = issuingPostMatch[1].trim();
 
-    // Finds flexible "Visa Type / Class" label, then captures the final alphanumeric code (e.g., K1).
     const visaClassMatch = text.match(/(?:Visa\s*Type\s*[\/\w]*\s*Class)[\s\S]*?\b([A-Z0-9]+)\b/i);
     if (visaClassMatch) newInfo.visaClass = visaClassMatch[1];
 
-    // Finds "Issue Date" then captures the specific date format.
     const issueDateMatch = text.match(/(?:Issue\s*Date)[\s\S]*?(\d{1,2}[A-Z]{3}\d{4})/i);
     newInfo.issueDate = normalizeDate(issueDateMatch?.[1]);
 
-    // Finds flexible "Expiration Date" label (handles "Explration"), then captures the date.
     const expiryDateMatch = text.match(/(?:Exp\w*\s*Date)[\s\S]*?(\d{1,2}[A-Z]{3}\d{4})/i);
     newInfo.expiryDate = normalizeDate(expiryDateMatch?.[1]);
 
   } else {
-    // --- STRATEGY 2: Regex for Indian Visas (working correctly) ---
     const indianVisaNoRegex = /REPUBLIC\sOF\sINDIA\s*([A-Z]{2}\s*\d{7})/;
     const indianVisaTypeRegex = /(?:Visa\sType)\s*([A-Z0-9]+)\b/;
     const indianIssueDateRegex = /(?:Date\sof\sIssue)[\s\S]*?(\d{2}\/\d{2}\/\d{4})/;
@@ -123,7 +105,6 @@ const parseVisaText = (rawText: string): ParsedVisaInfo => {
   return newInfo;
 };
 
-// --- The React Component ---
 const VisaParser: React.FC<VisaParserProps> = ({ rawText, onDataParsed }) => {
   useEffect(() => {
     if (!rawText) return;

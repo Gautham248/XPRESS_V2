@@ -1,17 +1,15 @@
-// src/components/FileUploader.tsx
 
 import React, { useState, useRef } from 'react';
 import axios from 'axios';
 import { DocumentType } from './types';
 import { X } from 'lucide-react';
 
-// BackendDocumentRecord now uses Date | null for date fields
 export interface BackendDocumentRecord {
   id: number;
   idType: string;
   userId: number|undefined;
   documentPath: string;
-  uploadDate: Date; // Date object in frontend state after parsing
+  uploadDate: Date; 
   createdBy: number;
   passportNumber?: string | null;
   passportIssueDate?: Date | null;
@@ -148,12 +146,11 @@ function FileUploader({
   const handleFileSelection = (file: File) => {
     const validationError = validateFile(file);
     if (validationError) {
-      setUploadError(validationError); // Set internal state to show error message
-      onFileSelect(null); // Inform parent the selection is invalid
+      setUploadError(validationError);
+      onFileSelect(null);
       setPreviewURL(null);
       return;
     }
-    // If valid, clear previous errors and update state
     setUploadError(null);
     onFileSelect(file);
     const url = URL.createObjectURL(file);
@@ -175,6 +172,17 @@ function FileUploader({
     const files = e.dataTransfer.files;
     if (files.length > 0) {
       handleFileSelection(files[0]);
+    }
+  };
+  
+  
+  const handleRemoveFile = (e: React.MouseEvent) => {
+    e.stopPropagation(); 
+    onFileSelect(null);
+    setPreviewURL(null);
+    setUploadError(null);
+    if (fileInputRef.current) {
+        fileInputRef.current.value = ''; 
     }
   };
 
@@ -204,7 +212,6 @@ function FileUploader({
         setPreviewURL(selectedFile.type === 'application/pdf' ? `${cloudinaryData.secure_url}#view=FitH` : cloudinaryData.secure_url);
         try {
           const newRecord = await saveDocumentPathToBackend(cloudinaryData.secure_url, docType, userId);
-          // REMOVED: setUploadSuccess(true); // Parent will show toast via onRecordCreated
           onRecordCreated(newRecord, selectedFile);
         } catch (backendError: any) {
           const errorMessage = `File uploaded, but DB save failed: ${backendError.message}. Try saving details or re-upload.`;
@@ -227,7 +234,6 @@ function FileUploader({
 
   return (
     <div className="space-y-6">
-      {/* ✅ --- data-testid added here --- ✅ */}
       <input data-testid="file-input" ref={fileInputRef} type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={handleFileChange} disabled={isUploading} className="hidden" />
       
       <div
@@ -255,8 +261,15 @@ function FileUploader({
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <div className="flex-shrink-0"><svg className="w-8 h-8 text-blue-500" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" /></svg></div>
-              <div><p className="text-sm font-medium text-gray-900">{selectedFile.name}</p><p className="text-xs text-gray-500">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</p></div>
-            </div><button onClick={handlePreview} className="px-3 py-1 text-sm text-blue-600 hover:text-blue-800 font-medium">Preview</button>
+              <div><p className="text-sm font-medium text-gray-900 truncate max-w-[200px] md:max-w-xs">{selectedFile.name}</p><p className="text-xs text-gray-500">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</p></div>
+            </div>
+           
+            <div className="flex items-center space-x-2">
+                <button onClick={handlePreview} className="px-3 py-1 text-sm text-blue-600 hover:text-blue-800 font-medium">Preview</button>
+                <button onClick={handleRemoveFile} className="p-1.5 text-red-500 hover:text-red-700 rounded-full hover:bg-red-100 transition-colors" aria-label="Remove file">
+                    <X size={20} />
+                </button>
+            </div>
           </div>
         </div>
       )}
@@ -267,7 +280,6 @@ function FileUploader({
         </div>
       )}
 
-      {/* ✅ --- data-testid added here --- ✅ */}
       {uploadError && (
         <div data-testid="error-message" className="bg-red-50 border border-red-200 rounded-md p-3">
           <div className="text-sm text-red-700">{uploadError}</div>
