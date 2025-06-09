@@ -542,5 +542,6 @@ const EmployeeDashboard: React.FC = () => {
     </div>
   );
 };
+// New dashboard
  
 export default EmployeeDashboard;
