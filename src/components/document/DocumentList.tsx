@@ -6,7 +6,7 @@ import toast from "react-hot-toast";
 
 interface DocumentListProps {
   docType: string;
-  userId: number;
+  userId: number|undefined;
 }
 
 interface Document {
