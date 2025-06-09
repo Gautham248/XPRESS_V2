@@ -52,9 +52,7 @@ const DateRangePicker: React.FC<DateRangePickerProps> = ({
   const formatDisplayDate = (dateString: string): string => {
     if (!dateString) return '';
     const date = new Date(dateString);
-    // Ensuring the input 'dateString' which is yyyy-mm-dd is parsed correctly
-    // by potentially accounting for timezone issues if not already UTC.
-    // For 'en-US' toLocaleDateString, it's usually fine.
+
     return date.toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
@@ -165,7 +163,7 @@ const DateRangePicker: React.FC<DateRangePickerProps> = ({
               onClick={() => {
                 onStartDateChange('');
                 onEndDateChange('');
-                setIsOpen(false); // Also close the picker on clear
+                setIsOpen(false); 
               }}
               className="px-3 py-1 bg-gray-600 text-white text-sm rounded-md hover:bg-gray-700"
             >

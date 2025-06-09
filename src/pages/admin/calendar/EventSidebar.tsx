@@ -1,15 +1,14 @@
-// src/pages/admin/calendar/EventSidebar.tsx
+
 import React from 'react';
 import { TravelEvent, TravelRequest } from './Calendar'; // Import main types
 import { NavigateFunction } from 'react-router-dom';
-import { CalendarDays, PlaneTakeoff, PlaneLanding, User, MapPin, Flag, Info } from 'lucide-react';
+import { CalendarDays, PlaneTakeoff, PlaneLanding, Info, MapPin, Flag } from 'lucide-react';
 
 interface EventSidebarProps {
   selectedDate: Date | null;
   selectedEventType: 'OutboundDeparture' | 'ReturnArrival' | null;
   getEventsForDate: (date: Date) => TravelEvent[];
   navigate: NavigateFunction;
-  // Optional: A function to switch the selectedEventType if tabs are used in sidebar
   onEventTypeChange?: (type: 'OutboundDeparture' | 'ReturnArrival' | null) => void;
 }
 
@@ -18,7 +17,7 @@ const EventSidebar: React.FC<EventSidebarProps> = ({
   selectedEventType,
   getEventsForDate,
   navigate,
-  onEventTypeChange, // Optional prop for tab-like behavior
+  onEventTypeChange,
 }) => {
   if (!selectedDate) {
     return (
@@ -31,34 +30,37 @@ const EventSidebar: React.FC<EventSidebarProps> = ({
   }
 
   const eventsForSelectedDate = getEventsForDate(selectedDate);
-  let displayedEvents: TravelEvent[] = []; // Changed to TravelEvent[] to include type info
+  let displayedEvents: TravelEvent[] = [];
   let title = "Events";
 
   if (selectedEventType) {
     displayedEvents = eventsForSelectedDate.filter(event => event.type === selectedEventType);
     title = selectedEventType === 'OutboundDeparture' ? "Outbound Departures" : "Return Arrivals";
   } else if (eventsForSelectedDate.length > 0) {
-    // If no specific type is selected, show all events for the day
     displayedEvents = eventsForSelectedDate;
     title = "All Events for Selected Date";
   }
 
+  
   const formatDate = (dateString: string | null | undefined): string => {
     if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true
-    });
+    const options: Intl.DateTimeFormatOptions = {
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric', 
+      hour: '2-digit', 
+      minute: '2-digit', 
+      hour12: true,
+      timeZone: 'UTC' 
+    };
+    
+    return new Date(dateString).toLocaleDateString('en-US', options) + ' UTC';
   };
 
   const handleRequestClick = (requestId: string) => {
-    // Example navigation: navigate to a travel request detail page
-    // Adjust the path as per your routing setup
     navigate(`/admin/travel-requests/${requestId}`);
-    // Or if it's a modal:
-    // openModalWithRequest(requestId);
   };
 
-  // Helper function to get color classes based on event type
   const getEventColorClasses = (eventType: 'OutboundDeparture' | 'ReturnArrival') => {
     if (eventType === 'OutboundDeparture') {
       return {
@@ -77,12 +79,18 @@ const EventSidebar: React.FC<EventSidebarProps> = ({
 
   return (
     <div className="lg:flex-[0.35] bg-white rounded-lg shadow-sm p-4 sm:p-6 h-full max-h-[calc(100vh-150px)] overflow-y-auto">
+   
       <h2 className="text-xl sm:text-2xl font-semibold text-gray-800 mb-1">
-        {selectedDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+        {selectedDate.toLocaleDateString('en-US', { 
+          weekday: 'long', 
+          year: 'numeric', 
+          month: 'long', 
+          day: 'numeric',
+          timeZone: 'UTC' 
+        })}
       </h2>
       <p className="text-lg font-medium text-blue-600 mb-4">{title}</p>
 
-      {/* Optional: Tabs to switch between OutboundDeparture and ReturnArrival if both exist */}
       {onEventTypeChange && eventsForSelectedDate.some(e => e.type === 'OutboundDeparture') && eventsForSelectedDate.some(e => e.type === 'ReturnArrival') && (
         <div className="mb-4 flex border-b">
           <button
@@ -153,7 +161,7 @@ const EventSidebar: React.FC<EventSidebarProps> = ({
                         request.currentStatusName === 'In-transit' ? 'bg-indigo-100 text-indigo-700' :
                         request.currentStatusName === 'Returned' ? 'bg-green-100 text-green-700' :
                         request.currentStatusName === 'Closed' ? 'bg-gray-200 text-gray-700' :
-                        'bg-gray-100 text-gray-600' // Default
+                        'bg-gray-100 text-gray-600'
                       }`}
                     >
                       {request.currentStatusName}

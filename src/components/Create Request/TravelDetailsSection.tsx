@@ -273,12 +273,17 @@ const TravelDetailsSection: React.FC = () => {
           )}
         </div>
         
+        {/* Departure Section */}
         <div className="space-y-4">
+          <div className="flex items-center">
+            <div className="h-6 w-1 bg-green-600 rounded mr-3"></div>
+            <h4 className="text-md font-semibold text-gray-800">Departure</h4>
+          </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="flex gap-4">
               <div className="flex-1">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Outbound Departure Date *
+                  Departure Date *
                 </label>
                 <div className="relative">
                   <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5 z-10" />
@@ -312,7 +317,7 @@ const TravelDetailsSection: React.FC = () => {
             <div className="flex gap-4"> 
               <div className="flex-1">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Outbound Arrival Date
+                  Arrival Date
                 </label>
                 <div className="relative">
                   <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5 z-10" />
@@ -344,13 +349,18 @@ const TravelDetailsSection: React.FC = () => {
           </div>
         </div>
 
+        {/* Return Section */}
         {tripType === 'roundTrip' && (
           <div className="space-y-4">
+            <div className="flex items-center">
+              <div className="h-6 w-1 bg-orange-600 rounded mr-3"></div>
+              <h4 className="text-md font-semibold text-gray-800">Return</h4>
+            </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div className="flex gap-4">
                 <div className="flex-1">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Return Departure Date
+                    Departure Date
                   </label>
                   <div className="relative">
                     <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5 z-10" />
@@ -384,7 +394,7 @@ const TravelDetailsSection: React.FC = () => {
               <div className="flex gap-4">
                 <div className="flex-1">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Return Arrival Date
+                    Arrival Date
                   </label>
                   <div className="relative">
                     <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5 z-10" />

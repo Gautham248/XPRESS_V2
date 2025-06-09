@@ -78,7 +78,22 @@ function Documents() {
   const [rawOcrText, setRawOcrText] = useState<string | null>(null);
   const [showFileValidation, setShowFileValidation] = useState(false);
   const ocrCompletionHandled = useRef(false);
-  const userId = 1;
+
+
+  const userString = localStorage.getItem('user');
+  let role = '';
+  let userId: number | undefined = undefined;
+  let currentUser: any = null;
+ 
+  if (userString) {
+    const user = JSON.parse(userString);
+    role = user.role;
+    userId = parseInt(user.userId, 10);
+    currentUser = user;
+  }
+
+  console.log(userId);
+  
 
   // NOTE: The useEffect hook that cleared state on tab switch has been removed
   // to allow state to persist across tabs.
@@ -235,6 +250,7 @@ function Documents() {
           <div>
             <h3 className="text-lg font-semibold text-gray-800 mb-4">Step 1: Upload Document</h3>
             <FileUploader
+              userId={userId}
               docType={activeTab}
               onFileSelect={(file) => {
                 setSelectedFileForUpload(file);

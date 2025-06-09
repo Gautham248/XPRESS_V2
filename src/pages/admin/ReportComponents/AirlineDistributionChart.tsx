@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { ExternalLink, Filter, ChevronDown, Globe, MapPin } from 'lucide-react';
 import ReusableTable from './ReusableTable';
@@ -9,7 +9,7 @@ interface PieChartItem {
   name: string;
   value: number;
   cost?: number;
-  travelType?: 'international' | 'domestic';
+  travelType?: 'International' | 'Domestic';
 }
 
 interface TableDataItem {
@@ -19,22 +19,84 @@ interface TableDataItem {
   travel_type: string;
 }
 
+// API Response interfaces
+interface AirlineReportItem {
+  airlineName: string;
+  typeOfTravel: 'Domestic' | 'International';
+  travelRequestCount: number;
+  totalAirlineExpense: number;
+}
+
+interface AirlineReportsResponse {
+  isSuccess: boolean;
+  result: AirlineReportItem[];
+  statusCode: number;
+  errorMessages: string[];
+}
+
 interface AirlineDistributionChartProps {
-  chartData: PieChartItem[];
   startDate?: string;
   endDate?: string;
 }
 
-type TravelTypeFilter = 'all' | 'international' | 'domestic';
+type TravelTypeFilter = 'all' | 'International' | 'Domestic';
 
 const AirlineDistributionChart: React.FC<AirlineDistributionChartProps> = ({ 
-  chartData, 
   startDate, 
   endDate 
 }) => {
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [travelTypeFilter, setTravelTypeFilter] = useState<TravelTypeFilter>('all');
   const [isFilterOpen, setIsFilterOpen] = useState<boolean>(false);
+  
+  // State for API data
+  const [chartData, setChartData] = useState<PieChartItem[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch airline data from API
+  useEffect(() => {
+    const fetchAirlineData = async () => {
+      if (!startDate || !endDate) return;
+      
+      setLoading(true);
+      setError(null);
+      
+      try {
+        const response = await fetch(
+          `http://localhost:5030/api/AirlineReports?startDate=${startDate}&endDate=${endDate}`
+        );
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch airline data');
+        }
+        
+        const data: AirlineReportsResponse = await response.json();
+        
+        if (data.isSuccess && data.result) {
+          // Transform API data to chart format
+          const transformedData: PieChartItem[] = data.result.map(item => ({
+            name: item.airlineName,
+            value: item.travelRequestCount,
+            cost: item.totalAirlineExpense,
+            travelType: item.typeOfTravel
+          }));
+          
+          setChartData(transformedData);
+        } else {
+          const errorMessage = data.errorMessages?.join(' ') || 'Unknown API error occurred';
+          throw new Error(errorMessage);
+        }
+      } catch (err: any) {
+        setError(err.message);
+        setChartData([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAirlineData();
+  }, [startDate, endDate]);
   
   // Filter data based on travel type
   const filteredChartData = useMemo(() => {
@@ -128,9 +190,9 @@ const AirlineDistributionChart: React.FC<AirlineDistributionChartProps> = ({
   // Get filter display text
   const getFilterDisplayText = (): string => {
     switch (travelTypeFilter) {
-      case 'international':
+      case 'International':
         return 'International Flights';
-      case 'domestic':
+      case 'Domestic':
         return 'Domestic Flights';
       default:
         return 'All Flights';
@@ -140,9 +202,9 @@ const AirlineDistributionChart: React.FC<AirlineDistributionChartProps> = ({
   // Get filter icon
   const getFilterIcon = () => {
     switch (travelTypeFilter) {
-      case 'international':
+      case 'International':
         return <Globe className="w-4 h-4" />;
-      case 'domestic':
+      case 'Domestic':
         return <MapPin className="w-4 h-4" />;
       default:
         return <Filter className="w-4 h-4" />;
@@ -158,15 +220,42 @@ const AirlineDistributionChart: React.FC<AirlineDistributionChartProps> = ({
 
   const filterOptions = [
     { value: 'all', label: 'All Flights', icon: <Filter className="w-4 h-4" />, count: chartData.length },
-    { value: 'international', label: 'International Only', icon: <Globe className="w-4 h-4" />, count: chartData.filter(item => item.travelType === 'international').length },
-    { value: 'domestic', label: 'Domestic Only', icon: <MapPin className="w-4 h-4" />, count: chartData.filter(item => item.travelType === 'domestic').length }
+    { value: 'International', label: 'International Only', icon: <Globe className="w-4 h-4" />, count: chartData.filter(item => item.travelType === 'International').length },
+    { value: 'Domestic', label: 'Domestic Only', icon: <MapPin className="w-4 h-4" />, count: chartData.filter(item => item.travelType === 'Domestic').length }
   ];
+
+  
+  if (loading) {
+    return (
+      <div className="bg-white rounded-lg p-6 shadow-sm">
+        <div className="flex items-center justify-center h-80">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading airline data...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-white rounded-lg p-6 shadow-sm">
+        <div className="flex items-center justify-center h-80">
+          <div className="text-center">
+            <div className="text-red-500 mb-2">⚠️</div>
+            <p className="text-red-600">Error loading airline data: {error}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white rounded-lg p-6 shadow-sm">
       <div className="mb-4 flex justify-between items-center">
         <div className="flex items-center">
-          <h3 className="text-5lg font-bold text-gray-800">Flight Provider Insights</h3>
+          <h3 className="text-lg font-bold text-gray-800">Flight Provider Insights</h3>
           {!isEmptyData && (
             <button 
               onClick={() => setIsModalOpen(true)}
@@ -221,7 +310,7 @@ const AirlineDistributionChart: React.FC<AirlineDistributionChartProps> = ({
         </div>
       </div>
 
-      {/* Overlay to close dropdown when clicking outside */}
+      
       {isFilterOpen && (
         <div 
           className="fixed inset-0 z-5" 

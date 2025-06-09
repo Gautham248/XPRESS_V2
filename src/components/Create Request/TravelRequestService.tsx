@@ -106,7 +106,7 @@ class TravelRequestService {
   private baseUrl: string;
   private timeout: number;
 
-  constructor(baseUrl: string = 'http://localhost:5030/api', timeout: number = 15000) {
+  constructor(baseUrl: string = 'http://localhost:5030/api', timeout: number = 60000) {
     this.baseUrl = baseUrl;
     this.timeout = timeout;
     console.log(`TravelRequestService initialized with baseUrl: ${this.baseUrl}`);
@@ -330,4 +330,4 @@ class TravelRequestService {
   }
 }
 
-export const travelRequestService = new TravelRequestService('http://localhost:5030/api', 15000);
+export const travelRequestService = new TravelRequestService('http://localhost:5030/api', 60000);

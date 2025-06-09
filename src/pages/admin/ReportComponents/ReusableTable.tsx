@@ -23,7 +23,6 @@ const ReusableTable: React.FC<TableProps> = ({ headers, data }) => {
           {data.map((row, rowIndex) => (
             <tr key={rowIndex} className={rowIndex % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
               {headers.map((header, cellIndex) => {
-                // Convert header to a likely corresponding object key (lowercase, no spaces)
                 const key = header.toLowerCase().replace(/\s+/g, '_');
                 return (
                   <td key={cellIndex} className="py-3 px-4 text-sm text-gray-700">
