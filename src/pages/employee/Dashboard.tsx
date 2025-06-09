@@ -327,7 +327,7 @@ const EmployeeDashboard: React.FC = () => {
                         {trip.status}
                       </span>
                     </td>
-                    <td className="py-3 px-4 text-right">
+                    {/* <td className="py-3 px-4 text-right">
                       <button className="text-sm text-blue-600 hover:text-blue-800">
                         View Details
                       </button>
@@ -336,7 +336,7 @@ const EmployeeDashboard: React.FC = () => {
                           Add Subtrip
                         </button>
                       )}
-                    </td>
+                    </td> */}
                   </tr>
                 ))}
               </tbody>
