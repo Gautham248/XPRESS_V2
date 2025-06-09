@@ -35,6 +35,7 @@ export interface TicketOption {
   id: string;
   description: string;
   selected: boolean;
+  filePath?: string;
 }
 
 export const dummyTicketOptions = [
