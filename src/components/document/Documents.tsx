@@ -1,6 +1,6 @@
 // src/components/Documents.tsx
 
-import React, { useState, useReducer, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useReducer, useRef, useCallback } from 'react';
 import axios from 'axios';
 import toast, { Toaster } from 'react-hot-toast';
 import { DocumentType, DocumentState, FormState, Action, initialState as formInitialState } from './types';
@@ -78,23 +78,23 @@ function Documents() {
   const [rawOcrText, setRawOcrText] = useState<string | null>(null);
   const [showFileValidation, setShowFileValidation] = useState(false);
   const ocrCompletionHandled = useRef(false);
-
-
   const userId = 1;
 
-  useEffect(() => {
-    setSelectedFileForUpload(null);
-    setOcrRequest(null);
-    setRawOcrText(null);
-    setShowFileValidation(false);
-    ocrCompletionHandled.current = false;
-  }, [activeTab]);
+  // NOTE: The useEffect hook that cleared state on tab switch has been removed
+  // to allow state to persist across tabs.
 
   const handleRecordCreated = (record: BackendDocumentRecord, uploadedFile: File) => {
-    ocrCompletionHandled.current = false;
+    // When a new file is uploaded for a tab, clear any previous OCR/pending state
+    // for THAT tab to start the new flow fresh.
+    setPendingFormRecords(prev => ({ ...prev, [activeTab]: undefined }));
     setRawOcrText(null);
+    
+    // Set up the new OCR request
+    ocrCompletionHandled.current = false;
     setOcrRequest({ file: uploadedFile, docType: activeTab, record });
-    setSelectedFileForUpload(null);
+    
+    // Clear the file from the uploader's view since it's now being processed
+    setSelectedFileForUpload(null); 
     setShowFileValidation(false);
   };
 
@@ -104,7 +104,6 @@ function Documents() {
         return;
     }
     ocrCompletionHandled.current = true;
-
     toast.success('Scan complete. Displaying parsed data...');
     setRawOcrText(rawText);
   };
@@ -113,8 +112,7 @@ function Documents() {
     if (!ocrRequest) return;
     const { docType, record } = ocrRequest;
 
-    console.log(`[OCR] Parsed data received for ${docType}:`, parsedData);
-
+    // Reset the form for the current docType and then populate it with parsed data
     dispatch({ type: 'RESET_FORM', docType });
     Object.entries(parsedData).forEach(([key, value]) => {
       if (value !== null && value !== undefined) {
@@ -122,11 +120,12 @@ function Documents() {
       }
     });
 
+    // Set the pending record for the form to use
     setPendingFormRecords(prev => ({
       ...prev,
       [docType]: { id: record.id, initialRecord: record }
     }));
-    setOcrRequest(null);
+    setOcrRequest(null); // End the OCR request process
   };
 
   const handleSaveDetails = async (currentFormState: FormState, recordId: number, docType: DocumentType) => {
@@ -147,7 +146,6 @@ function Documents() {
       const dateObj = new Date(expiryDate);
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-
       if (dateObj < today) {
         isExpired = true;
       }
@@ -159,10 +157,8 @@ function Documents() {
       if (isExpired) {
         await axios.delete(`http://localhost:5030/api/Documents/${recordId}/type/${docType}`);
         toast.error(`This document is expired and cannot be saved.`, { id: toastId });
-
       } else {
         const payloadForApi = { ...pendingRecord.initialRecord };
-
         if (docType === 'Passport') {
             payloadForApi.passportNumber = currentFormState.passportNumber;
             payloadForApi.issuingCountry = currentFormState.issuingCountry;
@@ -192,6 +188,7 @@ function Documents() {
         toast.success(`${docType} details saved successfully!`, { id: toastId });
       }
 
+      // After a successful save or delete, clear the state for that document type
       dispatch({ type: 'RESET_FORM', docType });
       setPendingFormRecords(prev => {
           const newState = { ...prev };
@@ -216,7 +213,6 @@ function Documents() {
   const currentPendingRecord = pendingFormRecords[activeTab];
 
   return (
-    // ✅ --- CHANGE 1: Removed `space-y-6` from this root div --- ✅
     <div className="animate-fadeIn">
       <Toaster position="top-right" reverseOrder={false} />
 
@@ -232,7 +228,6 @@ function Documents() {
         <h2 className="text-2xl font-semibold text-gray-800">Travel Documents</h2>
       </div>
       
-      {/* ✅ --- CHANGE 2: Added `mt-6` here to create the space ONLY between heading and this box --- ✅ */}
       <div className="bg-white rounded-lg p-6 shadow-sm mt-6">
         <DocumentTabs activeTab={activeTab} setActiveTab={setActiveTab} />
 
@@ -286,10 +281,10 @@ function Documents() {
 
         <div className="mt-8">
           <h3 className="text-lg font-semibold text-gray-800 mb-4">Existing Documents</h3>
-          <DocumentList
-            docType={activeTab}
+          <DocumentList 
+            docType={activeTab} 
             userId={userId}
-            key={`${activeTab}-${Object.keys(pendingFormRecords).length}`}
+            key={`${activeTab}-${Object.keys(pendingFormRecords).length}`} 
           />
         </div>
       </div>
