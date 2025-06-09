@@ -5,12 +5,12 @@ import {
   FileText,
   User,
   X,
-  Edit, // Added Edit icon
+  Edit,
 } from 'lucide-react';
 import { format, parseISO, differenceInDays } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { getStatusColor } from '../../data/mockData';
-import EditTravelRequestModal from './EditTravelRequestModal';
+import EditTravelRequestModal, { DetailedTravelRequest } from './EditTravelRequestModal';
 
 // --- INTERFACES ---
 interface TravelRequest {
@@ -66,7 +66,10 @@ const EmployeeDashboard: React.FC = () => {
   // State for UI
   const [selectedDocForPreview, setSelectedDocForPreview] = useState<Document | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [selectedRequestForEdit, setSelectedRequestForEdit] = useState<TravelRequest | null>(null);
+  const [selectedRequestForEdit, setSelectedRequestForEdit] = useState<DetailedTravelRequest | null>(null);
+  const [isFetchingDetails, setIsFetchingDetails] = useState(false);
+  const [statusForModal, setStatusForModal] = useState<string | undefined>();
+
 
   const userString = localStorage.getItem('user');
   const user = userString ? JSON.parse(userString) : null;
@@ -78,23 +81,17 @@ const EmployeeDashboard: React.FC = () => {
   };
 
   // --- API CALLS ---
-
   const fetchTravelRequests = useCallback(async () => {
     if (!user?.userId || !user?.token) return;
     
-    // Log the API endpoint as requested
     const endpoint = `http://localhost:5030/api/TravelRequest/ByUser/${user.userId}`;
-    console.log("Fetching travel requests from API endpoint:", endpoint);
-
+    
     try {
       const response = await fetch(
         endpoint,
         { headers: { Authorization: `Bearer ${user.token}` } }
       );
       const data = await response.json();
-      
-      // Log the raw API data as requested
-      console.log("API Response Data:", data);
 
       if (data.isSuccess) {
         const mappedRequests = data.result.map((trip: any): TravelRequest => ({
@@ -104,9 +101,7 @@ const EmployeeDashboard: React.FC = () => {
           tripType: trip.isRoundTrip ? 'Round Trip' : 'One Way',
           departureDate: trip.outboundDepartureDate,
           returnDate: trip.returnDepartureDate || '', 
-          // FIX: Combine place and country for a full source string, with a fallback.
           source: [trip.sourcePlace, trip.sourceCountry].filter(Boolean).join(', ') || 'Unknown',
-          // FIX: The destination field was missing. This combines place and country for a full destination string.
           destination: [trip.destinationPlace, trip.destinationCountry].filter(Boolean).join(', ') || 'Unknown',
           purpose: trip.purposeOfTravel,
           status: trip.currentStatusName,
@@ -170,29 +165,53 @@ const EmployeeDashboard: React.FC = () => {
   // --- EVENT HANDLERS ---
   const handleRowClick = (item: TravelRequest) => navigate(`/manager/my-requests/${item.id}`);
 
-  const handleEditClick = (e: React.MouseEvent, request: TravelRequest) => {
+  const handleEditClick = async (e: React.MouseEvent, request: TravelRequest) => {
     e.stopPropagation();
-    setSelectedRequestForEdit(request);
-    setIsEditModalOpen(true);
+    if (!user?.token) {
+      alert("Authentication error. Please log in again.");
+      return;
+    }
+    
+    setIsFetchingDetails(true);
+    try {
+      const endpoint = `http://localhost:5030/api/TravelRequest/${request.id}`;
+      
+      const response = await axios.get(endpoint, {
+        headers: { Authorization: `Bearer ${user.token}` },
+      });
+      
+      if (response.data.isSuccess) {
+        setSelectedRequestForEdit(response.data.result);
+        setStatusForModal(request.status); 
+        setIsEditModalOpen(true);
+      } else {
+        alert(`Could not fetch request details: ${response.data.errorMessages.join(', ')}`);
+      }
+    } catch (error) {
+      const errorMessage = axios.isAxiosError(error) && error.response
+        ? error.response.data.message || 'A server error occurred.'
+        : 'An unknown error occurred.';
+      alert(`Error: ${errorMessage}`);
+    } finally {
+      setIsFetchingDetails(false);
+    }
   };
   
   const handleUpdateRequest = async (updatedData: any) => {
-      if (!selectedRequestForEdit) {
+      const requestId = selectedRequestForEdit?.requestId;
+      if (!requestId) {
           console.error("No request selected for update.");
-          alert("Error: No request was selected. Please try again.");
           return;
       }
       if (!user?.token) {
           console.error("User token not found.");
-          alert("Authentication error. Please log in again.");
           return;
       }
 
-      const requestId = selectedRequestForEdit.id;
-      const endpoint = `http://localhost:5030/api/travelrequests/${requestId}/edit`;
+      const endpoint = `http://localhost:5030/api/TravelRequest/${requestId}`;
 
       try {
-        const response = await axios.post(endpoint, updatedData, {
+        const response = await axios.put(endpoint, updatedData, {
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${user.token}`,
@@ -203,22 +222,22 @@ const EmployeeDashboard: React.FC = () => {
             alert('Travel request updated successfully!');
             setIsEditModalOpen(false);
             setSelectedRequestForEdit(null);
-            await fetchTravelRequests(); // Refresh data on success
+            await fetchTravelRequests(); 
         } else {
             alert(`Update failed with status: ${response.status}`);
         }
       } catch (error) {
-        console.error("Error updating travel request:", error);
         const errorMessage = axios.isAxiosError(error) && error.response 
-            ? error.response.data.message || 'A server error occurred.'
+            ? error.response.data.errorMessages.join(', ') || 'A server error occurred.'
             : 'An unknown error occurred.';
         alert(`Update failed: ${errorMessage}`);
       }
   };
 
-  // --- UPDATED LOGIC ---
-  // The button is disabled only if the status is 'Returned' or 'Closed'.
-  const isEditDisabled = (status: string) => ['Returned', 'Closed'].includes(status);
+  const isEditDisabled = (status: string) => {
+    const nonEditableStatuses = ['Returned', 'Closed', 'Cancelled', 'Rejected'];
+    return nonEditableStatuses.includes(status);
+  };
   
   const getDocumentDisplayInfo = (doc: Document) => ({
       title: `${doc.documentType}: ${doc.documentNumber || ''}`,
@@ -252,9 +271,9 @@ const EmployeeDashboard: React.FC = () => {
                     <td className="py-3 px-4">
                       <button 
                         onClick={(e) => handleEditClick(e, trip)} 
-                        disabled={isEditDisabled(trip.status)} 
+                        disabled={isEditDisabled(trip.status) || isFetchingDetails} 
                         className={`p-2 rounded-md transition-colors ${isEditDisabled(trip.status) ? 'text-gray-400 bg-gray-100 cursor-not-allowed' : 'text-blue-600 hover:text-blue-800 hover:bg-blue-50'}`} 
-                        title={isEditDisabled(trip.status) ? "Cannot edit 'Returned' or 'Closed' requests" : 'Edit request'}
+                        title={isEditDisabled(trip.status) ? `Cannot edit a '${trip.status}' request` : 'Edit request'}
                       >
                         <Edit className="h-4 w-4" />
                       </button>
@@ -299,7 +318,13 @@ const EmployeeDashboard: React.FC = () => {
       </div>
 
       {/* RENDER MODALS */}
-      <EditTravelRequestModal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} request={selectedRequestForEdit} onUpdate={handleUpdateRequest} />
+      <EditTravelRequestModal 
+        isOpen={isEditModalOpen} 
+        onClose={() => setIsEditModalOpen(false)} 
+        request={selectedRequestForEdit} 
+        onUpdate={handleUpdateRequest}
+        statusName={statusForModal}
+      />
       
       {selectedDocForPreview && (
          <div className="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center p-4" onClick={() => setSelectedDocForPreview(null)}>
@@ -316,6 +341,5 @@ const EmployeeDashboard: React.FC = () => {
     </div>
   );
 };
-// New dashboard
  
 export default EmployeeDashboard;
