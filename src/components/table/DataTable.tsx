@@ -35,7 +35,7 @@ interface DataTableProps<T> {
   newButtonPath?: string;
   getStatusColor?: (status: string) => string;
   getTypeColor?: (type: string) => string;
-  getTripTypeColor?: (tripType: string) => string; // Added for isRoundTrip styling
+  getTripTypeColor?: (tripType: string) => string;
   renderActions?: (item: T) => React.ReactNode;
   onRowClick?: (item: T) => void;
 }
@@ -52,7 +52,7 @@ const DataTable = <T extends Record<string, any>>({
   newButtonPath,
   getStatusColor,
   getTypeColor,
-  getTripTypeColor, // Added to props
+  getTripTypeColor,
   renderActions,
   onRowClick,
 }: DataTableProps<T>) => {
@@ -125,7 +125,6 @@ const DataTable = <T extends Record<string, any>>({
   }, [visibleColumns, title]);
 
   useEffect(() => {
-    // Update sortBy if the current sortBy key is no longer in headers
     if (headers.length > 0 && !headers.some(h => h.key === sortBy)) {
       setSortBy(headers[0].key);
     }
@@ -496,13 +495,22 @@ const DataTable = <T extends Record<string, any>>({
             </thead>
             <tbody>
               {paginatedData.map((item, index) => (
-                <tr key={item.id || index} onClick={() => onRowClick?.(item)}
+                <tr
+                  key={item.id || index}
+                  onClick={() => onRowClick?.(item)}
                   className="border-b last:border-0 hover:bg-muted/50 transition-colors"
-                  style={onRowClick ? { cursor: 'pointer' } : {}}>
+                  style={onRowClick ? { cursor: 'pointer' } : {}}
+                  data-testid={`row-${item.id}`}
+                >
                   {headers.map(header => visibleColumns.includes(header.key) && (
-                    <td key={header.key} className="py-3 px-4 whitespace-nowrap text-sm">
+                    <td
+                      key={header.key}
+                      className="py-3 px-4 whitespace-nowrap text-sm"
+                      data-testid={`cell-${item.id}-${header.key}`}
+                    >
                       {header.key === 'travelDates' && item.departureDate && item.returnDate ? (
-                        <div className="flex items-center"><Calendar className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
+                        <div className="flex items-center">
+                          <Calendar className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
                           <span>{formatDateForDisplay(item.departureDate)} - {formatDateForDisplay(item.returnDate)}</span>
                         </div>
                       ) : header.key === 'currentStatusName' && getStatusColor ? (
