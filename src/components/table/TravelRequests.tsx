@@ -52,10 +52,14 @@ const TravelRequests: React.FC = () => {
         const role = user.role;
 
         // Determine the API endpoint based on the user's role
-        const apiUrl =
-          role === 'admin'
-            ? 'http://localhost:5030/api/TravelRequest/travelrequests'
-            : `http://localhost:5030/api/TravelRequest/ByProjectManager/${encodeURIComponent(email)}`;
+        let apiUrl = '';
+        if (role === 'admin') {
+          apiUrl = 'http://localhost:5030/api/TravelRequest/travelrequests';
+        } else if (role === 'duhead') {
+          apiUrl = `http://localhost:5030/api/TravelRequest/ByDUH/${encodeURIComponent(email)}`;
+        } else {
+          apiUrl = `http://localhost:5030/api/TravelRequest/ByProjectManager/${encodeURIComponent(email)}`;
+        }
 
         const response = await fetch(apiUrl, {
           method: 'GET',
