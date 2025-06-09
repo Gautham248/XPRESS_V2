@@ -6,18 +6,16 @@ interface ExportDataOptions {
   dateRange?: string;
 }
 
-/**
- * Loads SheetJS library dynamically if not already loaded
- */
+
 const loadSheetJS = (): Promise<any> => {
   return new Promise((resolve, reject) => {
-    // Check if XLSX is already available
+    
     if (typeof window !== 'undefined' && (window as any).XLSX) {
       resolve((window as any).XLSX);
       return;
     }
 
-    // Create script tag to load SheetJS from CDN
+    
     const script = document.createElement('script');
     script.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
     script.onload = () => {
@@ -46,25 +44,24 @@ export const exportData = async ({
   try {
     console.log('Starting Excel export...');
     
-    // Load SheetJS library
+  
     const XLSX = await loadSheetJS();
     console.log('SheetJS loaded successfully');
     
-    // Create a new workbook
+  
     const workbook = XLSX.utils.book_new();
     
-    // Prepare worksheet data
-    const worksheetData: any[][] = [];
     
-    // Add title and date range as header rows if provided
+    const worksheetData: any[][] = [];
+  
     if (title) {
       worksheetData.push([title]);
-      worksheetData.push([]); // Empty row for spacing
+      worksheetData.push([]);
     }
     
     if (dateRange) {
       worksheetData.push([dateRange]);
-      worksheetData.push([]); // Empty row for spacing
+      worksheetData.push([]); 
     }
     
     // Add headers row
