@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import {
   Briefcase,
   Clock,
@@ -13,12 +14,13 @@ import {
   CheckCircle,
   FileText,
   User,
+  X, // 1. ADDED: Import the 'X' icon for the modal's close button
 } from 'lucide-react';
 import { format, parseISO, differenceInDays } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
-import { dashboardStats, getStatusColor } from '../../data/mockData';
-import { mockUserDocuments } from '../../data/documentData';
+import { getStatusColor } from '../../data/mockData';
 
+// --- Interfaces are unchanged ---
 interface TravelRequest {
   id: string;
   travelerName: string;
@@ -50,40 +52,36 @@ interface TravelRequest {
   }>;
 }
 
+interface Document {
+  id: string;
+  documentType: string;
+  documentNumber: string;
+  issuingCountry?: string;
+  issuingPost?: string;
+  issueDate: string;
+  expiryDate?: string;
+  documentUrl: string;
+  fullName?: string;
+  visaClass?: string;
+}
+
 interface UserDocuments {
   userId: string;
   userName: string;
-  visaDocuments: Array<{
-    id: string;
-    visaNumber: string;
-    visaClass: string;
-    issuingCountry: string;
-    issuingPost: string;
-    issueDate: string;
-    expiryDate: string;
-    documentUrl: string;
-  }>;
-  passportDocuments: Array<{
-    id: string;
-    passportNumber: string;
-    issuingCountry: string;
-    issueDate: string;
-    expiryDate: string;
-    documentUrl: string;
-  }>;
-  aadharDocuments: Array<{
-    id: string;
-    fullName: string;
-    aadharNumber: string;
-    documentUrl: string;
-  }>;
+  documents: Document[];
 }
 
 const EmployeeDashboard: React.FC = () => {
   const navigate = useNavigate();
 
-  // State for travel requests
+  // State for travel requests and documents
   const [travelRequests, setTravelRequests] = useState<TravelRequest[]>([]);
+  const [userDocuments, setUserDocuments] = useState<UserDocuments | null>(null);
+  const [documentsLoading, setDocumentsLoading] = useState(true);
+  const [documentsError, setDocumentsError] = useState<string | null>(null);
+  
+  // 2. ADDED: State to manage which document is being previewed
+  const [selectedDocForPreview, setSelectedDocForPreview] = useState<Document | null>(null);
 
   // Get user data from local storage
   const userString = localStorage.getItem('user');
@@ -92,9 +90,76 @@ const EmployeeDashboard: React.FC = () => {
     id: user?.userId || 'USER001',
     name: user?.userName || 'John Smith',
     role: user?.role || 'Employee',
-    department: user?.userDU , // As per original code
+    department: user?.userDU,
     photo: '',
   };
+
+  // Fetch documents from API
+  useEffect(() => {
+    const fetchUserDocuments = async () => {
+      if (!user?.userId || !user?.token) {
+        console.error('User ID or token not found in local storage');
+        setDocumentsError('User authentication required');
+        setDocumentsLoading(false);
+        return;
+      }
+
+      try {
+        setDocumentsLoading(true);
+        setDocumentsError(null);
+
+        const response = await axios.get(
+          `http://localhost:5030/api/Documents/User/${user.userId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${user.token}`,
+              'Content-Type': 'application/json',
+            },
+          }
+        );
+        const apiDocuments = Array.isArray(response.data)
+          ? response.data
+          : response.data.documents || response.data.result || [];
+
+        if (apiDocuments && apiDocuments.length > 0) {
+          
+          const mappedDocuments = apiDocuments.map((apiDoc: any) => ({
+            id: String(apiDoc.id),
+            documentType: apiDoc.idType,
+            documentUrl: apiDoc.documentPath,
+            documentNumber: apiDoc.visaNumber || apiDoc.passportNumber || apiDoc.aadharNumber || '',
+            issueDate: apiDoc.visaIssueDate || apiDoc.passportIssueDate || apiDoc.uploadDate,
+            expiryDate: apiDoc.visaExpiryDate || apiDoc.passportExpiryDate,
+            issuingCountry: apiDoc.issuingCountry,
+            fullName: apiDoc.fullName,
+            visaClass: apiDoc.visaClass,
+          }));
+
+          const newUserDocuments = {
+            userId: user.userId,
+            userName: user.userName,
+            documents: mappedDocuments,
+          };
+
+          setUserDocuments(newUserDocuments);
+          
+        } else {
+          setUserDocuments({
+            userId: user.userId,
+            userName: user.userName,
+            documents: [],
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching documents:', error);
+        setDocumentsError('Error loading documents');
+      } finally {
+        setDocumentsLoading(false);
+      }
+    };
+
+    fetchUserDocuments();
+}, []);
 
   // Fetch travel requests from API
   useEffect(() => {
@@ -118,7 +183,6 @@ const EmployeeDashboard: React.FC = () => {
         const data = await response.json();
 
         if (data.isSuccess) {
-          // Map API response to TravelRequest interface
           const mappedRequests = data.result.map((trip: any) => ({
             id: trip.requestId,
             travelerName: user.userName,
@@ -126,7 +190,7 @@ const EmployeeDashboard: React.FC = () => {
               ? 'Domestic'
               : 'International',
             departureDate: trip.outboundDepartureDate,
-            returnDate: trip.returnDepartureDate || '', // Handle null return date
+            returnDate: trip.returnDepartureDate || '', 
             source: 'Unknown',
             destination: trip.destination,
             purpose: trip.purposeOfTravel,
@@ -134,7 +198,7 @@ const EmployeeDashboard: React.FC = () => {
             estimatedCost: 0,
             transportationType: 'Unknown',
             accommodationType: 'Unknown',
-            requestDate: trip.outboundDepartureDate, // Fallback to departure date
+            requestDate: trip.outboundDepartureDate, 
             departmentCode: currentUser.department,
             managerName: 'Unknown',
             reportingManager: 'Unknown',
@@ -161,19 +225,16 @@ const EmployeeDashboard: React.FC = () => {
   );
 
   // Document expiry alerts
-  const userDocs = mockUserDocuments.find((doc) => doc.userId === currentUser.id);
-  const documentAlerts = [
-    ...(userDocs?.visaDocuments || []).map((doc) => ({
-      type: 'Visa',
-      message: `Visa ${doc.visaNumber} for ${doc.issuingCountry} expires on ${doc.expiryDate}`,
-      daysUntilExpiry: differenceInDays(parseISO(doc.expiryDate), new Date()),
-    })),
-    ...(userDocs?.passportDocuments || []).map((doc) => ({
-      type: 'Passport',
-      message: `Passport ${doc.passportNumber} expires on ${doc.expiryDate}`,
-      daysUntilExpiry: differenceInDays(parseISO(doc.expiryDate), new Date()),
-    })),
-  ].filter((alert) => alert.daysUntilExpiry <= 45);
+  const documentAlerts = userDocuments?.documents
+    ? userDocuments.documents
+        .filter((doc) => doc.expiryDate)
+        .map((doc) => ({
+          type: doc.documentType,
+          message: `${doc.documentType} ${doc.documentNumber} expires on ${doc.expiryDate}`,
+          daysUntilExpiry: differenceInDays(parseISO(doc.expiryDate!), new Date()),
+        }))
+        .filter((alert) => alert.daysUntilExpiry <= 45)
+    : [];
 
   // SLA alerts for delayed requests
   const slaAlerts = filteredRequests
@@ -206,41 +267,56 @@ const EmployeeDashboard: React.FC = () => {
 
   const getIconComponent = (iconName: string) => {
     switch (iconName) {
-      case 'Briefcase':
-        return Briefcase;
-      case 'Clock':
-        return Clock;
-      case 'Plane':
-        return Plane;
-      case 'DollarSign':
-        return DollarSign;
-      default:
-        return Briefcase;
+      case 'Briefcase': return Briefcase;
+      case 'Clock': return Clock;
+      case 'Plane': return Plane;
+      case 'DollarSign': return DollarSign;
+      default: return Briefcase;
     }
   };
 
   const getIconBackgroundColor = (iconName: string) => {
     switch (iconName) {
-      case 'Briefcase':
-        return 'bg-blue-500';
-      case 'Clock':
-        return 'bg-yellow-500';
-      case 'Plane':
-        return 'bg-indigo-500';
-      case 'DollarSign':
-        return 'bg-green-500';
-      default:
-        return 'bg-blue-500';
+      case 'Briefcase': return 'bg-blue-500';
+      case 'Clock': return 'bg-yellow-500';
+      case 'Plane': return 'bg-indigo-500';
+      case 'DollarSign': return 'bg-green-500';
+      default: return 'bg-blue-500';
     }
   };
 
   // Navigation handlers for the buttons
-  const handleNewRequestClick = () => {
-    navigate('/manager/new-request');
-  };
+  const handleNewRequestClick = () => { navigate('/manager/new-request'); };
+  const handleUploadDocumentsClick = () => { navigate('/manager/documents'); };
 
-  const handleUploadDocumentsClick = () => {
-    navigate('/manager/documents');
+  // Helper function to get document display info
+  const getDocumentDisplayInfo = (doc: Document) => {
+    switch (doc.documentType) {
+      case 'Visa':
+        return {
+          title: `Visa: ${doc.documentNumber || ''}`,
+          subtitle: doc.issuingCountry ? `Country: ${doc.issuingCountry}` : '',
+          additionalInfo: doc.visaClass ? `Class: ${doc.visaClass}` : '',
+        };
+      case 'Passport':
+        return {
+          title: `Passport: ${doc.documentNumber || ''}`,
+          subtitle: doc.issuingCountry ? `Issued by: ${doc.issuingCountry}` : '',
+          additionalInfo: '',
+        };
+      case 'Aadhar':
+        return {
+          title: `Aadhar: ${doc.documentNumber || ''}`,
+          subtitle: doc.fullName ? `Name: ${doc.fullName}` : '',
+          additionalInfo: '',
+        };
+      default:
+        return {
+          title: `${doc.documentType}: ${doc.documentNumber || ''}`,
+          subtitle: '',
+          additionalInfo: '',
+        };
+    }
   };
 
   return (
@@ -287,7 +363,12 @@ const EmployeeDashboard: React.FC = () => {
               <thead>
                 <tr className="border-b">
                   <th className="text-left py-3 px-4 font-medium text-gray-500">ID</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-500">
+                  <th className="text-left py-3 px-4 font-medium text-gray-500">Destination</th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-500">Travel Dates</th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-500">Purpose</th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-500">Status</th>
+                  <th className="text-right py-3 px-4 font-medium text-gray-500">Actions</th>
+                  {/* <th className="text-left py-3 px-4 font-medium text-gray-500">
                     Destination
                   </th>
                   <th className="text-left py-3 px-4 font-medium text-gray-500">
@@ -298,7 +379,7 @@ const EmployeeDashboard: React.FC = () => {
                   </th>
                   <th className="text-left py-3 px-4 font-medium text-gray-500">
                     Status
-                  </th>
+                  </th> */}
                   {/* <th className="text-right py-3 px-4 font-medium text-gray-500">
                     Actions
                   </th> */}
@@ -314,10 +395,8 @@ const EmployeeDashboard: React.FC = () => {
                     <td className="py-3 px-4">{trip.id}</td>
                     <td className="py-3 px-4">{trip.destination}</td>
                     <td className="py-3 px-4">
-                      {format(parseISO(trip.departureDate), 'MMM dd')} -{' '}
-                      {trip.returnDate
-                        ? format(parseISO(trip.returnDate), 'MMM dd, yyyy')
-                        : 'N/A'}
+                      {trip.departureDate ? format(parseISO(trip.departureDate), 'MMM dd') : 'N/A'} -{' '}
+                      {trip.returnDate ? format(parseISO(trip.returnDate), 'MMM dd, yyyy') : 'N/A'}
                     </td>
                     <td className="py-3 px-4">{trip.purpose}</td>
                     <td className="py-3 px-4">
@@ -327,14 +406,15 @@ const EmployeeDashboard: React.FC = () => {
                         {trip.status}
                       </span>
                     </td>
+                    <td className="py-3 px-4 text-right">
+                      <button className="text-sm text-blue-600 hover:text-blue-800">View Details</button>
+                    </td>
                     {/* <td className="py-3 px-4 text-right">
                       <button className="text-sm text-blue-600 hover:text-blue-800">
                         View Details
                       </button>
                       {['DUApproved', 'Verified', 'Closed'].includes(trip.status) && (
-                        <button className="text-sm text-blue-600 hover:text-blue-800 ml-2">
-                          Add Subtrip
-                        </button>
+                        <button className="text-sm text-blue-600 hover:text-blue-800 ml-2">Add Subtrip</button>
                       )}
                     </td> */}
                   </tr>
@@ -349,91 +429,57 @@ const EmployeeDashboard: React.FC = () => {
       <div className="card bg-white shadow-sm p-6 rounded-lg">
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-lg font-semibold">Document Repository</h3>
-          {/* <button className="text-sm text-blue-600 hover:text-blue-800">
-            Upload New
-          </button> */}
         </div>
-        {userDocs &&
-        (userDocs.visaDocuments.length > 0 ||
-          userDocs.passportDocuments.length > 0 ||
-          userDocs.aadharDocuments.length > 0) ? (
+        
+        {documentsLoading ? (
+          <div className="text-center py-6">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <p className="text-gray-500 mt-2">Loading documents...</p>
+          </div>
+        ) : documentsError ? (
+          <div className="text-center py-6">
+            <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-2" />
+            <p className="text-red-600">{documentsError}</p>
+            <button 
+              onClick={() => window.location.reload()} 
+              className="text-blue-600 hover:text-blue-800 mt-2"
+            >
+              Retry
+            </button>
+          </div>
+        ) : userDocuments && userDocuments.documents.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {userDocs.visaDocuments.map((doc) => (
-              <div
-                key={doc.id}
-                className="border rounded-lg p-4 flex items-start space-x-3"
-              >
-                <FileText className="h-6 w-6 text-gray-500" />
-                <div>
-                  <p className="font-medium">
-                    Visa: {doc.visaNumber}
-                  </p>
-                  <p className="text-sm text-gray-500">
-                    Expires: {doc.expiryDate}
-                  </p>
-                  <p
-                    className={`text-sm ${
-                      differenceInDays(parseISO(doc.expiryDate), new Date()) <= 30
-                        ? 'text-red-600'
-                        : 'text-yellow-600'
-                    }`}
-                  >
-                    {differenceInDays(parseISO(doc.expiryDate), new Date()) <= 45
-                      ? `Expires in ${differenceInDays(
-                          parseISO(doc.expiryDate),
-                          new Date()
-                        )} days`
-                      : 'Valid'}
-                  </p>
+            {userDocuments.documents.map((doc) => {
+              const displayInfo = getDocumentDisplayInfo(doc);
+              const daysUntilExpiry = doc.expiryDate ? differenceInDays(parseISO(doc.expiryDate), new Date()) : null;
+              
+              return (
+                // 3. MODIFIED: Make this whole div clickable
+                <div
+                  key={doc.id}
+                  className="border rounded-lg p-4 flex items-start space-x-3 hover:shadow-md hover:border-blue-500 transition-all cursor-pointer"
+                  onClick={() => setSelectedDocForPreview(doc)}
+                >
+                  <FileText className="h-6 w-6 text-gray-500 flex-shrink-0" />
+                  <div className="flex-1">
+                    <p className="font-medium">{displayInfo.title}</p>
+                    {displayInfo.subtitle && <p className="text-sm text-gray-500">{displayInfo.subtitle}</p>}
+                    {displayInfo.additionalInfo && <p className="text-sm text-gray-500">{displayInfo.additionalInfo}</p>}
+                    {doc.expiryDate && (
+                      <>
+                        <p className="text-sm text-gray-500">Expires: {format(parseISO(doc.expiryDate), 'MMM dd, yyyy')}</p>
+                        {daysUntilExpiry !== null && (
+                          <p className={`text-sm ${daysUntilExpiry <= 30 ? 'text-red-600' : daysUntilExpiry <= 45 ? 'text-yellow-600' : 'text-green-600'}`}>
+                            {daysUntilExpiry <= 0 ? 'Expired' : daysUntilExpiry <= 45 ? `Expires in ${daysUntilExpiry} days` : 'Valid'}
+                          </p>
+                        )}
+                      </>
+                    )}
+                    {doc.issueDate && <p className="text-sm text-gray-500">Issued: {format(parseISO(doc.issueDate), 'MMM dd, yyyy')}</p>}
+                  </div>
                 </div>
-              </div>
-            ))}
-            {userDocs.passportDocuments.map((doc) => (
-              <div
-                key={doc.id}
-                className="border rounded-lg p-4 flex items-start space-x-3"
-              >
-                <FileText className="h-6 w-6 text-gray-500" />
-                <div>
-                  <p className="font-medium">
-                    Passport: {doc.passportNumber}
-                  </p>
-                  <p className="text-sm text-gray-500">
-                    Expires: {doc.expiryDate}
-                  </p>
-                  <p
-                    className={`text-sm ${
-                      differenceInDays(parseISO(doc.expiryDate), new Date()) <= 30
-                        ? 'text-red-600'
-                        : 'text-yellow-600'
-                    }`}
-                  >
-                    {differenceInDays(parseISO(doc.expiryDate), new Date()) <= 45
-                      ? `Expires in ${differenceInDays(
-                          parseISO(doc.expiryDate),
-                          new Date()
-                        )} days`
-                      : 'Valid'}
-                  </p>
-                </div>
-              </div>
-            ))}
-            {userDocs.aadharDocuments.map((doc) => (
-              <div
-                key={doc.id}
-                className="border rounded-lg p-4 flex items-start space-x-3"
-              >
-                <FileText className="h-6 w-6 text-gray-500" />
-                <div>
-                  <p className="font-medium">
-                    Aadhar: {doc.aadharNumber}
-                  </p>
-                  <p className="text-sm text-gray-500">
-                    Name: {doc.fullName}
-                  </p>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         ) : (
           <p className="text-gray-500 text-center py-6">
@@ -460,6 +506,43 @@ const EmployeeDashboard: React.FC = () => {
           </div> */}
         </div>
       </div>
+
+      {/* 4. ADDED: The Preview Modal JSX at the end of the main div */}
+      {selectedDocForPreview && (
+         <div 
+            className="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center p-4"
+            onClick={() => setSelectedDocForPreview(null)} // Close modal on background click
+         >
+          <div 
+            className="relative bg-white rounded-lg p-3 max-w-4xl w-full max-h-[90vh] overflow-auto"
+            onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside modal
+          >
+            <button 
+                className="absolute top-3 right-3 p-1 bg-white rounded-full shadow-md text-gray-800 hover:text-red-500 transition-colors z-10" 
+                onClick={() => setSelectedDocForPreview(null)} 
+                aria-label="Close preview"
+            >
+              <X className="w-6 h-6" />
+            </button>
+            <div className="pt-8 h-full">
+              {selectedDocForPreview.documentUrl.toLowerCase().endsWith('.pdf') ? (
+                <iframe 
+                    src={`${selectedDocForPreview.documentUrl}#view=FitH`} 
+                    title={`${selectedDocForPreview.documentType} Preview`} 
+                    className="w-full rounded" 
+                    style={{ minHeight: '500px', height: 'calc(90vh - 4rem)' }} 
+                />
+              ) : (
+                <img 
+                    src={selectedDocForPreview.documentUrl} 
+                    alt={`${selectedDocForPreview.documentType} Preview`} 
+                    className="max-w-full max-h-[calc(90vh-4rem)] object-contain mx-auto" 
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
