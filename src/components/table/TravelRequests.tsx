@@ -286,8 +286,8 @@ const TravelRequests: React.FC = () => {
       statusOptions={['PendingReview', 'DUApproved', 'OptionSelected', 'Rejected']}
       typeOptions={['Domestic', 'International']}
       dateFilterKey="departureDate"
-      newButtonLabel="New Request"
-      newButtonPath="/create-request"
+      // newButtonLabel="New Request"
+      // newButtonPath="/create-request"
       getStatusColor={getStatusColor}
       getTypeColor={(type: string) =>
         type === 'Domestic' ? 'bg-primary/10 text-primary' : 'bg-secondary/10 text-secondary'
