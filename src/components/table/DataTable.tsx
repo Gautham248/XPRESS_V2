@@ -276,6 +276,9 @@ const DataTable = <T extends Record<string, any>>({
   };
 
   const formatDateForDisplay = (dateInput: string | Date): string => {
+    // Since dates are already formatted in TravelRequests.tsx, just return the string
+    if (typeof dateInput === 'string') return dateInput;
+    // Fallback for any unformatted dates
     try { return format(new Date(dateInput), 'dd-MM-yyyy'); } 
     catch (e) { return String(dateInput); }
   };
@@ -511,7 +514,7 @@ const DataTable = <T extends Record<string, any>>({
                       {header.key === 'travelDates' && item.departureDate && item.returnDate ? (
                         <div className="flex items-center">
                           <Calendar className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
-                          <span>{formatDateForDisplay(item.departureDate)} - {formatDateForDisplay(item.returnDate)}</span>
+                          <span>{item[header.key]}</span>
                         </div>
                       ) : header.key === 'currentStatusName' && getStatusColor ? (
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(item[header.key])}`}>
