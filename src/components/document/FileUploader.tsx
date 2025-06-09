@@ -8,7 +8,7 @@ import { X } from 'lucide-react';
 export interface BackendDocumentRecord {
   id: number;
   idType: string;
-  userId: number;
+  userId: number|undefined;
   documentPath: string;
   uploadDate: Date; // Date object in frontend state after parsing
   createdBy: number;
@@ -42,19 +42,20 @@ const parseDateString = (dateInput: string | Date | null | undefined): Date | nu
 };
 
 interface FileUploaderProps {
+  userId: number| undefined;
   docType: DocumentType;
   onFileSelect: (file: File | null) => void;
   showValidation: boolean;
   selectedFile: File | null;
   onUploadError?: (error: string) => void;
-  onRecordCreated: (record: BackendDocumentRecord, docType: DocumentType) => void;
+  onRecordCreated: (record: BackendDocumentRecord, uploadedFile: File) => void; 
 }
 
-const saveDocumentPathToBackend = async (documentUrl: string, docType: DocumentType): Promise<BackendDocumentRecord> => {
+const saveDocumentPathToBackend = async (documentUrl: string, docType: DocumentType, userId: number | undefined): Promise<BackendDocumentRecord> => {
   try {
     const apiPayload = {
       idType: docType.charAt(0).toUpperCase() + docType.slice(1),
-      userId: 1, 
+      userId: userId, 
       documentPath: documentUrl,
       uploadDate: new Date().toISOString(),
       createdBy: 1, 
@@ -119,6 +120,7 @@ const saveDocumentPathToBackend = async (documentUrl: string, docType: DocumentT
 };
 
 function FileUploader({ 
+  userId,
   docType, 
   onFileSelect, 
   showValidation, 
@@ -194,9 +196,9 @@ function FileUploader({
       if (cloudinaryData.secure_url) {
         setPreviewURL(selectedFile.type === 'application/pdf' ? `${cloudinaryData.secure_url}#view=FitH` : cloudinaryData.secure_url);
         try {
-          const newRecord = await saveDocumentPathToBackend(cloudinaryData.secure_url, docType);
+          const newRecord = await saveDocumentPathToBackend(cloudinaryData.secure_url, docType, userId);
           // REMOVED: setUploadSuccess(true); // Parent will show toast via onRecordCreated
-          onRecordCreated(newRecord, docType);
+          onRecordCreated(newRecord, selectedFile);
         } catch (backendError: any) {
           console.error('Backend save error (POST) after cloud upload:', backendError);
           const errorMessage = `File uploaded, but DB save failed: ${backendError.message}. Try saving details or re-upload.`;
