@@ -49,7 +49,11 @@ interface VisaStatusResponse {
 }
 
 interface ProcessingTimeResponse {
-  averageProcessingTimeDays: number;
+  averageDays: number;
+  averageHours: number;
+  averageMinutes: number;
+  readableFormat: string;
+  totalRequestsCalculated: number;
 }
 
 interface StatusOverviewData {
@@ -188,11 +192,6 @@ const Reports: React.FC = () => {
     return requestDate >= new Date(startDate) && requestDate <= new Date(endDate);
   });
 
-  const getSimplifiedProcessingMetrics = () => {
-    return { avgDays: processingTimeData?.averageProcessingTimeDays ?? 0 };
-  };
-  const processingMetrics = getSimplifiedProcessingMetrics();
-
   const openModal = (title: string, data: TravelRequest[], headers: string[]) => 
     setModalData({ title, data, headers });
   const closeModal = () => setModalData(null);
@@ -321,10 +320,10 @@ const Reports: React.FC = () => {
           </button>
         </div>
         
-      
+        {/* Processing Metrics Card - Updated to show readable format */}
         <StatCard 
           title="Processing Metrics" 
-          value={`${processingMetrics.avgDays} days`} 
+          value={processingTimeData?.readableFormat ?? 'N/A'} 
           subtitle="Avg Completion Time" 
           icon={<Clock />} 
           iconClass="text-cyan-600" 
