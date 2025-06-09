@@ -92,7 +92,7 @@ const EmployeeDashboard: React.FC = () => {
     id: user?.userId || 'USER001',
     name: user?.userName || 'John Smith',
     role: user?.role || 'Employee',
-    department: 'MKT-01', // As per original code
+    department: user?.userDU , // As per original code
     photo: '',
   };
 
@@ -234,6 +234,15 @@ const EmployeeDashboard: React.FC = () => {
     }
   };
 
+  // Navigation handlers for the buttons
+  const handleNewRequestClick = () => {
+    navigate('/manager/new-request');
+  };
+
+  const handleUploadDocumentsClick = () => {
+    navigate('/manager/documents');
+  };
+
   return (
     <div className="container mx-auto p-6 space-y-6">
       {/* Header Section */}
@@ -248,10 +257,16 @@ const EmployeeDashboard: React.FC = () => {
           </div>
         </div>
         <div className="flex space-x-4 mt-4 md:mt-0">
-          <button className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
+          <button 
+            onClick={handleNewRequestClick}
+            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+          >
             New Travel Request
           </button>
-          <button className="border border-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-100">
+          <button 
+            onClick={handleUploadDocumentsClick}
+            className="border border-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-100"
+          >
             <Upload className="h-4 w-4 inline mr-2" /> Upload Documents
           </button>
         </div>
@@ -334,9 +349,9 @@ const EmployeeDashboard: React.FC = () => {
       <div className="card bg-white shadow-sm p-6 rounded-lg">
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-lg font-semibold">Document Repository</h3>
-          <button className="text-sm text-blue-600 hover:text-blue-800">
+          {/* <button className="text-sm text-blue-600 hover:text-blue-800">
             Upload New
-          </button>
+          </button> */}
         </div>
         {userDocs &&
         (userDocs.visaDocuments.length > 0 ||
