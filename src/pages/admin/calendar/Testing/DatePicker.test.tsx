@@ -1,211 +1,202 @@
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom';
-import DatePicker from '../DatePicker'; // Adjust path as necessary
+
+// Import the component to be tested.
+import DatePicker from '../DatePicker'; 
 
 describe('DatePicker Component', () => {
+
   const mockOnDateSelect = jest.fn();
-  const mockFormatWeekRange = jest.fn(() => 'Jan 1 - Jan 7, 2023');
-  const initialCurrentDate = new Date(2023, 0, 15); // Jan 15, 2023
+  const mockFormatWeekRange = jest.fn(() => 'Oct 20 - Oct 26, 2024');
 
-  const openPickerToMonthView = async (
-    currentDateForPicker: Date = initialCurrentDate,
-    viewProp: 'Month' | 'Week' = 'Month'
-  ) => {
-    let buttonNameRegex;
-    if (viewProp === 'Month') {
-      const monthYearString = currentDateForPicker.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-      buttonNameRegex = new RegExp(monthYearString, 'i');
-    } else {
-      buttonNameRegex = /jan 1 - jan 7, 2023/i;
-    }
-
-    const mainButton = screen.getByRole('button', { name: buttonNameRegex });
-    await userEvent.click(mainButton);
-    // Wait for a sign that the month selection grid is open
-    // Using 'Jan' as a general indicator for the month grid
-    await screen.findByText('Jan');
-    // Also confirm the year in the header of the month grid
-    expect(screen.getByText(currentDateForPicker.getFullYear().toString())).toBeInTheDocument();
+  const defaultProps = {
+    currentDate: new Date('2024-10-22T12:00:00Z'), 
+    onDateSelect: mockOnDateSelect,
+    formatWeekRange: mockFormatWeekRange,
   };
 
-
+  // Reset all mocks before each test to ensure test isolation
   beforeEach(() => {
-    mockOnDateSelect.mockClear();
-    mockFormatWeekRange.mockClear();
-    jest.useRealTimers();
+    jest.clearAllMocks();
   });
 
-  test('renders with initial month view and correct date format', () => {
-    render(
-      <DatePicker
-        currentDate={initialCurrentDate}
-        view="Month"
-        onDateSelect={mockOnDateSelect}
-        formatWeekRange={mockFormatWeekRange}
-      />
-    );
-    expect(screen.getByText('January 2023')).toBeInTheDocument();
-    expect(mockFormatWeekRange).not.toHaveBeenCalled();
-  });
-
-  test('renders with initial week view and calls formatWeekRange', () => {
-    render(
-      <DatePicker
-        currentDate={initialCurrentDate}
-        view="Week"
-        onDateSelect={mockOnDateSelect}
-        formatWeekRange={mockFormatWeekRange}
-      />
-    );
-    expect(screen.getByText('Jan 1 - Jan 7, 2023')).toBeInTheDocument();
-    expect(mockFormatWeekRange).toHaveBeenCalled();
-  });
-
-  test('opens date picker in "Months" view when main button is clicked', async () => {
-    render(
-      <DatePicker
-        currentDate={initialCurrentDate}
-        view="Month"
-        onDateSelect={mockOnDateSelect}
-        formatWeekRange={mockFormatWeekRange}
-      />
-    );
-    await openPickerToMonthView(initialCurrentDate, 'Month');
-    expect(screen.getByText('Jan')).toBeInTheDocument();
-    expect(screen.getByText(initialCurrentDate.getFullYear().toString())).toBeInTheDocument();
-  });
-
-  test('closes date picker when clicking outside', async () => {
-    render(
-      <DatePicker
-        currentDate={initialCurrentDate}
-        view="Month"
-        onDateSelect={mockOnDateSelect}
-        formatWeekRange={mockFormatWeekRange}
-      />
-    );
-    await openPickerToMonthView(initialCurrentDate, 'Month');
-    expect(screen.getByText('Jan')).toBeInTheDocument();
-
-    await userEvent.click(document.body);
-    await waitFor(() => {
+  describe('Initial Rendering', () => {
+    it('should render the button with the formatted month when view is "Month"', () => {
+      render(<DatePicker {...defaultProps} view="Month" />);
+      
+      expect(screen.getByRole('button', { name: /October 2024/i })).toBeInTheDocument();
       expect(screen.queryByText('Jan')).not.toBeInTheDocument();
     });
+
+    it('should render the button with the formatted week range when view is "Week"', () => {
+      render(<DatePicker {...defaultProps} view="Week" />);
+      
+      expect(screen.getByRole('button', { name: /Oct 20 - Oct 26, 2024/i })).toBeInTheDocument();
+      expect(mockFormatWeekRange).toHaveBeenCalled();
+    });
   });
 
-  describe('Month Selection Grid', () => {
-    test('navigates to previous and next year', async () => {
-      render(
-        <DatePicker
-          currentDate={initialCurrentDate}
-          view="Month"
-          onDateSelect={mockOnDateSelect}
-          formatWeekRange={mockFormatWeekRange}
-        />
-      );
-      await openPickerToMonthView(initialCurrentDate, 'Month');
+  describe('Picker Visibility and Interaction', () => {
+    it('should open the month selection grid when the button is clicked', async () => {
+      const user = userEvent.setup();
+      render(<DatePicker {...defaultProps} view="Month" />);
 
-      expect(screen.getByText('2023')).toBeInTheDocument();
-      const prevYearButton = screen.getByRole('button', { name: '<' });
-      const nextYearButton = screen.getByRole('button', { name: '>' });
+      const pickerButton = screen.getByRole('button', { name: /October 2024/i });
+      await user.click(pickerButton);
 
-      await userEvent.click(nextYearButton);
-      expect(await screen.findByText('2024')).toBeInTheDocument();
-
-      await userEvent.click(prevYearButton);
-      await userEvent.click(prevYearButton);
-      expect(await screen.findByText('2022')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: '2024' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Jan' })).toBeInTheDocument();
     });
 
-    test('selects a month in "Month" view, calls onDateSelect, and closes picker', async () => {
-      render(
-        <DatePicker
-          currentDate={initialCurrentDate}
-          view="Month"
-          onDateSelect={mockOnDateSelect}
-          formatWeekRange={mockFormatWeekRange}
-        />
-      );
-      await openPickerToMonthView(initialCurrentDate, 'Month');
+    it('should close the picker when clicking outside the component', async () => {
+        const user = userEvent.setup();
+        render(<DatePicker {...defaultProps} view="Month" />);
 
-      const febMonthButton = screen.getByText('Feb');
-      await userEvent.click(febMonthButton);
+        const pickerButton = screen.getByRole('button', { name: /October 2024/i });
+        await user.click(pickerButton);
 
-      expect(mockOnDateSelect).toHaveBeenCalledWith(1, 1, 2023);
-      await waitFor(() => {
-        expect(screen.queryByText('Feb')).not.toBeInTheDocument();
-      });
+        expect(screen.getByRole('button', { name: 'Jan' })).toBeInTheDocument();
+        await user.click(document.body);
+        expect(screen.queryByText('Jan')).not.toBeInTheDocument();
     });
-
-    // Test removed due to "Found multiple elements with the text: 1"
-    // test('selects a month in "Week" view and switches to "Days" view for that month', async () => { ... });
-
-    // Test removed due to .toHaveClass failure
-    // test('highlights the current month and year in month selection', async () => { ... });
   });
 
-  describe('Days Selection Grid', () => {
-    const navigateToDaysViewFromMonthGrid = async (monthAbrev: string, fullMonthName: string, year: number) => {
-        const monthButton = screen.getByText(monthAbrev);
-        await userEvent.click(monthButton);
-        await screen.findByText(`${fullMonthName} ${year}`);
-        // More specific check for day 1 of current month
-        await waitFor(async () => {
-            const dayOneElements = await screen.findAllByText('1');
-            const currentMonthDayOne = dayOneElements.find(
-                el => el.parentElement && !el.parentElement.classList.contains('opacity-50')
-            );
-            if (!currentMonthDayOne) {
-                throw new Error('Day 1 of current month not found in days grid (helper).');
-            }
-            expect(currentMonthDayOne).toBeInTheDocument();
-        });
-    };
+  describe('Selection Logic', () => {
+    it('in "Month" view, should call onDateSelect with year/month and close when a month is clicked', async () => {
+      const user = userEvent.setup();
+      render(<DatePicker {...defaultProps} view="Month" />);
+      
+      await user.click(screen.getByRole('button', { name: /October 2024/i }));
+      
+      const mayButton = screen.getByRole('button', { name: 'May' });
+      await user.click(mayButton);
+      
+      expect(mockOnDateSelect).toHaveBeenCalledWith(2024, 4); 
+      expect(mockOnDateSelect).not.toHaveBeenCalledWith(expect.anything(), expect.anything(), expect.any(Number));
+      expect(screen.queryByRole('button', { name: 'May' })).not.toBeInTheDocument();
+    });
 
-    // Test removed due to "Unable to find an element with the text: 1" (originating from helper)
-    // test('switches from "Days" view back to "Months" view', async () => { ... });
+    it('in "Week" view, should navigate to day grid and then select a full date', async () => {
+        const user = userEvent.setup();
+        render(<DatePicker {...defaultProps} view="Week" />);
+        
+        await user.click(screen.getByRole('button'));
+        await user.click(screen.getByRole('button', { name: 'Sep' }));
+        
+        expect(screen.getByRole('button', { name: 'September 2024' })).toBeInTheDocument();
+        expect(screen.getByText('Sun')).toBeInTheDocument();
+        
+        const dayButton = screen.getByRole('button', { name: '15' });
+        await user.click(dayButton);
 
-    // Test removed due to "Found multiple elements with the text: 1" (originating from helper)
-    // test('selects a date, calls onDateSelect, and closes picker', async () => { ... });
+        expect(mockOnDateSelect).toHaveBeenCalledWith(2024, 8, 15);
+        expect(screen.queryByText('September 2024')).not.toBeInTheDocument();
+    });
+  });
+  
+  describe('Picker Navigation', () => {
+    it('should navigate between years in the month grid', async () => {
+        const user = userEvent.setup();
+        render(<DatePicker {...defaultProps} view="Month" />);
+        await user.click(screen.getByRole('button'));
 
-    // Test removed due to "Unable to find an element with the text: 1" (originating from helper)
-    // test('renders days from previous and next months correctly', async () => { ... });
+        expect(screen.getByRole('button', { name: '2024' })).toBeInTheDocument();
 
-    // Test removed due to "Unable to find an element with the text: 1" (originating from helper)
-    // test('selects a day from the previous month', async () => { ... });
+        await user.click(screen.getByLabelText('Next year'));
+        expect(screen.getByRole('button', { name: '2025' })).toBeInTheDocument();
 
-    // Test removed due to timeout
-    // test('highlights "today" with blue background if visible', async () => { ... }, 15000);
+        await user.click(screen.getByLabelText('Previous year'));
+        await user.click(screen.getByLabelText('Previous year'));
+        expect(screen.getByRole('button', { name: '2023' })).toBeInTheDocument();
+    });
+    
+    it('should navigate between months in the day selection grid', async () => {
+      const user = userEvent.setup();
+      render(<DatePicker {...defaultProps} view="Week" />);
+      
+      await user.click(screen.getByRole('button'));
+      await user.click(screen.getByRole('button', { name: 'Oct' }));
 
-    // Test removed due to timeout
-    // test('highlights "selectedDate" (currentDate prop) with green background if visible and not today', async () => { ... }, 15000);
+      expect(screen.getByRole('button', { name: 'October 2024' })).toBeInTheDocument();
 
-    // Test removed due to timeout
-    // test('highlights "today" with blue even if it is also the "selectedDate"', async () => { ... }, 15000);
+      await user.click(screen.getByLabelText('Next month'));
+      expect(screen.getByRole('button', { name: 'November 2024' })).toBeInTheDocument();
+
+      const prevMonthButton = screen.getByLabelText('Previous month');
+      await user.click(prevMonthButton);
+      await user.click(prevMonthButton);
+      expect(screen.getByRole('button', { name: 'September 2024' })).toBeInTheDocument();
+    });
+
+    it('should switch between Month, Year, and Day views correctly', async () => {
+        const user = userEvent.setup();
+        render(<DatePicker {...defaultProps} view="Week" />);
+        await user.click(screen.getByRole('button'));
+
+        expect(screen.getByText('Oct')).toBeInTheDocument();
+        
+        await user.click(screen.getByRole('button', { name: '2024' }));
+        expect(screen.queryByText('Oct')).not.toBeInTheDocument();
+        
+    expect(screen.getByText('2019 - 2030')).toBeInTheDocument();
+
+        await user.click(screen.getByRole('button', { name: '2028' }));
+        expect(screen.getByRole('button', { name: '2028' })).toBeInTheDocument();
+        expect(screen.getByText('Jan')).toBeInTheDocument();
+
+        await user.click(screen.getByRole('button', { name: 'May' }));
+        expect(screen.getByRole('button', { name: 'May 2028' })).toBeInTheDocument();
+    });
   });
 
-  test('toggles date picker visibility on main button click', async () => {
-    render(
-      <DatePicker
-        currentDate={initialCurrentDate}
-        view="Month"
-        onDateSelect={mockOnDateSelect}
-        formatWeekRange={mockFormatWeekRange}
-      />
-    );
-    const mainButton = screen.getByRole('button', { name: /january 2023/i });
-
-    expect(screen.queryByText(initialCurrentDate.getFullYear().toString())).not.toBeInTheDocument();
-
-    await userEvent.click(mainButton);
-    // Wait for year in month grid
-    await screen.findByText(initialCurrentDate.getFullYear().toString());
-
-    await userEvent.click(mainButton);
-    await waitFor(() => {
-      expect(screen.queryByText(initialCurrentDate.getFullYear().toString())).not.toBeInTheDocument();
+  describe('Day Grid Visual States', () => {
+   beforeAll(() => {
+      jest.useFakeTimers().setSystemTime(new Date('2024-10-15T12:00:00Z'));
     });
-  }, 10000);
+  
+    afterAll(() => {
+      // It's crucial to restore real timers after the tests in this block are done.
+      jest.useRealTimers();
+    });
+  
+    it('should correctly highlight the selected day and "today"', async () => {
+
+      const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
+      
+      // In this test: Selected date is Oct 22 (from props), but "today" is mocked to be Oct 15.
+      render(<DatePicker {...defaultProps} view="Week" />);
+  
+      // Open picker and navigate to the day view for October
+      await user.click(screen.getByRole('button'));
+      await user.click(screen.getByRole('button', { name: 'Oct' }));
+  
+      const selectedDayButton = screen.getByRole('button', { name: '22' });
+      const todayButton = screen.getByRole('button', { name: '15' });
+      const regularDayButton = screen.getByRole('button', { name: '10' });
+  
+      // Assert that the correct highlight classes are applied
+      expect(selectedDayButton).toHaveClass('bg-blue-500 text-white');
+      expect(todayButton).toHaveClass('bg-blue-100 text-blue-800');
+      expect(regularDayButton).not.toHaveClass('bg-blue-500', 'bg-blue-100');
+    });
+  });
+
+  describe('Prop Synchronization', () => {
+    it('should update the picker display when currentDate prop changes', async () => {
+        const user = userEvent.setup();
+        const { rerender } = render(<DatePicker {...defaultProps} view="Month" />);
+        
+        const newDate = new Date('2028-05-15T12:00:00Z');
+        rerender(<DatePicker {...defaultProps} currentDate={newDate} view="Month" />);
+        
+        await user.click(screen.getByRole('button', { name: /May 2028/i }));
+        
+        expect(screen.getByRole('button', { name: '2028' })).toBeInTheDocument();
+        
+        const mayButton = screen.getByRole('button', { name: 'May' });
+        expect(mayButton).toHaveClass('bg-blue-500 text-white');
+    });
+  });
 });

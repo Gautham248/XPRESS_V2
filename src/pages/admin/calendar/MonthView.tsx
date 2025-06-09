@@ -16,11 +16,12 @@ const MonthView: React.FC<MonthViewProps> = ({
   selectedDate,
   onDayCellClick,
 }) => {
-  const monthDays: DayInfo[] = getDaysForMonth(currentDate.getFullYear(), currentDate.getMonth());
+  const monthDays: DayInfo[] = getDaysForMonth(currentDate.getUTCFullYear(), currentDate.getUTCMonth());
   const weekdayNames: string[] = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-  const today = new Date(2025, 5, 5); // June 5, 2025 (month is 0-based)
-  today.setHours(0, 0, 0, 0);
+  // Create today's date in UTC for correct comparison
+  const today = new Date();
+  const todayUTC = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()));
 
   const getEventCounts = (events: TravelEvent[]): { OutboundDeparture: number; ReturnArrival: number } => {
     const counts = {
@@ -45,35 +46,50 @@ const MonthView: React.FC<MonthViewProps> = ({
           </div>
         ))}
         {monthDays.map((dayInfo: DayInfo, index: number) => {
-          const date = new Date(dayInfo.year, dayInfo.month, dayInfo.day);
-          date.setHours(0, 0, 0, 0);
+          // Create the date for each cell in UTC
+          const date = new Date(Date.UTC(dayInfo.year, dayInfo.month, dayInfo.day));
+          
           const events = getEventsForDate(date);
           const counts = getEventCounts(events);
 
           const isSelected =
             selectedDate &&
-            selectedDate.getFullYear() === dayInfo.year &&
-            selectedDate.getMonth() === dayInfo.month &&
-            selectedDate.getDate() === dayInfo.day;
+            selectedDate.getTime() === date.getTime();
 
-          const isToday =
-            date.getFullYear() === today.getFullYear() &&
-            date.getMonth() === today.getMonth() &&
-            date.getDate() === today.getDate();
+          const isToday = date.getTime() === todayUTC.getTime();
+
+          // Enhanced styling with clear light blue borders
+          let cellClasses = `h-16 flex flex-col p-1 rounded-md cursor-pointer relative transition-all duration-200 `;
+
+          if (isSelected) {
+            // Selected date: prominent light blue border and background
+            cellClasses += `bg-blue-100 border-3 border-blue-500 shadow-lg`;
+          } else if (isToday) {
+            // Today: lighter blue border with subtle background
+            cellClasses += `bg-blue-50 border-2 border-blue-300 shadow-md`;
+          } else if (dayInfo.currentMonth) {
+            // Current month days: normal styling
+            cellClasses += `bg-white border border-gray-200 shadow-sm hover:bg-gray-50 hover:shadow-md hover:border-gray-300`;
+          } else {
+            // Previous/next month days: muted styling
+            cellClasses += `bg-gray-100 border border-gray-200 opacity-50`;
+          }
 
           return (
             <div
               key={`month-day-${index}`}
-              className={`h-16 flex flex-col p-1 rounded-md cursor-pointer relative
-                ${dayInfo.currentMonth ? 'bg-white border border-gray-200 shadow-sm' : 'bg-gray-100 opacity-50'}
-                ${isSelected ? 'bg-blue-100' : ''}
-                ${isToday ? 'bg-blue-200' : ''}
-                hover:bg-gray-200 hover:shadow-sm hover:border hover:border-gray-300 transition-all duration-200`}
+              className={cellClasses}
               onClick={() => onDayCellClick(dayInfo)}
             >
               <span
-                className={`text-gray-800 text-center ${
-                  !dayInfo.currentMonth ? 'text-gray-400 opacity-50 font-light' : 'font-medium'
+                className={`text-center text-sm ${
+                  !dayInfo.currentMonth 
+                    ? 'text-gray-400 opacity-50 font-light' 
+                    : isSelected 
+                      ? 'font-bold text-blue-700' 
+                      : isToday 
+                        ? 'font-bold text-blue-600' 
+                        : 'font-medium text-gray-800'
                 }`}
               >
                 {dayInfo.day}
