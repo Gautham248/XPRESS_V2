@@ -7,11 +7,6 @@ import { mockTravelRequests } from '../../../data/mockData';
 import DateRangePicker from './DateRangePicker';
 import Modal from './Modal';
 
-// =================================================================================
-// TYPE DEFINITIONS
-// =================================================================================
-
-// Generic interface to cover all possible properties from API and mock data
 interface TravelRequest {
   id?: string; 
   requestDate?: string;
@@ -88,11 +83,6 @@ const formatDateForInput = (date: Date): string => {
   return date.toISOString().split('T')[0];
 };
 
-const processingContextSampleData: TravelRequest[] = [
-    { id: 'PT001', requestDate: '2025-01-10', status: 'Tickets Dispatched', travelType: 'Domestic', estimatedCost: 15000 },
-    { id: 'PT002', requestDate: '2025-02-15', status: 'In-transit', travelType: 'International', estimatedCost: 45000 },
-    { id: 'PT003', requestDate: '2025-03-20', status: 'Closed', travelType: 'Domestic', estimatedCost: 12000 },
-];
 
 const Reports: React.FC = () => {
   const getInitialEndDate = (): Date => new Date();
@@ -331,7 +321,7 @@ const Reports: React.FC = () => {
           </button>
         </div>
         
-        {/* Processing Metrics Card - Simplified without redundant content */}
+      
         <StatCard 
           title="Processing Metrics" 
           value={`${processingMetrics.avgDays} days`} 

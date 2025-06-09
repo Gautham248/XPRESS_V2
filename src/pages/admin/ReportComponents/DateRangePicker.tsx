@@ -163,7 +163,7 @@ const DateRangePicker: React.FC<DateRangePickerProps> = ({
               onClick={() => {
                 onStartDateChange('');
                 onEndDateChange('');
-                setIsOpen(false); // Also close the picker on clear
+                setIsOpen(false); 
               }}
               className="px-3 py-1 bg-gray-600 text-white text-sm rounded-md hover:bg-gray-700"
             >
