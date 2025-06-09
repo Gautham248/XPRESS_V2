@@ -77,33 +77,67 @@ const DocumentList: React.FC<DocumentListProps> = ({ docType, userId }) => {
     setShowConfirm(false);
   };
 
-  const handleDownload = async (url: string) => {
-    try {
-      const response = await axios.get(url, {
-        responseType: "blob",
-      });
-      console.log(response.data.type);
+const handleDownload = async (url: string) => {
+  try {
+    const response = await axios.get(url, {
+      responseType: "blob",
+    });
 
-      const blob = new Blob([response.data], {
-        type: "application/octet-stream",
-      }); // force download
-      const downloadUrl = window.URL.createObjectURL(blob);
+    // The server provides the MIME type (e.g., 'application/pdf', 'image/png')
+    const mimeType = response.data.type;
+    console.log("Detected MIME type:", mimeType);
 
-      const fileName = url.split("/").pop()?.split("?")[0] || "document";
+    // Create a new blob with a generic type to force a download prompt
+    const blob = new Blob([response.data], {
+      type: "application/octet-stream",
+    });
+    const downloadUrl = window.URL.createObjectURL(blob);
 
-      const link = document.createElement("a");
-      link.href = downloadUrl;
-      link.download = fileName.endsWith(".pdf") ? fileName : `${fileName}.pdf`; // ensure extension
-      link.style.display = "none"; // hide link
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(downloadUrl);
-    } catch (error) {
-      console.error("Download failed:", error);
-      toast.error("Failed to download document");
+    // --- Start of Changed Logic ---
+
+    // 1. Get the base file name from the URL
+    const fileNameFromUrl = url.split("/").pop()?.split("?")[0] || "download";
+
+    // 2. A map to associate MIME types with their common file extensions
+    const mimeTypeToExtension: { [key: string]: string } = {
+      "application/pdf": ".pdf",
+      "image/jpeg": ".jpeg",
+      "image/png": ".png",
+      // Add more types as you need them
+    };
+    
+    // 3. Determine the final filename
+    let finalFileName = fileNameFromUrl;
+    const knownExtensions = [".pdf", ".jpeg", ".jpg", ".png"];
+
+    // Check if the filename from the URL already has a valid extension
+    const hasExtension = knownExtensions.some(ext => fileNameFromUrl.toLowerCase().endsWith(ext));
+
+    if (!hasExtension) {
+      // If no extension, try to add one based on the MIME type
+      const extension = mimeTypeToExtension[mimeType];
+      if (extension) {
+        finalFileName = `${fileNameFromUrl}${extension}`;
+      }
+      // If the MIME type is unknown, it will download without an extension
     }
-  };
+    
+    // --- End of Changed Logic ---
+
+    const link = document.createElement("a");
+    link.href = downloadUrl;
+    link.download = finalFileName; // Use the dynamically determined filename
+    link.style.display = "none";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(downloadUrl);
+
+  } catch (error) {
+    console.error("Download failed:", error);
+    toast.error("Failed to download document");
+  }
+};
 
   const renderDetails = (doc: Document) => {
     switch (docType) {
