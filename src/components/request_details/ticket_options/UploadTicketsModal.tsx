@@ -24,6 +24,7 @@ interface UploadTicketsModalProps {
     isOpen: boolean;
     onClose: () => void;
     onConfirm: (data: AirlineTicketData) => void;
+    transportationType: 'flight' | 'train' | 'bus' | 'cab';
 }
 
 const CLOUDINARY_CLOUD_NAME = "dnwdvq7iv";
@@ -33,6 +34,7 @@ const UploadTicketsModal: React.FC<UploadTicketsModalProps> = memo(({
     isOpen,
     onClose,
     onConfirm,
+    transportationType,
 }) => {
     const [agencyName, setAgencyName] = useState<string>('');
     const [agencyExpense, setAgencyExpense] = useState<string>('');
@@ -114,14 +116,16 @@ const UploadTicketsModal: React.FC<UploadTicketsModalProps> = memo(({
         if (!selectedFile) newErrors.file = 'Please select a file to upload';
         else if (selectedFile.size > 10 * 1024 * 1024) newErrors.file = 'File size must be less than 10MB';
 
-        const airlineErrors = airlines.map((airline) => {
-            const error: { name?: string; cost?: string } = {};
-            if (!airline.name.trim()) error.name = 'Airline name is required';
-            if (!airline.cost.trim()) error.cost = 'Cost is required';
-            else if (isNaN(Number(airline.cost)) || Number(airline.cost) <= 0) error.cost = 'Cost must be a positive number';
-            return error;
-        });
-        if (airlineErrors.some(error => Object.keys(error).length > 0)) newErrors.airlines = airlineErrors;
+        if (transportationType === 'flight') {
+            const airlineErrors = airlines.map((airline) => {
+                const error: { name?: string; cost?: string } = {};
+                if (!airline.name.trim()) error.name = 'Airline name is required';
+                if (!airline.cost.trim()) error.cost = 'Cost is required';
+                else if (isNaN(Number(airline.cost)) || Number(airline.cost) <= 0) error.cost = 'Cost must be a positive number';
+                return error;
+            });
+            if (airlineErrors.some(error => Object.keys(error).length > 0)) newErrors.airlines = airlineErrors;
+        }
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     }, [agencyName, agencyExpense, totalExpense, selectedFile, airlines]);
@@ -255,7 +259,7 @@ const UploadTicketsModal: React.FC<UploadTicketsModalProps> = memo(({
                     </div>
 
                     {/* Airlines Details */}
-                    <div className="border border-gray-200 rounded-lg p-4 relative z-10">
+                    {transportationType.toLowerCase() === 'flight' &&<div className="border border-gray-200 rounded-lg p-4 relative z-10">
                         <div className="flex items-center justify-between mb-4">
                             <h3 className="text-sm font-medium text-gray-900">Airlines Details <span className='text-red-500'>*</span></h3>
                             <button type="button" onClick={addAirline} className="flex items-center px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 focus:outline-none focus:ring-1 focus:ring-blue-500">
@@ -293,6 +297,7 @@ const UploadTicketsModal: React.FC<UploadTicketsModalProps> = memo(({
                             ))}
                         </div>
                     </div>
+                    }
 
                     {/* Total Expense */}
                     <div className="border border-gray-200 rounded-lg p-4">

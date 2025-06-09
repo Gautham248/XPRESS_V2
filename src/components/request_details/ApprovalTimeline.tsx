@@ -2,9 +2,20 @@ import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { Check, Clock, X, Loader2, Edit } from 'lucide-react';
 import { format, isValid, parse } from 'date-fns';
-import { TimelineStep } from './TimelineModal';
 
-// --- Prop and API Data Interfaces ---
+// --- Interfaces ---
+interface TimelineStep {
+  id: string;
+  status: string;
+  date: string;
+  description: string;
+  details: string | null;
+  completed: boolean;
+  active: boolean;
+  rejected: boolean;
+  isModified: boolean;
+}
+
 interface ApprovalTimelineProps {
   requestId: string;
 }
@@ -27,7 +38,7 @@ interface ApiTravelRequestTimelineData {
 // --- Constants ---
 const LINEAR_PROGRESSION_STATUSES = [
   'PendingReview',
-  'Verified',
+  'Approved',
   'OptionsListed',
   'OptionSelected',
   'DUApproved',
@@ -40,8 +51,8 @@ const LINEAR_PROGRESSION_STATUSES = [
 type LinearStatus = typeof LINEAR_PROGRESSION_STATUSES[number];
 
 const STATUS_DISPLAY_PROPERTIES: Record<string, { displayName: string; icon: React.ReactNode }> = {
-  PendingReview: { displayName: 'Pending Review', icon: <Clock className="h-4 w-4" /> },
-  Verified: { displayName: 'Validated', icon: <Check className="h-4 w-4" /> },
+  PendingReview: { displayName: 'Request Submitted', icon: <Check className="h-4 w-4" /> },
+  Approved: { displayName: 'Approved', icon: <Check className="h-4 w-4" /> },
   OptionsListed: { displayName: 'Options Provided', icon: <Check className="h-4 w-4" /> },
   OptionSelected: { displayName: 'Option Confirmed', icon: <Check className="h-4 w-4" /> },
   DUApproved: { displayName: 'DU Approval', icon: <Check className="h-4 w-4" /> },
@@ -52,7 +63,7 @@ const STATUS_DISPLAY_PROPERTIES: Record<string, { displayName: string; icon: Rea
   Cancelled: { displayName: 'Canceled', icon: <X className="h-4 w-4" /> },
   Rejected: { displayName: 'Rejected', icon: <X className="h-4 w-4" /> },
   Modified: { displayName: 'Request Modified', icon: <Edit className="h-4 w-4" /> },
-  'Request Submitted': { displayName: 'Request Submitted', icon: <Check className="h-4 w-4" /> },
+  Pending: { displayName: 'Request Submitted', icon: <Check className="h-4 w-4" /> }, // Maps API's Pending to Request Submitted
 };
 
 const getDisplayProperties = (rawApiStatus: string) => {
@@ -86,7 +97,6 @@ const ApprovalTimeline: React.FC<ApprovalTimelineProps> = ({ requestId }) => {
       try {
         const response = await axios.get<{ isSuccess: boolean; result: ApiTravelRequestTimelineData; errorMessages?: string[] }>(
           `${API_BASE_URL}/TravelRequest/${requestId}/timeline`
-          // Remove headers for authentication
         );
         if (response.data.isSuccess && response.data.result) {
           setTravelRequestData(response.data.result);
@@ -151,7 +161,7 @@ const ApprovalTimeline: React.FC<ApprovalTimelineProps> = ({ requestId }) => {
     // Filter out 'BUApproved' events from timelineEvents
     const filteredEvents = timelineEvents.filter(event => event.type !== 'BUApproved');
 
-    // Merge duplicate 'OptionSelected' events
+    // Merge duplicate events (e.g., OptionSelected)
     const mergedEvents = filteredEvents.reduce((acc: ApiTimelineEvent[], event: ApiTimelineEvent) => {
       if (event.type === 'OptionSelected' && acc[acc.length - 1]?.type === 'OptionSelected') {
         const prev = acc[acc.length - 1];
@@ -173,7 +183,7 @@ const ApprovalTimeline: React.FC<ApprovalTimelineProps> = ({ requestId }) => {
     // Adjust rawStatus if it's 'BUApproved' to the next valid status
     let adjustedStatus = rawStatus;
     if (rawStatus === 'BUApproved') {
-      adjustedStatus = 'TicketDispatched'; // Skip to the next step
+      adjustedStatus = 'TicketDispatched';
     }
 
     // Find latest completed linear event index
@@ -193,16 +203,7 @@ const ApprovalTimeline: React.FC<ApprovalTimelineProps> = ({ requestId }) => {
       if (rawStatus === 'Closed') effectiveLinearIndex = LINEAR_PROGRESSION_STATUSES.length - 1;
     }
 
-    const baseSteps: (TimelineStep & { canceled?: boolean })[] = [
-      createTimelineStep(
-        'request-submitted',
-        'Request Submitted',
-        safeFormatDate(requestDate),
-        `${travelerName || 'Traveler'} submitted travel request.`,
-        { completed: true }
-      ),
-    ];
-
+    // Create base step for Request Submitted
     const eventSteps = mergedEvents.map((event: ApiTimelineEvent, index: number) => {
       const isModified = event.type === 'Modified';
       const isRejectedEvent = event.type === 'Rejected';
@@ -218,7 +219,7 @@ const ApprovalTimeline: React.FC<ApprovalTimelineProps> = ({ requestId }) => {
 
       return createTimelineStep(
         event.id || `event-${index}`,
-        event.type,
+        event.type === 'Pending' ? 'PendingReview' : event.type,
         safeFormatDate(event.date),
         event.description,
         {
@@ -231,27 +232,57 @@ const ApprovalTimeline: React.FC<ApprovalTimelineProps> = ({ requestId }) => {
       );
     });
 
-    let combinedSteps = [...baseSteps, ...eventSteps];
-
-    // Remove duplicate 'Request Submitted'
-    const submittedEventIndex = combinedSteps.findIndex(
-      step => step.status === getDisplayProperties('Request Submitted').displayName && step.id !== 'request-submitted'
-    );
-    if (submittedEventIndex > -1 && combinedSteps[0].id === 'request-submitted') {
-      if (JSON.stringify(combinedSteps[0]) !== JSON.stringify(combinedSteps[submittedEventIndex])) {
-        combinedSteps[0] = combinedSteps[submittedEventIndex];
-        combinedSteps.splice(submittedEventIndex, 1);
-      } else {
-        combinedSteps.splice(submittedEventIndex, 1);
-      }
-    }
-
+    // Initialize timeline with all possible steps
     const finalTimeline: (TimelineStep & { canceled?: boolean })[] = [];
     const addedDisplayStatuses = new Set<string>();
 
-    combinedSteps.forEach(step => {
-      finalTimeline.push(step);
-      addedDisplayStatuses.add(step.status);
+    // Add steps from events, avoiding duplicates
+    eventSteps.forEach(step => {
+      if (!addedDisplayStatuses.has(step.status)) {
+        finalTimeline.push(step);
+        addedDisplayStatuses.add(step.status);
+      } else if (step.status === getDisplayProperties('PendingReview').displayName) {
+        // Replace base step with event step for Request Submitted if it has a valid date
+        const existingIndex = finalTimeline.findIndex(s => s.status === step.status);
+        if (existingIndex !== -1) {
+          const existingDate = parse(finalTimeline[existingIndex].date, DATE_FORMAT, new Date());
+          const newDate = parse(step.date, DATE_FORMAT, new Date());
+          if (isValid(newDate) && (!isValid(existingDate) || newDate > existingDate)) {
+            finalTimeline[existingIndex] = step;
+          }
+        }
+      }
+    });
+
+    // Add all linear progression steps
+    LINEAR_PROGRESSION_STATUSES.forEach((rawStatus, index) => {
+      const displayProps = getDisplayProperties(rawStatus);
+      if (!addedDisplayStatuses.has(displayProps.displayName)) {
+        let stepStatus: 'completed' | 'active' | 'pending' = 'pending';
+        if (index <= effectiveLinearIndex) {
+          stepStatus = 'completed';
+        } else if (index === effectiveLinearIndex + 1 && !isTerminal) {
+          stepStatus = 'active';
+        }
+
+        const step = createTimelineStep(
+          `step-${rawStatus}`,
+          rawStatus,
+          stepStatus === 'completed' ? safeFormatDate(requestDate) : stepStatus === 'active' ? 'Pending' : 'Not Yet Started',
+          stepStatus === 'completed'
+            ? `${displayProps.displayName} completed.`
+            : stepStatus === 'active'
+            ? `Awaiting ${displayProps.displayName.toLowerCase()}`
+            : 'This step has not been reached.',
+          {
+            completed: stepStatus === 'completed',
+            active: stepStatus === 'active',
+            details: null,
+          }
+        );
+        finalTimeline.push(step);
+        addedDisplayStatuses.add(displayProps.displayName);
+      }
     });
 
     // Add global rejected/canceled if not in events
@@ -261,7 +292,7 @@ const ApprovalTimeline: React.FC<ApprovalTimelineProps> = ({ requestId }) => {
           'global-rejection',
           'Rejected',
           safeFormatDate(undefined),
-          'The travel request was rejected.',
+          'Travel request was rejected.',
           { rejected: true, completed: true }
         )
       );
@@ -272,95 +303,43 @@ const ApprovalTimeline: React.FC<ApprovalTimelineProps> = ({ requestId }) => {
           'global-cancellation',
           'Cancelled',
           safeFormatDate(undefined),
-          'The travel request was cancelled.',
+          'Travel request was cancelled.',
           { canceled: true, completed: true }
         )
       );
     }
 
-    // Add future linear steps, excluding BUApproved
-    if (!isTerminal && effectiveLinearIndex < LINEAR_PROGRESSION_STATUSES.length - 1) {
-      let foundActive = false;
-      LINEAR_PROGRESSION_STATUSES.forEach((rawStatus, idx) => {
-        const displayProps = getDisplayProperties(rawStatus);
-        if (!addedDisplayStatuses.has(displayProps.displayName)) {
-          if (!foundActive && idx === effectiveLinearIndex + 1) {
-            finalTimeline.push(
-              createTimelineStep(
-                `active-${rawStatus}`,
-                rawStatus,
-                'Pending',
-                `Awaiting ${displayProps.displayName.toLowerCase()}`,
-                { active: true }
-              )
-            );
-            foundActive = true;
-          } else if (idx > effectiveLinearIndex + 1) {
-            finalTimeline.push(
-              createTimelineStep(
-                `pending-${rawStatus}`,
-                rawStatus,
-                'Not Yet Started',
-                'This step has not been reached.',
-                { completed: false, active: false }
-              )
-            );
-          }
-        } else {
-          const existingStep = finalTimeline.find(s => s.status === displayProps.displayName);
-          if (
-            existingStep &&
-            !existingStep.completed &&
-            !existingStep.rejected &&
-            !existingStep.isModified &&
-            !existingStep.canceled &&
-            idx === effectiveLinearIndex + 1
-          ) {
-            existingStep.active = true;
-            foundActive = true;
-          }
-        }
-      });
-    }
-
-    // Sort timeline
+    // Sort timeline by LINEAR_PROGRESSION_STATUSES order
     finalTimeline.sort((a, b) => {
-      const dateA =
-        a.date === 'Pending' || a.date === 'Not Yet Started' || a.date === 'N/A'
-          ? new Date(0)
-          : parse(a.date, DATE_FORMAT, new Date());
-      const dateB =
-        b.date === 'Pending' || b.date === 'Not Yet Started' || b.date === 'N/A'
-          ? new Date(0)
-          : parse(b.date, DATE_FORMAT, new Date());
+      const statusOrderA = LINEAR_PROGRESSION_STATUSES.indexOf(a.status.replace(' ', '') as LinearStatus);
+      const statusOrderB = LINEAR_PROGRESSION_STATUSES.indexOf(b.status.replace(' ', '') as LinearStatus);
 
-      if (a.completed && !b.completed) return -1;
-      if (!a.completed && b.completed) return 1;
-      if (a.active && !b.active) return -1;
-      if (!a.active && b.active) return 1;
-      if (isValid(dateA) && isValid(dateB)) return dateA.getTime() - dateB.getTime();
+      if (statusOrderA !== -1 && statusOrderB !== -1) {
+        return statusOrderA - statusOrderB;
+      }
+      if (a.rejected || a.canceled) return 1;
+      if (b.rejected || b.canceled) return -1;
       return 0;
     });
 
     return finalTimeline;
   }, [travelRequestData, createTimelineStep]);
 
-  const getStepStyles = (step: TimelineStep & { canceled?: boolean }) => {
+  const getStepStyles = (step: TimelineStep & { canceled?: boolean }, isFirstStep: boolean) => {
     if (step.rejected) return { circle: 'bg-red-100 text-red-600', line: 'bg-red-200', title: 'text-red-600', date: 'text-red-500' };
     if (step.canceled) return { circle: 'bg-yellow-100 text-yellow-600', line: 'bg-yellow-200', title: 'text-yellow-600', date: 'text-yellow-500' };
     if (step.active) return { circle: 'bg-purple-100 text-purple-600', line: 'bg-gray-200', title: 'text-purple-700 font-semibold', date: 'text-purple-500' };
-    if (step.completed) return { circle: 'bg-green-100 text-green-600', line: 'bg-green-200', title: 'text-green-700', date: 'text-gray-500' };
+    if (step.completed || isFirstStep) return { circle: 'bg-green-100 text-green-600', line: 'bg-green-200', title: 'text-green-700', date: 'text-gray-500' };
     if (step.isModified) return { circle: 'bg-blue-100 text-blue-600', line: 'bg-gray-200', title: 'text-blue-700', date: 'text-blue-500' };
     return { circle: 'bg-gray-100 text-gray-400', line: 'bg-gray-200', title: 'text-gray-400', date: 'text-gray-400' };
   };
 
-  const renderIcon = (step: TimelineStep & { canceled?: boolean }) => {
-    const props = getDisplayProperties(step.status === getDisplayProperties('Request Submitted').displayName ? 'Request Submitted' : step.status);
-    if (step.rejected || step.canceled) return props.icon;
+  const renderIcon = (step: TimelineStep & { canceled?: boolean }, isFirstStep: boolean) => {
+    if (step.rejected || step.canceled) return <X className="h-4 w-4" />;
     if (step.active) return <Clock className="h-4 w-4 animate-pulse" />;
-    if (step.isModified) return props.icon;
-    if (step.completed) return props.icon;
-    return props.icon;
+    if (step.completed || isFirstStep) return <Check className="h-4 w-4" />;
+    if (step.isModified) return <Edit className="h-4 w-4" />;
+    return <div className="h-2 w-2 bg-gray-400 rounded-full" />;
   };
 
   if (loading) {
@@ -391,32 +370,34 @@ const ApprovalTimeline: React.FC<ApprovalTimelineProps> = ({ requestId }) => {
   }
 
   return (
-    <div className="card mb-6 p-6 bg-white rounded-lg shadow h-full">
+    <div className="card mb-6 p-6 bg-white rounded-lg shadow h-full  overflow-hidden">
       <h3 className="text-lg font-semibold mb-6 text-gray-800">Travel Request Timeline</h3>
-      <div className="space-y-6">
-        {processedTimelineSteps.map((step, index) => {
-          const styles = getStepStyles(step);
-          const isLastStep = index === processedTimelineSteps.length - 1;
+      <div className="overflow-y-auto max-h pr-2">
+        <div className="space-y-6">
+          {processedTimelineSteps.map((step, index) => {
+            const isFirstStep = index === 0;
+            const styles = getStepStyles(step, isFirstStep);
+            const isLastStep = index === processedTimelineSteps.length - 1;
 
-          return (
-            <div key={step.id || `timeline-step-${index}`} className="flex items-start relative">
-              {!isLastStep && (
-                <div
-                  className={`absolute left-[0.9375rem] top-8 w-0.5 h-[calc(100%-1.5rem)] ${styles.line} transition-colors duration-300`}
-                />
-              )}
-              <div className={`mr-4 flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${styles.circle} transition-colors duration-300`}>
-                {renderIcon(step)}
+            return (
+              <div key={step.id || `timeline-step-${index}`} className="flex items-start relative">
+                {!isLastStep && (
+                  <div
+                    className={`absolute left-[0.9375rem] top-8 w-0.5 h-[calc(100%-1.5rem)] ${styles.line} transition-colors duration-300`}
+                  />
+                )}
+                <div className={`mr-4 flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${styles.circle} transition-colors duration-300`}>
+                  {renderIcon(step, isFirstStep)}
+                </div>
+                <div className="flex-grow">
+                  <p className={`font-medium ${styles.title} transition-colors duration-300`}>{step.status}</p>
+                  <p className={`text-sm ${styles.date} transition-colors duration-300`}>{step.date}</p>
+                  {step.description && <p className="text-sm text-gray-600 mt-0.5">{step.description}</p>}
+                </div>
               </div>
-              <div className="flex-grow">
-                <p className={`font-medium ${styles.title} transition-colors duration-300`}>{step.status}</p>
-                <p className={`text-sm ${styles.date} transition-colors duration-300`}>{step.date}</p>
-                {step.description && <p className="text-sm text-gray-600 mt-0.5">{step.description}</p>}
-                {/* {step.details && <p className="text-sm text-gray-500 mt-0.5 italic">{step.details}</p>} */}
-              </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
     </div>
   );

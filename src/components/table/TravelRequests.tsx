@@ -5,7 +5,7 @@ import DataTable from './DataTable';
 import { Eye, CheckCircle, XCircle } from 'lucide-react';
 
 interface TravelRequest {
-  [key: string]: any; // Allow any key-value pairs to accommodate dynamic fields
+  [key: string]: any;
 }
 
 interface User {
@@ -29,6 +29,8 @@ const TravelRequests: React.FC = () => {
   const [headers, setHeaders] = useState<Header[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [role, setRole] = useState<string>(''); // State for role
+  const [statusOptions, setStatusOptions] = useState<string[]>([]); // State for status options
 
   useEffect(() => {
     const fetchTravelRequests = async () => {
@@ -49,13 +51,13 @@ const TravelRequests: React.FC = () => {
 
         const email = user.userEmail;
         const token = user.token;
-        const role = user.role;
+        setRole(user.role); // Set the role state
 
         // Determine the API endpoint based on the user's role
         let apiUrl = '';
-        if (role === 'admin') {
+        if (user.role === 'admin') {
           apiUrl = 'http://localhost:5030/api/TravelRequest/travelrequests';
-        } else if (role === 'duhead') {
+        } else if (user.role === 'duhead') {
           apiUrl = `http://localhost:5030/api/TravelRequest/ByDUH/${encodeURIComponent(email)}`;
         } else {
           apiUrl = `http://localhost:5030/api/TravelRequest/ByProjectManager/${encodeURIComponent(email)}`;
@@ -70,14 +72,14 @@ const TravelRequests: React.FC = () => {
         });
 
         if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+          throw new Error('Failed to fetch travel requests.');
         }
 
         const data = await response.json();
 
         // Handle response based on the role
         let travelRequestData: any[];
-        if (role === 'admin') {
+        if (user.role === 'admin') {
           if (!Array.isArray(data)) {
             throw new Error('Invalid API response format: Expected an array for admin role');
           }
@@ -135,7 +137,6 @@ const TravelRequests: React.FC = () => {
 
           // Add remaining fields from the API response
           Object.keys(sampleItem).forEach((key) => {
-            // Skip fields that are in priorityFields, excluded, or shouldn't be displayed
             if (priorityKeys.has(key) || excludedKeys.has(key)) {
               return;
             }
@@ -145,7 +146,6 @@ const TravelRequests: React.FC = () => {
               .replace(/^./, (str) => str.toUpperCase())
               .trim();
 
-            // Customize display names for specific fields
             if (key === 'projectName') displayName = 'Project Code';
             if (key === 'travelModeName') displayName = 'Travel Mode';
             if (key === 'projectManagerName') displayName = 'Manager';
@@ -158,26 +158,26 @@ const TravelRequests: React.FC = () => {
             });
           });
 
-          // Add remaining derived fields
           dynamicHeaders.unshift(
             { key: 'travelDates', displayName: 'Travel Dates', sortable: true, filterable: false }
           );
         }
 
-        // Combine priority fields with remaining dynamic fields
         setHeaders([...priorityFields, ...dynamicHeaders]);
 
         const mappedData: TravelRequest[] = travelRequestData.map((item: any) => {
-          // Convert UTC dates to IST
-          const convertUtcToIst = (utcDate: string | null): Date | null => {
+          const convertUtcToIst = (utcDate: string | null): string | null => {
             if (!utcDate) return null;
             const date = parseISO(utcDate);
             const istOffset = 5.5 * 60 * 60 * 1000; // IST is UTC+5:30
-            return new Date(date.getTime() + istOffset);
+            const istDate = new Date(date.getTime() + istOffset);
+            return format(istDate, 'dd-MM-yyyy');
           };
 
           const departureDateIst = convertUtcToIst(item.outboundDepartureDate);
           const returnDateIst = convertUtcToIst(item.returnDepartureDate);
+          const outboundArrivalDateIst = convertUtcToIst(item.outboundArrivalDate);
+          const returnArrivalDateIst = convertUtcToIst(item.returnArrivalDate);
 
           return {
             ...item,
@@ -187,18 +187,26 @@ const TravelRequests: React.FC = () => {
             source: item.sourcePlace && item.sourceCountry ? `${item.sourcePlace}, ${item.sourceCountry}` : 'N/A',
             destination: item.destinationPlace && item.destinationCountry ? `${item.destinationPlace}, ${item.destinationCountry}` : 'N/A',
             travelDates: departureDateIst && returnDateIst 
-              ? `${format(departureDateIst, 'MMM dd, yyyy')} - ${format(returnDateIst, 'MMM dd, yyyy')}` 
+              ? `${departureDateIst} - ${returnDateIst}` 
               : 'N/A',
             departureDate: item.outboundDepartureDate,
             returnDate: item.returnDepartureDate,
+            outboundDepartureDate: departureDateIst || 'N/A',
+            outboundArrivalDate: outboundArrivalDateIst || 'N/A',
+            returnDepartureDate: returnDateIst || 'N/A',
+            returnArrivalDate: returnArrivalDateIst || 'N/A',
             comments: item.comments || 'N/A',
             departmentCode: item.duId ? item.duId.toString() : 'N/A',
           };
         });
 
+        // Extract all unique statuses from the data
+        const uniqueStatuses = [...new Set(mappedData.map(item => item.currentStatusName))].filter(status => status != null).sort();
+        setStatusOptions(uniqueStatuses);
+
         setTravelRequests(mappedData);
       } catch (err: any) {
-        setError(err.message || 'Failed to fetch travel requests. Please try again later.');
+        setError(err.message || 'Failed to fetch travel requests.');
         console.error('Error fetching travel requests:', err);
         setTravelRequests([]);
       } finally {
@@ -208,6 +216,12 @@ const TravelRequests: React.FC = () => {
 
     fetchTravelRequests();
   }, []);
+
+  // Function to get the page title based on the user's role
+  const getPageTitle = () => {
+    if (!role) return 'Dashboard';
+    return `${role.charAt(0).toUpperCase() + role.slice(1)} Dashboard`;
+  };
 
   const getStatusColor = (status: string | undefined): string => {
     if (!status) return 'bg-gray-100 text-gray-800';
@@ -247,12 +261,10 @@ const TravelRequests: React.FC = () => {
 
   const handleApproveAction = (item: TravelRequest) => {
     console.log('Approving item:', item.id);
-    // Add your approval logic here, e.g., API call to update status
   };
 
   const handleRejectAction = (item: TravelRequest) => {
     console.log('Rejecting item:', item.id);
-    // Add your rejection logic here, e.g., API call to update status
   };
 
   if (loading) {
@@ -260,20 +272,32 @@ const TravelRequests: React.FC = () => {
   }
 
   if (error) {
-    return <div className="text-center py-8 text-red-600">{error}</div>;
+    return (
+      <div className="text-center py-8">
+        <h2 className="text-xl font-semibold text-blue-600">Great News !</h2>
+        <p className="text-gray-600">You have no travel requests to be worried about</p>
+      </div>
+    );
+  }
+
+  if (travelRequests.length === 0) {
+    return (
+      <div className="text-center py-8">
+        <h2 className="text-xl font-semibold text-green-600">Great news!</h2>
+        <p className="text-gray-600">There are no travel requests awaiting your approval.</p>
+      </div>
+    );
   }
 
   return (
     <DataTable<TravelRequest>
       headers={headers}
       data={travelRequests}
-      title="Travel Requests"
-      searchableFields={headers.filter(h => h.filterable !== false).map(h => h.key)}
-      statusOptions={['PendingReview', 'DUApproved', 'OptionSelected', 'Rejected']}
+      title={getPageTitle()}
+      searchableFields={['projectName', 'employeeName', 'source', 'destination']}
+      statusOptions={statusOptions}
       typeOptions={['Domestic', 'International']}
       dateFilterKey="departureDate"
-      newButtonLabel="New Request"
-      newButtonPath="/create-request"
       getStatusColor={getStatusColor}
       getTypeColor={(type: string) =>
         type === 'Domestic' ? 'bg-primary/10 text-primary' : 'bg-secondary/10 text-secondary'
@@ -288,6 +312,7 @@ const TravelRequests: React.FC = () => {
               e.stopPropagation();
               handleRowClick(item);
             }}
+            data-testid={`view-details-${item.id}`}
           >
             <Eye size={18} />
           </button>
@@ -300,6 +325,7 @@ const TravelRequests: React.FC = () => {
                   e.stopPropagation();
                   handleApproveAction(item);
                 }}
+                data-testid={`approve-${item.id}`}
               >
                 <CheckCircle size={18} />
               </button>
@@ -310,6 +336,7 @@ const TravelRequests: React.FC = () => {
                   e.stopPropagation();
                   handleRejectAction(item);
                 }}
+                data-testid={`reject-${item.id}`}
               >
                 <XCircle size={18} />
               </button>

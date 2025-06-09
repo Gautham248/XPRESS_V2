@@ -28,7 +28,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
           <Plane className="h-6 w-6 text-primary" />
           <span className={`ml-2 text-xl font-semibold text-primary transition-opacity duration-200 
             ${isOpen ? 'opacity-100' : 'opacity-0 hidden'}`}>
-            TravelPro
+           Xpress
           </span>
         </div>
         <button 
@@ -85,17 +85,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
       </div>
       
       <div className="p-4 border-t">
-        <div className={`flex items-center ${isOpen ? '' : 'justify-center'}`}>
-          <div className="flex-shrink-0">
-            <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center text-white">
-              <User className="h-4 w-4" />
-            </div>
-          </div>
-          <div className={`ml-3 transition-opacity duration-200 ${isOpen ? 'opacity-100' : 'opacity-0 hidden'}`}>
-            <p className="text-sm font-medium">Sarah Parker</p>
-            <p className="text-xs text-muted-foreground">Travel Manager</p>
-          </div>
-        </div>
+        
         
         <button className={`mt-4 sidebar-link text-muted-foreground w-full ${isOpen ? '' : 'justify-center'}`}>
           <LogOut className="h-5 w-5" />

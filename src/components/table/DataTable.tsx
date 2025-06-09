@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import * as XLSX from 'xlsx';
 
 interface Header {
@@ -206,43 +206,50 @@ const DataTable = <T extends Record<string, any>>({
   const dateFilteredData = filteredData.filter(item => {
     if (!dateFilterKey || (!startDate && !endDate)) return true;
 
+    const convertUtcToIstDate = (utcDate: string | null): Date | null => {
+      if (!utcDate) return null;
+      const date = parseISO(utcDate);
+      const istOffset = 5.5 * 60 * 60 * 1000; // IST is UTC+5:30
+      return new Date(date.getTime() + istOffset);
+    };
+
     if (dateFilterType === 'requestDate') {
       const itemDateValue = item[dateFilterKey];
       if (!itemDateValue) return false;
-      const dateValue = new Date(itemDateValue);
-      if (isNaN(dateValue.getTime())) return false;
+      const dateValueIst = convertUtcToIstDate(itemDateValue);
+      if (!dateValueIst || isNaN(dateValueIst.getTime())) return false;
 
       const sDate = startDate ? new Date(new Date(startDate).setHours(0, 0, 0, 0)) : null;
       const eDate = endDate ? new Date(new Date(endDate).setHours(23, 59, 59, 999)) : null;
 
-      const itemDay = new Date(new Date(dateValue).setHours(0, 0, 0, 0));
+      const itemDay = new Date(dateValueIst.setHours(0, 0, 0, 0));
 
       if (sDate && eDate && sDate.getTime() === new Date(new Date(eDate).setHours(0, 0, 0, 0)).getTime()) {
         return itemDay.getTime() === sDate.getTime();
       }
-      if (sDate && eDate) return dateValue >= sDate && dateValue <= eDate;
-      if (sDate) return dateValue >= sDate;
-      if (eDate) return dateValue <= eDate;
+      if (sDate && eDate) return dateValueIst >= sDate && dateValueIst <= eDate;
+      if (sDate) return dateValueIst >= sDate;
+      if (eDate) return dateValueIst <= eDate;
       return true;
     } else {
-      const departureDate = item.departureDate ? new Date(item.departureDate) : null;
-      const returnDate = item.returnDate ? new Date(item.returnDate) : null;
-      if (!departureDate || !returnDate || isNaN(departureDate.getTime()) || isNaN(returnDate.getTime())) return false;
+      const departureDateIst = convertUtcToIstDate(item.departureDate);
+      const returnDateIst = convertUtcToIstDate(item.returnDate);
+      if (!departureDateIst || !returnDateIst || isNaN(departureDateIst.getTime()) || isNaN(returnDateIst.getTime())) return false;
 
       const sDate = startDate ? new Date(new Date(startDate).setHours(0, 0, 0, 0)) : null;
       const eDate = endDate ? new Date(new Date(endDate).setHours(23, 59, 59, 999)) : null;
 
-      const departureDay = departureDate ? new Date(new Date(departureDate).setHours(0, 0, 0, 0)) : null;
-      const returnDay = returnDate ? new Date(new Date(returnDate).setHours(0, 0, 0, 0)) : null;
+      const departureDay = new Date(departureDateIst.setHours(0, 0, 0, 0));
+      const returnDay = new Date(returnDateIst.setHours(0, 0, 0, 0));
 
       if (sDate && eDate && sDate.getTime() === new Date(new Date(eDate).setHours(0, 0, 0, 0)).getTime()) {
-        return departureDay && returnDay && departureDay.getTime() <= sDate.getTime() && returnDay.getTime() >= sDate.getTime();
+        return departureDay.getTime() <= sDate.getTime() && returnDay.getTime() >= sDate.getTime();
       }
       if (sDate && eDate) {
-        return departureDate <= eDate && returnDate >= sDate;
+        return departureDateIst <= eDate && returnDateIst >= sDate;
       }
-      if (sDate) return returnDate >= sDate;
-      if (eDate) return departureDate <= eDate;
+      if (sDate) return returnDateIst >= sDate;
+      if (eDate) return departureDateIst <= eDate;
       return true;
     }
   });
@@ -276,6 +283,7 @@ const DataTable = <T extends Record<string, any>>({
   };
 
   const formatDateForDisplay = (dateInput: string | Date): string => {
+    if (typeof dateInput === 'string') return dateInput;
     try { return format(new Date(dateInput), 'dd-MM-yyyy'); } 
     catch (e) { return String(dateInput); }
   };
@@ -511,7 +519,7 @@ const DataTable = <T extends Record<string, any>>({
                       {header.key === 'travelDates' && item.departureDate && item.returnDate ? (
                         <div className="flex items-center">
                           <Calendar className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
-                          <span>{formatDateForDisplay(item.departureDate)} - {formatDateForDisplay(item.returnDate)}</span>
+                          <span>{item[header.key]}</span>
                         </div>
                       ) : header.key === 'currentStatusName' && getStatusColor ? (
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(item[header.key])}`}>

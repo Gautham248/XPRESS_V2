@@ -97,7 +97,7 @@ const Header: React.FC<HeaderProps> = ({ pageTitle, toggleSidebar, sidebarOpen }
             </div>
             <div className="flex items-center">
               <span className="text-sm">{userName || 'User'}</span>
-              <ChevronDown className="h-4 w-4 ml-1 text-muted-foreground" />
+              {/* <ChevronDown className="h-4 w-4 ml-1 text-muted-foreground" /> */}
             </div>
           </div>
         </div>
