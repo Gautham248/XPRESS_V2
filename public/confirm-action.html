@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confirm Action - Travel Request</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 90vh; margin: 20px; background-color: #f4f7f9; color: #333; line-height: 1.6; }
+        .container { background-color: #ffffff; padding: 30px 40px; border-radius: 8px; box-shadow: 0 8px 16px rgba(0,0,0,0.1); text-align: center; max-width: 550px; width: 90%; }
+        h1 { font-size: 1.75em; color: #2c3e50; margin-bottom: 15px; }
+        p { font-size: 1.1em; margin-bottom: 25px; }
+        #requestInfo { font-weight: bold; color: #3498db; margin-bottom: 10px; }
+        .button-group { display: flex; justify-content: center; gap: 15px; margin-top: 20px; }
+        button { border: none; padding: 12px 25px; font-size: 1em; border-radius: 5px; cursor: pointer; transition: background-color 0.2s ease, transform 0.1s ease; font-weight: 500; }
+        button:hover { transform: translateY(-1px); }
+        button:active { transform: translateY(0px); }
+        #confirmButton { background-color: #28a745; color: white; }
+        #confirmButton:hover { background-color: #218838; }
+        #cancelButton { background-color: #6c757d; color: white; }
+        #cancelButton:hover { background-color: #5a6268; }
+        button:disabled { background-color: #e9ecef; color: #6c757d; cursor: not-allowed; transform: none; }
+        #message { margin-top: 25px; font-weight: bold; font-size: 1.1em; padding: 10px; border-radius: 4px; }
+        .message-success { color: #155724; background-color: #d4edda; border: 1px solid #c3e6cb;}
+        .message-error { color: #721c24; background-color: #f8d7da; border: 1px solid #f5c6cb;}
+        .message-info { color: #0c5460; background-color: #d1ecf1; border: 1px solid #bee5eb;}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 id="actionTitle">Confirm Action</h1>
+        <p id="requestInfo">Loading request information...</p>
+        <p id="confirmationQuestion">Are you sure you want to proceed?</p>
+        <div class="button-group">
+            <button id="confirmButton" disabled>Confirm</button>
+            <button id="cancelButton" onclick="closeWindow()">Cancel & Close</button>
+        </div>
+        <div id="message"></div>
+    </div>
+
+    <script>
+        // --- Configuration ---
+        // !!! IMPORTANT: Adjust this to your actual ASP.NET Core API's base URL for the ApprovalsController !!!
+        const API_DOMAIN = 'https://localhost:5030'; // Example: Your .NET API domain (running on Kestrel)
+        const APPROVALS_API_BASE_PATH = '/api/Approvals'; // The route prefix for your ApprovalsController
+
+        // --- Get Parameters from URL ---
+        const urlParams = new URLSearchParams(window.location.search);
+        const actionTypeParam = urlParams.get('action');
+        const requestIdParam = urlParams.get('requestId');
+        const intendedActorEmailParam = urlParams.get('intendedActor');
+        const optionIdParam = urlParams.get('optionId'); // Only for select-ticket
+
+        // --- DOM Elements ---
+        const requestInfoEl = document.getElementById('requestInfo');
+        const actionTitleEl = document.getElementById('actionTitle');
+        const confirmButtonEl = document.getElementById('confirmButton');
+        const cancelButtonEl = document.getElementById('cancelButton');
+        const messageEl = document.getElementById('message');
+        const confirmationQuestionEl = document.getElementById('confirmationQuestion');
+
+        // --- State Variables ---
+        let apiPath = '';
+        let httpMethod = 'PUT'; // Default for approvals/rejections
+        let actionDisplayableText = 'Unknown Action';
+
+        // --- Initialization ---
+        function initializePage() {
+            if (!actionTypeParam || !requestIdParam || !intendedActorEmailParam) {
+                requestInfoEl.textContent = '';
+                actionTitleEl.textContent = 'Error';
+                confirmationQuestionEl.textContent = 'Invalid action link. Required information is missing.';
+                confirmButtonEl.disabled = true;
+                return;
+            }
+
+            requestInfoEl.textContent = `For Travel Request ID: ${requestIdParam}`;
+            confirmButtonEl.disabled = false; // Enable button once basic params are present
+
+            switch (actionTypeParam) {
+                case 'manager-approve':
+                    actionDisplayableText = 'Approve Request (Manager)';
+                    apiPath = `/${requestIdParam}/manager/approve`;
+                    break;
+                case 'manager-reject':
+                    actionDisplayableText = 'Reject Request (Manager)';
+                    apiPath = `/${requestIdParam}/manager/reject`;
+                    break;
+                case 'duhead-approve':
+                    actionDisplayableText = 'Approve Request (DU Head)';
+                    apiPath = `/${requestIdParam}/duhead/approve`;
+                    break;
+                case 'duhead-reject':
+                    actionDisplayableText = 'Reject Request (DU Head)';
+                    apiPath = `/${requestIdParam}/duhead/reject`;
+                    break;
+                case 'select-ticket':
+                    if (!optionIdParam) {
+                        actionDisplayableText = 'Error: Missing Option ID for ticket selection.';
+                        apiPath = null; // Prevent action
+                        confirmButtonEl.disabled = true;
+                    } else {
+                        actionDisplayableText = `Select Ticket Option ${optionIdParam} (Manager)`;
+                        apiPath = `/${requestIdParam}/manager/select-ticket/${optionIdParam}`;
+                    }
+                    break;
+                default:
+                    apiPath = null; // Prevent action
+                    confirmButtonEl.disabled = true;
+            }
+
+            if (!apiPath) { // If actionType was invalid or params missing for it
+                messageEl.textContent = `Error: Action '${actionTypeParam}' is not recognized or is missing required parameters.`;
+                messageEl.className = 'message-error';
+                confirmationQuestionEl.style.display = 'none';
+            } else {
+                actionTitleEl.textContent = `Confirm: ${actionDisplayableText}`;
+                confirmButtonEl.textContent = actionDisplayableText.split('(')[0].trim(); // e.g., "Approve Request"
+            }
+        }
+
+        // --- Event Listener ---
+        confirmButtonEl.addEventListener('click', async () => {
+            if (confirmButtonEl.disabled || !apiPath) return;
+
+            messageEl.textContent = 'Processing...';
+            messageEl.className = 'message-info';
+            confirmButtonEl.disabled = true;
+            cancelButtonEl.disabled = true;
+
+            const requestBody = {
+                actorEmail: intendedActorEmailParam, // Pass the email of the intended actor
+                comments: "" // TODO: Optionally add a textarea to this HTML page for comments
+            };
+
+            try {
+                const fullApiUrl = `${API_DOMAIN}${APPROVALS_API_BASE_PATH}${apiPath}`;
+                console.log(`Attempting ${httpMethod} to: ${fullApiUrl}`);
+                console.log("Request body:", requestBody);
+
+                const response = await fetch(fullApiUrl, {
+                    method: httpMethod,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        // If your API is secured by JWT and this page is on a domain
+                        // where the user might be logged in, you'd add Authorization header here.
+                        // e.g., 'Authorization': `Bearer ${localStorage.getItem('userAuthToken')}`
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+
+                const responseText = await response.text(); // Get response text first for logging/parsing
+
+                if (response.ok) {
+                    console.log("API call successful. Response:", responseText);
+                    if (response.headers.get("content-type")?.includes("text/html")) {
+                        // If API returns full HTML response, replace current page content
+                        // This allows your API to render the final success/error page directly.
+                        document.open();
+                        document.write(responseText);
+                        document.close();
+                    } else {
+                        // If API returns JSON or plain text success
+                        messageEl.textContent = `Action successful! ${responseText}`;
+                        messageEl.className = 'message-success';
+                    }
+                } else {
+                    console.error(`API Error ${response.status}:`, responseText);
+                    let displayError = `An error occurred (Status: ${response.status}).`;
+                    if (response.headers.get("content-type")?.includes("text/html")) {
+                        try {
+                            const parser = new DOMParser();
+                            const doc = parser.parseFromString(responseText, "text/html");
+                            const h1 = doc.querySelector('h1'); // Assuming your API error page has an H1
+                            const pMsg = doc.querySelector('p'); // And a P for the message
+                            if (h1 && pMsg) {
+                                displayError = `Error: ${h1.textContent} - ${pMsg.textContent}`;
+                            } else if (pMsg) { // Sometimes just a p tag
+                                displayError = `Error: ${pMsg.textContent}`;
+                            }
+                        } catch (e) { /* Use raw responseText if parsing HTML fails */ }
+                    } else if (responseText) {
+                         displayError = `Error ${response.status}: ${responseText}`;
+                    }
+                    messageEl.textContent = displayError;
+                    messageEl.className = 'message-error';
+                    confirmButtonEl.disabled = false; // Re-enable if user might want to retry (e.g., network error)
+                }
+            } catch (error) {
+                console.error('JavaScript Fetch API call error:', error);
+                messageEl.textContent = 'A network error occurred or the API is unreachable. Please check your connection and try again. See console for details.';
+                messageEl.className = 'message-error';
+                confirmButtonEl.disabled = false; // Re-enable for retry
+            } finally {
+                cancelButtonEl.disabled = false; // Always re-enable cancel
+            }
+        });
+
+        // --- Utility ---
+        function closeWindow() {
+            // Try to close the window/tab. May not work in all browsers due to security.
+            window.open('', '_self', ''); // Attempt to release the window for some browsers
+            window.close();
+            if (!window.closed) { // If not closed (e.g., due to browser restrictions)
+                confirmationQuestionEl.style.display = 'none';
+                confirmButtonEl.style.display = 'none';
+                cancelButtonEl.textContent = 'Close Tab';
+                messageEl.innerHTML = "You can now manually close this browser tab. <br/> <small>(Automatic closing might be blocked by your browser)</small>";
+                messageEl.className = 'message-info';
+            }
+        }
+
+        // --- Initialize Page Logic ---
+        initializePage();
+    </script>
+</body>
+</html>

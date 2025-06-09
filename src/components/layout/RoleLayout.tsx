@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import Header from './Header';
 import Footer from './Footer';
@@ -10,7 +10,6 @@ import {
   Settings, 
   LogOut, 
   ChevronLeft,
-
   User,
   PlusCircle,
   FileText
@@ -22,31 +21,31 @@ interface NavItem {
   icon: React.ReactNode;
 }
 
+interface User {
+  role: string;
+  token: string;
+  userEmail: string;
+  userId: number;
+  userName: string;
+}
+
 const navConfig: Record<string, NavItem[]> = {
   admin: [
-    // { label: 'Dashboard', path: '/admin/dashboard', icon: <Home className="h-5 w-5" /> },
     { label: 'Dashboard', path: '/admin/reports', icon: <Home className="h-5 w-5" /> },
     { label: 'Travel Requests', path: '/admin/travel-requests', icon: <Briefcase className="h-5 w-5" /> },
     { label: 'Calendar', path: '/admin/calendar', icon: <Calendar className="h-5 w-5" /> },
-    // { label: 'Settings', path: '/admin/settings', icon: <Settings className="h-5 w-5" /> },
-   
-    // { label: 'New Request', path: '/admin/create-request', icon: <PlusCircle className="h-5 w-5" /> }
-    // { label: 'Settings', path: '/admin/settings', icon: <Settings className="h-5 w-5" /> }
   ],
   manager: [
     { label: 'Dashboard', path: '/manager/dashboard', icon: <Home className="h-5 w-5" /> },
     { label: 'New Request', path: '/manager/new-request', icon: <PlusCircle className="h-5 w-5" /> },
     { label: 'Team Requests', path: '/manager/team-requests', icon: <Briefcase className="h-5 w-5" /> },
-    // { label: 'My Requests', path: '/manager/my-requests', icon: <Briefcase className="h-5 w-5" /> },
-     { label: 'Documents', path: '/manager/documents', icon: <FileText className="h-5 w-5" /> },
-    // { label: 'Calendar', path: '/manager/calendar', icon: <Calendar className="h-5 w-5" /> }
+    { label: 'Documents', path: '/manager/documents', icon: <FileText className="h-5 w-5" /> },
   ],
   employee: [
     { label: 'Dashboard', path: '/employee/dashboard', icon: <Home className="h-5 w-5" /> },
     { label: 'New Request', path: '/employee/new-request', icon: <PlusCircle className="h-5 w-5" /> },
     { label: 'My Requests', path: '/employee/my-requests', icon: <Briefcase className="h-5 w-5" /> },
-     { label: 'Documents', path: '/employee/documents', icon: <FileText className="h-5 w-5" /> },
-    // { label: 'Calendar', path: '/employee/calendar', icon: <Calendar className="h-5 w-5" /> }
+    { label: 'Documents', path: '/employee/documents', icon: <FileText className="h-5 w-5" /> },
   ]
 };
 
@@ -59,6 +58,18 @@ const RoleLayout: React.FC<RoleLayoutProps> = ({ role }) => {
   const location = useLocation();
   const navItems = navConfig[role];
   const [isOpen, setIsOpen] = useState(true);
+  const [userName, setUserName] = useState<string>(''); // State to store the employee's name
+
+  // Fetch user data from local storage when the component mounts
+  useEffect(() => {
+    const userString = localStorage.getItem('user');
+    if (userString) {
+      const user: User = JSON.parse(userString);
+      setUserName(user.userName || 'User'); // Fallback to 'User' if userName is not available
+    } else {
+      setUserName('User'); // Fallback if no user data is found
+    }
+  }, []);
 
   const handleLogout = () => {
     localStorage.removeItem('user');
@@ -77,7 +88,7 @@ const RoleLayout: React.FC<RoleLayoutProps> = ({ role }) => {
     <div className="flex flex-col overflow-hidden" style={{ zoom: '0.8', height: '125vh' }}>
       {/* Fixed Header */}
       <Header 
-        pageTitle={`${role.charAt(0).toUpperCase() + role.slice(1)} Dashboard`}
+        pageTitle={role === 'admin' ? 'Travel Administrator' : 'Traveler'}
         toggleSidebar={toggleSidebar} 
         sidebarOpen={isOpen}
       />
@@ -90,7 +101,7 @@ const RoleLayout: React.FC<RoleLayoutProps> = ({ role }) => {
             <div className={`flex items-center ${isOpen ? '' : 'justify-center w-full'}`}>
               <User className="h-6 w-6 text-primary" />
               <span className={`ml-2 text-xl font-semibold text-primary transition-opacity duration-200 ${isOpen ? 'opacity-100' : 'opacity-0 hidden'}`}>
-                {role.charAt(0).toUpperCase() + role.slice(1)}
+                {userName}
               </span>
             </div>
             <button 

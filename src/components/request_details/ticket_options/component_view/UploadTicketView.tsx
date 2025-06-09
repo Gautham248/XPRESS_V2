@@ -1,5 +1,5 @@
 import React from 'react';
-import { Plus, Upload, Edit, Trash, Save, X, Ticket } from 'lucide-react';
+import { Plus, Edit, Trash, Save, X, Ticket } from 'lucide-react';
 import { TicketOption } from '../../../../data/mockData';
 
 interface CustomButton {
@@ -119,7 +119,7 @@ const UploadTicketView: React.FC<Props> = ({
                             Option {index + 1}
                           </span>
                         </div>
-                        <p className="text-gray-700 leading-relaxed">{option.description}</p>
+                        <p className="text-gray-700 leading-relaxed whitespace-pre-line">{option.description}</p>
                       </div>
                       <div className="flex gap-2 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                         <button
@@ -157,11 +157,11 @@ const UploadTicketView: React.FC<Props> = ({
           </div>
           <div className="flex gap-3">
             <button
-              className="flex items-center gap-2 px-6 py-3 bg-emerald-500 text-white rounded-xl font-medium hover:bg-emerald-700 shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200"
+              className="flex items-center gap-2 px-6 py-3 bg-red-600 text-white rounded-xl font-medium hover:bg-red-700 shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200"
               onClick={onUploadOptions}
             >
-              <Upload size={18} />
-              Upload All Options
+              <Trash size={18} />
+              Clear All
             </button>
             {customButtons.map((button, index) => (
               <button
