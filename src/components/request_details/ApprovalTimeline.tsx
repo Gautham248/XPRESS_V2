@@ -325,22 +325,21 @@ const ApprovalTimeline: React.FC<ApprovalTimelineProps> = ({ requestId }) => {
     return finalTimeline;
   }, [travelRequestData, createTimelineStep]);
 
-  const getStepStyles = (step: TimelineStep & { canceled?: boolean }) => {
+  const getStepStyles = (step: TimelineStep & { canceled?: boolean }, isFirstStep: boolean) => {
     if (step.rejected) return { circle: 'bg-red-100 text-red-600', line: 'bg-red-200', title: 'text-red-600', date: 'text-red-500' };
     if (step.canceled) return { circle: 'bg-yellow-100 text-yellow-600', line: 'bg-yellow-200', title: 'text-yellow-600', date: 'text-yellow-500' };
     if (step.active) return { circle: 'bg-purple-100 text-purple-600', line: 'bg-gray-200', title: 'text-purple-700 font-semibold', date: 'text-purple-500' };
-    if (step.completed) return { circle: 'bg-green-100 text-green-600', line: 'bg-green-200', title: 'text-green-700', date: 'text-gray-500' };
+    if (step.completed || isFirstStep) return { circle: 'bg-green-100 text-green-600', line: 'bg-green-200', title: 'text-green-700', date: 'text-gray-500' };
     if (step.isModified) return { circle: 'bg-blue-100 text-blue-600', line: 'bg-gray-200', title: 'text-blue-700', date: 'text-blue-500' };
     return { circle: 'bg-gray-100 text-gray-400', line: 'bg-gray-200', title: 'text-gray-400', date: 'text-gray-400' };
   };
 
-  const renderIcon = (step: TimelineStep & { canceled?: boolean }) => {
-    const props = getDisplayProperties(step.status.replace(' ', ''));
-    if (step.rejected || step.canceled) return props.icon;
+  const renderIcon = (step: TimelineStep & { canceled?: boolean }, isFirstStep: boolean) => {
+    if (step.rejected || step.canceled) return <X className="h-4 w-4" />;
     if (step.active) return <Clock className="h-4 w-4 animate-pulse" />;
-    if (step.isModified) return props.icon;
-    if (step.completed) return props.icon;
-    return props.icon;
+    if (step.completed || isFirstStep) return <Check className="h-4 w-4" />;
+    if (step.isModified) return <Edit className="h-4 w-4" />;
+    return <div className="h-2 w-2 bg-gray-400 rounded-full" />;
   };
 
   if (loading) {
@@ -371,31 +370,34 @@ const ApprovalTimeline: React.FC<ApprovalTimelineProps> = ({ requestId }) => {
   }
 
   return (
-    <div className="card mb-6 p-6 bg-white rounded-lg shadow h-full">
+    <div className="card mb-6 p-6 bg-white rounded-lg shadow h-full  overflow-hidden">
       <h3 className="text-lg font-semibold mb-6 text-gray-800">Travel Request Timeline</h3>
-      <div className="space-y-6">
-        {processedTimelineSteps.map((step, index) => {
-          const styles = getStepStyles(step);
-          const isLastStep = index === processedTimelineSteps.length - 1;
+      <div className="overflow-y-auto max-h pr-2">
+        <div className="space-y-6">
+          {processedTimelineSteps.map((step, index) => {
+            const isFirstStep = index === 0;
+            const styles = getStepStyles(step, isFirstStep);
+            const isLastStep = index === processedTimelineSteps.length - 1;
 
-          return (
-            <div key={step.id || `timeline-step-${index}`} className="flex items-start relative">
-              {!isLastStep && (
-                <div
-                  className={`absolute left-[0.9375rem] top-8 w-0.5 h-[calc(100%-1.5rem)] ${styles.line} transition-colors duration-300`}
-                />
-              )}
-              <div className={`mr-4 flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${styles.circle} transition-colors duration-300`}>
-                {renderIcon(step)}
+            return (
+              <div key={step.id || `timeline-step-${index}`} className="flex items-start relative">
+                {!isLastStep && (
+                  <div
+                    className={`absolute left-[0.9375rem] top-8 w-0.5 h-[calc(100%-1.5rem)] ${styles.line} transition-colors duration-300`}
+                  />
+                )}
+                <div className={`mr-4 flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${styles.circle} transition-colors duration-300`}>
+                  {renderIcon(step, isFirstStep)}
+                </div>
+                <div className="flex-grow">
+                  <p className={`font-medium ${styles.title} transition-colors duration-300`}>{step.status}</p>
+                  <p className={`text-sm ${styles.date} transition-colors duration-300`}>{step.date}</p>
+                  {step.description && <p className="text-sm text-gray-600 mt-0.5">{step.description}</p>}
+                </div>
               </div>
-              <div className="flex-grow">
-                <p className={`font-medium ${styles.title} transition-colors duration-300`}>{step.status}</p>
-                <p className={`text-sm ${styles.date} transition-colors duration-300`}>{step.date}</p>
-                {step.description && <p className="text-sm text-gray-600 mt-0.5">{step.description}</p>}
-              </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
     </div>
   );
