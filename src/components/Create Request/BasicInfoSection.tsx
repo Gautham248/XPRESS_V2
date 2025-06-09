@@ -9,6 +9,7 @@ const BasicInfoSection: React.FC = () => {
     <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 mb-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         
+        {/* Travel Type Section */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-3">
             Travel Type
@@ -24,7 +25,8 @@ const BasicInfoSection: React.FC = () => {
               onClick={() => dispatch({ type: 'SET_TRAVEL_TYPE', payload: 'domestic' })}
             >
               {travelType === 'domestic' && (
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 absolute top-2 right-2 text-white" viewBox="0 0 20 20" fill="currentColor">
+                // --- MODIFICATION 1 ---
+                <svg data-testid="selected-icon-domestic" xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 absolute top-2 right-2 text-white" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                 </svg>
               )}
@@ -45,7 +47,8 @@ const BasicInfoSection: React.FC = () => {
               onClick={() => dispatch({ type: 'SET_TRAVEL_TYPE', payload: 'international' })}
             >
               {travelType === 'international' && (
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 absolute top-2 right-2 text-white" viewBox="0 0 20 20" fill="currentColor">
+                // --- MODIFICATION 2 ---
+                <svg data-testid="selected-icon-international" xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 absolute top-2 right-2 text-white" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                 </svg>
               )}
@@ -59,7 +62,7 @@ const BasicInfoSection: React.FC = () => {
           </div>
         </div>
 
-
+        {/* Trip Type Section */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-3">
             Trip Type
@@ -75,7 +78,8 @@ const BasicInfoSection: React.FC = () => {
               onClick={() => dispatch({ type: 'SET_TRIP_TYPE', payload: 'oneWay' })}
             >
               {tripType === 'oneWay' && (
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 absolute top-2 right-2 text-white" viewBox="0 0 20 20" fill="currentColor">
+                // --- MODIFICATION 3 ---
+                <svg data-testid="selected-icon-one-way" xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 absolute top-2 right-2 text-white" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                 </svg>
               )}
@@ -96,7 +100,8 @@ const BasicInfoSection: React.FC = () => {
               onClick={() => dispatch({ type: 'SET_TRIP_TYPE', payload: 'roundTrip' })}
             >
               {tripType === 'roundTrip' && (
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 absolute top-2 right-2 text-white" viewBox="0 0 20 20" fill="currentColor">
+                // --- MODIFICATION 4 ---
+                <svg data-testid="selected-icon-round-trip" xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 absolute top-2 right-2 text-white" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                 </svg>
               )}

@@ -9,14 +9,30 @@ const Layout: React.FC = () => {
   const location = useLocation();
   
   // Extract page title from location
-  const getPageTitle = () => {
-    const path = location.pathname;
-    if (path === '/') return 'Dashboard';
-    return path.split('/').pop()?.split('-').map(word => 
-      word.charAt(0).toUpperCase() + word.slice(1)
-    ).join(' ') || 'Dashboard';
-  };
+const getPageTitle = () => {
+  const path = location.pathname;
 
+  // Check if the base path starts with '/admin'
+  const isAdmin = path.startsWith('/admin');
+
+  // Split the path into segments and remove empty segments
+  const pathSegments = path.split('/').filter(segment => segment);
+
+  // If the path is just '/', return the appropriate dashboard title
+  if (path === '/') {
+    return isAdmin ? 'Admin Dashboard' : 'Traveler Dashboard';
+  }
+
+  // Capitalize and format the last segment for the page title
+  const lastSegment = pathSegments[pathSegments.length - 1];
+  const formattedTitle = lastSegment
+    .split('-')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+
+  // Prepend "Admin Dashboard" or "Traveler Dashboard" based on the base path
+  return isAdmin ? `Admin Dashboard - ${formattedTitle}` : `Traveler Dashboard - ${formattedTitle}`;
+};
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
   };
