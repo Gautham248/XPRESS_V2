@@ -162,7 +162,7 @@ const TravelInfo: React.FC<TravelInfoProps> = ({ requestId }) => {
         return <TrainFront data-testid="train-icon" className="h-4 w-4 mr-2" />;
       case "bus":
         return <BusFront data-testid="bus-icon" className="h-4 w-4 mr-2" />;
-      case "car rental":
+      case "cab":
         return <CarTaxiFront data-testid="car-icon" className="h-4 w-4 mr-2" />;
       default:
         return <Check data-testid="default-transport-icon" className="h-4 w-4 mr-2" />;
