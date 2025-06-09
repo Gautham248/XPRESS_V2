@@ -4,7 +4,6 @@ import EmptyStateView from './EmptyStateView';
 import Modal from './Modal';
 import ReusableTable from './ReusableTable';
 
-// API Response interfaces
 interface TravelAgencyApiResponse {
   isSuccess: boolean;
   result: TravelAgencyApiItem[];
@@ -50,7 +49,7 @@ const TravelAgencyBarChart: React.FC<TravelAgencyBarChartProps> = ({
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch data from API
+
   useEffect(() => {
     const fetchTravelAgencyData = async () => {
       if (!startDate || !endDate) return;
@@ -94,7 +93,7 @@ const TravelAgencyBarChart: React.FC<TravelAgencyBarChartProps> = ({
     fetchTravelAgencyData();
   }, [startDate, endDate]);
 
-  // Filter data based on travel type
+
   const filteredChartData = useMemo(() => {
     if (!chartData) return [];
     if (travelTypeFilter === 'all') {
@@ -248,7 +247,7 @@ const TravelAgencyBarChart: React.FC<TravelAgencyBarChartProps> = ({
   
 
   const tableData: TableDataItem[] = filteredChartData.map(item => ({
-    agency: item.name, // Keep original name for table
+    agency: item.name, 
     bookings: item.value,
     cost: `₹${(item.cost || 0).toLocaleString()}`,
     travel_type: item.travelType ? item.travelType.charAt(0).toUpperCase() + item.travelType.slice(1) : 'Unknown'
@@ -387,7 +386,7 @@ const TravelAgencyBarChart: React.FC<TravelAgencyBarChartProps> = ({
               
               return (
                 <div key={index} className="flex flex-col items-center group relative" style={{ minWidth: `${Math.max(80, 400 / filteredChartData.length)}px` }}>
-                  {/* Booking count above bar */}
+              
                   <div className="text-sm font-semibold text-gray-700 mb-1">
                     {entry.value}
                   </div>
@@ -402,7 +401,7 @@ const TravelAgencyBarChart: React.FC<TravelAgencyBarChartProps> = ({
                         minHeight: '40px' 
                       }}
                     >
-                      {/* Cost label positioned vertically inside the bar */}
+                  
                       <div className="absolute inset-0 flex items-center justify-center">
                         <div className="-rotate-90 text-xs font-medium text-white whitespace-nowrap">
                           ₹{(entry.cost || 0).toLocaleString()}

@@ -30,6 +30,7 @@ const TravelRequests: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [role, setRole] = useState<string>(''); // State for role
+  const [statusOptions, setStatusOptions] = useState<string[]>([]); // State for status options
 
   useEffect(() => {
     const fetchTravelRequests = async () => {
@@ -71,7 +72,7 @@ const TravelRequests: React.FC = () => {
         });
 
         if (!response.ok) {
-          throw new Error('Failed to fetch travel requests.'); // Generic error message
+          throw new Error('Failed to fetch travel requests.');
         }
 
         const data = await response.json();
@@ -165,15 +166,18 @@ const TravelRequests: React.FC = () => {
         setHeaders([...priorityFields, ...dynamicHeaders]);
 
         const mappedData: TravelRequest[] = travelRequestData.map((item: any) => {
-          const convertUtcToIst = (utcDate: string | null): Date | null => {
+          const convertUtcToIst = (utcDate: string | null): string | null => {
             if (!utcDate) return null;
             const date = parseISO(utcDate);
-            const istOffset = 5.5 * 60 * 60 * 1000;
-            return new Date(date.getTime() + istOffset);
+            const istOffset = 5.5 * 60 * 60 * 1000; // IST is UTC+5:30
+            const istDate = new Date(date.getTime() + istOffset);
+            return format(istDate, 'dd-MM-yyyy');
           };
 
           const departureDateIst = convertUtcToIst(item.outboundDepartureDate);
           const returnDateIst = convertUtcToIst(item.returnDepartureDate);
+          const outboundArrivalDateIst = convertUtcToIst(item.outboundArrivalDate);
+          const returnArrivalDateIst = convertUtcToIst(item.returnArrivalDate);
 
           return {
             ...item,
@@ -183,14 +187,22 @@ const TravelRequests: React.FC = () => {
             source: item.sourcePlace && item.sourceCountry ? `${item.sourcePlace}, ${item.sourceCountry}` : 'N/A',
             destination: item.destinationPlace && item.destinationCountry ? `${item.destinationPlace}, ${item.destinationCountry}` : 'N/A',
             travelDates: departureDateIst && returnDateIst 
-              ? `${format(departureDateIst, 'MMM dd, yyyy')} - ${format(returnDateIst, 'MMM dd, yyyy')}` 
+              ? `${departureDateIst} - ${returnDateIst}` 
               : 'N/A',
             departureDate: item.outboundDepartureDate,
             returnDate: item.returnDepartureDate,
+            outboundDepartureDate: departureDateIst || 'N/A',
+            outboundArrivalDate: outboundArrivalDateIst || 'N/A',
+            returnDepartureDate: returnDateIst || 'N/A',
+            returnArrivalDate: returnArrivalDateIst || 'N/A',
             comments: item.comments || 'N/A',
             departmentCode: item.duId ? item.duId.toString() : 'N/A',
           };
         });
+
+        // Extract all unique statuses from the data
+        const uniqueStatuses = [...new Set(mappedData.map(item => item.currentStatusName))].filter(status => status != null).sort();
+        setStatusOptions(uniqueStatuses);
 
         setTravelRequests(mappedData);
       } catch (err: any) {
@@ -282,12 +294,10 @@ const TravelRequests: React.FC = () => {
       headers={headers}
       data={travelRequests}
       title={getPageTitle()}
-      searchableFields={headers.filter(h => h.filterable !== false).map(h => h.key)}
-      statusOptions={['PendingReview', 'DUApproved', 'OptionSelected', 'Rejected']}
+      searchableFields={['projectName', 'employeeName', 'source', 'destination']}
+      statusOptions={statusOptions}
       typeOptions={['Domestic', 'International']}
       dateFilterKey="departureDate"
-      newButtonLabel="New Request"
-      newButtonPath="/create-request"
       getStatusColor={getStatusColor}
       getTypeColor={(type: string) =>
         type === 'Domestic' ? 'bg-primary/10 text-primary' : 'bg-secondary/10 text-secondary'
