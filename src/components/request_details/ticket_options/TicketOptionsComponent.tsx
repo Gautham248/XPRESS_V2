@@ -13,7 +13,9 @@ import { INDEX_TO_STATUS_MAP } from '../TravelRequestDetails';
 // --- API Related Interfaces ---
 interface ApiTravelRequestDetail {
   currentStatusId: number;
+  transportationType: string;
 }
+
 interface TravelRequestDetailApiResponse {
   isSuccess: boolean;
   result: ApiTravelRequestDetail;
@@ -66,6 +68,7 @@ const API_BASE_URL = 'http://localhost:5030/api';
 const TicketOptionComponent: React.FC<TicketProps> = ({ requestId }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [travelRequestStatus, setTravelRequestStatus] = useState<string | null>(null);
+  const [transportationType, setTransportationType] = useState<'flight' | 'train' | 'bus' | 'cab'>();
   const [ticketOptionsFromApi, setTicketOptionsFromApi] = useState<ApiTicketOptionItem[]>([]);
 
   const [newOptionText, setNewOptionText] = useState<string>('');
@@ -117,7 +120,17 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId }) => {
         const statusId = response.data.result.currentStatusId;
         const statusName = INDEX_TO_STATUS_MAP[statusId] || 'PendingReview';
 
-        console.log(`Mapped status ID ${statusId} to:`, statusName);
+        const transportType = response.data.result.transportationType?.toLowerCase() || 'flight';
+            
+        // Validate and set the transportation type
+        if (['flight', 'train', 'bus', 'car'].includes(transportType)) {
+            setTransportationType(transportType as 'flight' | 'train' | 'bus' | 'cab');
+        } else {
+            console.warn(`Unexpected transportation type: ${transportType}, defaulting to flight`);
+            setTransportationType('flight');
+        }
+
+        // console.log(`Mapped status ID ${statusId} to:`, statusName);
         setTravelRequestStatus(statusName);
 
         await fetchTicketOptions(requestId);
@@ -316,7 +329,7 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId }) => {
       console.log('Backend response from ticket upload:', response.data);
 
       if (response.data && response.data.isSuccess) {
-        alert('Ticket details uploaded successfully!');
+        // alert('Ticket details uploaded successfully!');
 
         setIsUploadTicketsFileModalOpen(false);
 
@@ -592,6 +605,15 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId }) => {
       );
     }
 
+    if (status === 'DUApproved') {
+      return (
+        <SelectedView
+          ticketOptions={uiTicketOptions}
+          customButtons={[]}
+        />
+      )
+    }
+
     if (['DUApproved', 'TicketsDispatched', 'InTransit', 'Returned', 'Closed'].includes(status)) {
       return renderEmployeeContent(status);
     }
@@ -622,7 +644,7 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId }) => {
         />
       );
     }
-    if (['', 'DUApproved', 'TicketsDispatched', 'InTransit', 'Returned', 'Closed'].includes(status)) {
+    if (['DUApproved', 'TicketsDispatched', 'InTransit', 'Returned', 'Closed'].includes(status)) {
       return (
         <SelectedView
           ticketOptions={uiTicketOptions}
@@ -647,7 +669,7 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId }) => {
     return (
       <SelectedView
         ticketOptions={uiTicketOptions}
-        onDownloadTickets={selectedOption ? () => console.log("Employee: Download initiated") : undefined}
+        onDownloadTickets={handleDownloadTicket}
         buttons={selectedOption ? ['downloadTickets'] : []}
         customButtons={[]}
       />
@@ -672,6 +694,7 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId }) => {
       <UploadTicketsModal
         isOpen={isUploadTicketsFileModalOpen} onClose={() => setIsUploadTicketsFileModalOpen(false)}
         onConfirm={handleUploadActualTickets}
+        transportationType={transportationType ?? 'flight'}
       />
     </>
   );
