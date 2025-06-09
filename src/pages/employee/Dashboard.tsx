@@ -6,8 +6,6 @@ import {
   User,
   X,
   Edit, // Added Edit icon
-  X,
-  Edit,
 } from 'lucide-react';
 import { format, parseISO, differenceInDays } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
