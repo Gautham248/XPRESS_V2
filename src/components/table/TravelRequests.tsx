@@ -1,51 +1,71 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { format, parseISO } from 'date-fns';
 import DataTable from './DataTable';
 import { Eye, CheckCircle, XCircle } from 'lucide-react';
 
 interface TravelRequest {
-  id: string;
-  status: string;
-  travelerName: string;
-  projectCode: string;
-  travelType: string;
-  source: string;
-  destination: string;
-  travelDates: string;
-  departmentCode: string;
-  reportingManager: string;
-  departureDate: string;
-  returnDate: string;
+  [key: string]: any; // Allow any key-value pairs to accommodate dynamic fields
+}
+
+interface User {
+  role: string;
+  token: string;
+  userEmail: string;
+  userId: number;
+  userName: string;
+}
+
+interface Header {
+  key: string;
+  displayName: string;
+  sortable?: boolean;
+  filterable?: boolean;
 }
 
 const TravelRequests: React.FC = () => {
   const navigate = useNavigate();
   const [travelRequests, setTravelRequests] = useState<TravelRequest[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [headers, setHeaders] = useState<Header[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-
-  const headers = [
-    { key: 'id', displayName: 'Request ID', sortable: true, filterable: true },
-    { key: 'status', displayName: 'Status', sortable: true, filterable: true },
-    { key: 'travelerName', displayName: 'Traveler', sortable: true, filterable: true },
-    { key: 'projectCode', displayName: 'Project Code', sortable: true, filterable: true },
-    { key: 'travelType', displayName: 'Type', sortable: true },
-    { key: 'source', displayName: 'Source', sortable: true, filterable: true },
-    { key: 'destination', displayName: 'Destination', sortable: true, filterable: true },
-    { key: 'travelDates', displayName: 'Travel Dates', sortable: true },
-    { key: 'departmentCode', displayName: 'Department', sortable: true },
-    { key: 'reportingManager', displayName: 'Manager', sortable: true },
-  ];
 
   useEffect(() => {
     const fetchTravelRequests = async () => {
       try {
         setLoading(true);
-        const response = await fetch('http://localhost:5030/api/TravelRequest/ByProjectManager/nithu.kb%40experionglobal.com', {
+        setError(null);
+
+        // Retrieve user data from local storage
+        const userString = localStorage.getItem('user');
+        if (!userString) {
+          throw new Error('User data not found in local storage. Please log in again.');
+        }
+
+        const user: User = JSON.parse(userString);
+        if (!user?.userEmail || !user?.token) {
+          throw new Error('User email or token not found in local storage.');
+        }
+
+        const email = user.userEmail;
+        const token = user.token;
+        const role = user.role;
+
+        // Determine the API endpoint based on the user's role
+        let apiUrl = '';
+        if (role === 'admin') {
+          apiUrl = 'http://localhost:5030/api/TravelRequest/travelrequests';
+        } else if (role === 'duhead') {
+          apiUrl = `http://localhost:5030/api/TravelRequest/ByDUH/${encodeURIComponent(email)}`;
+        } else {
+          apiUrl = `http://localhost:5030/api/TravelRequest/ByProjectManager/${encodeURIComponent(email)}`;
+        }
+
+        const response = await fetch(apiUrl, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
-            // Add any necessary authorization headers, e.g., 'Authorization': `Bearer ${token}`
+            'Authorization': `Bearer ${token}`,
           },
         });
 
@@ -54,28 +74,133 @@ const TravelRequests: React.FC = () => {
         }
 
         const data = await response.json();
-        if (data.isSuccess && Array.isArray(data.result)) {
-          const mappedData: TravelRequest[] = data.result.map((item: any) => ({
+
+        // Handle response based on the role
+        let travelRequestData: any[];
+        if (role === 'admin') {
+          if (!Array.isArray(data)) {
+            throw new Error('Invalid API response format: Expected an array for admin role');
+          }
+          travelRequestData = data;
+        } else {
+          if (!data.isSuccess || !Array.isArray(data.result)) {
+            throw new Error('Invalid API response format');
+          }
+          travelRequestData = data.result;
+        }
+
+        // Define the priority fields in the specified order
+        const priorityFields = [
+          { key: 'requestId', displayName: 'Request ID', sortable: true, filterable: true },
+          { key: 'currentStatusName', displayName: 'Status', sortable: true, filterable: false },
+          { key: 'travelType', displayName: 'Type', sortable: true, filterable: false },
+          { key: 'isRoundTrip', displayName: 'Trip Type', sortable: true, filterable: true },
+          { key: 'employeeName', displayName: 'Traveler', sortable: true, filterable: true },
+          { key: 'destination', displayName: 'Destination', sortable: true, filterable: true },
+          { key: 'source', displayName: 'Source', sortable: true, filterable: true },
+          { key: 'outboundDepartureDate', displayName: 'Outbound Departure', sortable: true, filterable: true },
+          { key: 'outboundArrivalDate', displayName: 'Outbound Arrival', sortable: true, filterable: true },
+          { key: 'returnDepartureDate', displayName: 'Inbound Departure', sortable: true, filterable: true },
+          { key: 'returnArrivalDate', displayName: 'Inbound Arrival', sortable: true, filterable: true },
+          { key: 'duId', displayName: 'Department', sortable: true, filterable: true },
+          { key: 'purposeOfTravel', displayName: 'Purpose', sortable: true, filterable: true },
+          { key: 'comments', displayName: 'Comments', sortable: true, filterable: true },
+        ];
+
+        // Dynamically generate headers for remaining fields
+        const dynamicHeaders: Header[] = [];
+        const sampleItem = travelRequestData[0];
+        if (sampleItem) {
+          const priorityKeys = new Set(priorityFields.map(field => field.key));
+          const excludedKeys = new Set([
+            'isPickupRequired',
+            'isDropoffRequired',
+            'pickupPlace',
+            'dropoffPlace',
+            'isVegetarian',
+            'attendedCct',
+            'travelAgencyName',
+            'totalExpense',
+            'uploadedTicketPdfPath',
+            'createdAt',
+            'updatedAt',
+            'outboundDepartureDate',
+            'returnDepartureDate',
+            'isInternational',
+            'sourcePlace',
+            'sourceCountry',
+            'destinationPlace',
+            'destinationCountry'
+          ]);
+
+          // Add remaining fields from the API response
+          Object.keys(sampleItem).forEach((key) => {
+            // Skip fields that are in priorityFields, excluded, or shouldn't be displayed
+            if (priorityKeys.has(key) || excludedKeys.has(key)) {
+              return;
+            }
+
+            let displayName = key
+              .replace(/([A-Z])/g, ' $1')
+              .replace(/^./, (str) => str.toUpperCase())
+              .trim();
+
+            // Customize display names for specific fields
+            if (key === 'projectName') displayName = 'Project Code';
+            if (key === 'travelModeName') displayName = 'Travel Mode';
+            if (key === 'projectManagerName') displayName = 'Manager';
+
+            dynamicHeaders.push({
+              key,
+              displayName,
+              sortable: true,
+              filterable: true,
+            });
+          });
+
+          // Add remaining derived fields
+          dynamicHeaders.unshift(
+            { key: 'travelDates', displayName: 'Travel Dates', sortable: true, filterable: false }
+          );
+        }
+
+        // Combine priority fields with remaining dynamic fields
+        setHeaders([...priorityFields, ...dynamicHeaders]);
+
+        const mappedData: TravelRequest[] = travelRequestData.map((item: any) => {
+          // Convert UTC dates to IST
+          const convertUtcToIst = (utcDate: string | null): Date | null => {
+            if (!utcDate) return null;
+            const date = parseISO(utcDate);
+            const istOffset = 5.5 * 60 * 60 * 1000; // IST is UTC+5:30
+            return new Date(date.getTime() + istOffset);
+          };
+
+          const departureDateIst = convertUtcToIst(item.outboundDepartureDate);
+          const returnDateIst = convertUtcToIst(item.returnDepartureDate);
+
+          return {
+            ...item,
             id: item.requestId,
-            status: item.currentStatusName,
-            travelerName: item.employeeName,
-            projectCode: item.projectName,
             travelType: item.isInternational ? 'International' : 'Domestic',
-            source: `${item.sourcePlace}, ${item.sourceCountry}`,
-            destination: `${item.destinationPlace}, ${item.destinationCountry}`,
-            travelDates: `${item.outboundDepartureDate} - ${item.returnDepartureDate}`,
+            isRoundTrip: item.isRoundTrip ? 'Round Trip' : 'One Way',
+            source: item.sourcePlace && item.sourceCountry ? `${item.sourcePlace}, ${item.sourceCountry}` : 'N/A',
+            destination: item.destinationPlace && item.destinationCountry ? `${item.destinationPlace}, ${item.destinationCountry}` : 'N/A',
+            travelDates: departureDateIst && returnDateIst 
+              ? `${format(departureDateIst, 'MMM dd, yyyy')} - ${format(returnDateIst, 'MMM dd, yyyy')}` 
+              : 'N/A',
             departureDate: item.outboundDepartureDate,
             returnDate: item.returnDepartureDate,
-            departmentCode: 'Unknown', // API response doesn't provide this; adjust as needed
-            reportingManager: 'Unknown', // API response doesn't provide this; adjust as needed
-          }));
-          setTravelRequests(mappedData);
-        } else {
-          throw new Error('Invalid API response format');
-        }
-      } catch (err) {
-        setError('Failed to fetch travel requests. Please try again later.');
+            comments: item.comments || 'N/A',
+            departmentCode: item.duId ? item.duId.toString() : 'N/A',
+          };
+        });
+
+        setTravelRequests(mappedData);
+      } catch (err: any) {
+        setError(err.message || 'Failed to fetch travel requests. Please try again later.');
         console.error('Error fetching travel requests:', err);
+        setTravelRequests([]);
       } finally {
         setLoading(false);
       }
@@ -84,7 +209,8 @@ const TravelRequests: React.FC = () => {
     fetchTravelRequests();
   }, []);
 
-  const getStatusColor = (status: string): string => {
+  const getStatusColor = (status: string | undefined): string => {
+    if (!status) return 'bg-gray-100 text-gray-800';
     switch (status.toLowerCase()) {
       case 'pendingreview':
         return 'bg-yellow-100 text-yellow-800';
@@ -97,6 +223,11 @@ const TravelRequests: React.FC = () => {
       default:
         return 'bg-gray-100 text-gray-800';
     }
+  };
+
+  const getTripTypeColor = (tripType: string | undefined): string => {
+    if (!tripType) return 'bg-gray-100 text-gray-800';
+    return tripType === 'Round Trip' ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800';
   };
 
   const handleRowClick = (item: TravelRequest) => {
@@ -137,7 +268,7 @@ const TravelRequests: React.FC = () => {
       headers={headers}
       data={travelRequests}
       title="Travel Requests"
-      searchableFields={['travelerName', 'destination', 'id', 'projectCode', 'source']}
+      searchableFields={headers.filter(h => h.filterable !== false).map(h => h.key)}
       statusOptions={['PendingReview', 'DUApproved', 'OptionSelected', 'Rejected']}
       typeOptions={['Domestic', 'International']}
       dateFilterKey="departureDate"
@@ -147,6 +278,7 @@ const TravelRequests: React.FC = () => {
       getTypeColor={(type: string) =>
         type === 'Domestic' ? 'bg-primary/10 text-primary' : 'bg-secondary/10 text-secondary'
       }
+      getTripTypeColor={getTripTypeColor}
       renderActions={(item: TravelRequest) => (
         <div className="flex items-center justify-end gap-1.5">
           <button
@@ -159,7 +291,7 @@ const TravelRequests: React.FC = () => {
           >
             <Eye size={18} />
           </button>
-          {['PendingReview', 'DUApproved', 'OptionSelected'].includes(item.status) && (
+          {['PendingReview', 'DUApproved', 'OptionSelected'].includes(item.currentStatusName) && (
             <>
               <button
                 className="p-1.5 text-green-600 hover:text-green-800 hover:bg-green-100 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-green-400"
@@ -191,137 +323,3 @@ const TravelRequests: React.FC = () => {
 };
 
 export default TravelRequests;
-
-
-
-
-
-
-
-
-
-
-
-
-// import React from 'react';
-// import { useNavigate } from 'react-router-dom';
-// import DataTable from './DataTable'; // Assuming DataTable.tsx is in the same directory or correct path
-// import { mockTravelRequests, TravelRequest, getStatusColor } from '../../data/mockData';
-// import { Eye, CheckCircle, XCircle } from 'lucide-react'; // Import the icons you need
-
-// const TravelRequests: React.FC = () => {
-//   const navigate = useNavigate();
-
-//   const headers = [
-//     { key: 'id', displayName: 'Request ID', sortable: true, filterable: true },
-//     { key: 'status', displayName: 'Status', sortable: true, filterable: true },
-//     { key: 'travelerName', displayName: 'Traveler', sortable: true, filterable: true },
-//     { key: 'projectCode', displayName: 'Project Code', sortable: true, filterable: true },
-//     { key: 'travelType', displayName: 'Type', sortable: true },
-//     { key: 'source', displayName: 'Source', sortable: true, filterable: true },
-//     { key: 'destination', displayName: 'Destination', sortable: true, filterable: true },
-//     { key: 'travelDates', displayName: 'Travel Dates', sortable: true },
-//     { key: 'departmentCode', displayName: 'Department', sortable: true },
-//     { key: 'reportingManager', displayName: 'Manager', sortable: true },
-//   ];
-
-//   const handleRowClick = (item: TravelRequest) => {
-//     const userString = localStorage.getItem('user');
-//     const user = userString ? JSON.parse(userString) : null;
-//     if (!user) return;
-
-//     const path = window.location.pathname;
-//     let basePath = '';
-//     if (user.role === 'admin') {
-//       basePath = '/admin/travel-requests';
-//     } else  {
-//       basePath = path.includes('team-requests') ? '/manager/team-requests' : '/manager/my-requests';
-//     } 
-//     navigate(`${basePath}/${item.id}`); 
-//   };
-
-//   const handleApproveAction = (item: TravelRequest) => {
-//     console.log("Approving item:", item.id);
-//     // Add your approval logic here
-//   };
-
-//   const handleRejectAction = (item: TravelRequest) => {
-//     console.log("Rejecting item:", item.id);
-//     // Add your rejection logic here
-//   };
-
-//   return (
-//     <DataTable<TravelRequest>
-//       headers={headers}
-//       data={mockTravelRequests}
-//       title="Travel Requests"
-//       searchableFields={['travelerName', 'destination', 'id', 'projectCode', 'source']}
-//       statusOptions={[
-//         'Pending',
-//         'Approved',
-//         'Rejected',
-//         'Completed',
-//         'Manager Approved',
-//         'Tickets Dispatched',
-//         'Tickets Selected',
-//         'DU Head Approved',
-//         'In-transit',
-//         'Returned',
-//         'Closed',
-//       ]}
-//       typeOptions={['Domestic', 'International']}
-//       dateFilterKey="departureDate"
-//       newButtonLabel="New Request"
-//       newButtonPath="/create-request"
-//       getStatusColor={getStatusColor}
-//       getTypeColor={(type: string) =>
-//         type === 'Domestic' ? 'bg-primary/10 text-primary' : 'bg-secondary/10 text-secondary'
-//       }
-//       renderActions={(item: TravelRequest) => (
-//         <div className="flex items-center justify-end gap-1.5">
-//           <button 
-//             className="p-1.5 text-blue-600 hover:text-blue-800 hover:bg-blue-100 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400"
-//             title="View Details" // Tooltip text
-//             onClick={(e) => {
-//               e.stopPropagation();
-//               handleRowClick(item);
-//             }}
-//           >
-//             <Eye size={18} />
-//           </button>
-
-//           {/* Conditionally render Approve/Reject based on status */}
-//           {/* Adjust these conditions based on your application's workflow */}
-//           {['Pending', 'Manager Approved', 'DU Head Approved', 'Tickets Selected'].includes(item.status) && (
-//             <>
-//               <button 
-//                 className="p-1.5 text-green-600 hover:text-green-800 hover:bg-green-100 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-green-400"
-//                 title="Approve" // Tooltip text
-//                 onClick={(e) => {
-//                   e.stopPropagation();
-//                   handleApproveAction(item); 
-//                 }}
-//               >
-//                 <CheckCircle size={18} />
-//               </button>
-//               <button 
-//                 className="p-1.5 text-red-600 hover:text-red-800 hover:bg-red-100 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-red-400"
-//                 title="Reject" // Tooltip text
-//                 onClick={(e) => {
-//                   e.stopPropagation();
-//                   handleRejectAction(item);
-//                 }}
-//               >
-//                 <XCircle size={18} />
-//               </button>
-//             </>
-//           )}
-//           {/* Edit button has been removed */}
-//         </div>
-//       )}
-//       onRowClick={handleRowClick}
-//     />
-//   );
-// };
-
-// export default TravelRequests;

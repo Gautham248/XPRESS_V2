@@ -38,7 +38,7 @@ const Header: React.FC<HeaderProps> = ({ pageTitle, toggleSidebar, sidebarOpen }
         
         <div className="flex items-center space-x-3">
           {/* Notification bell */}
-          <div className="relative">
+          {/* <div className="relative">
             <button 
               onClick={() => setNotificationsOpen(!notificationsOpen)}
               className="relative p-1.5 rounded-md text-muted-foreground hover:bg-muted transition-colors"
@@ -87,7 +87,7 @@ const Header: React.FC<HeaderProps> = ({ pageTitle, toggleSidebar, sidebarOpen }
               </div>
             )}
           </div>
-          
+           */}
           {/* User Info */}
           <div className="hidden md:flex items-center space-x-2">
             <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center text-white">
