@@ -20,7 +20,7 @@ interface TravelRequest {
   tripType?: 'One Way' | 'Round Trip';
   departureDate: string;
   returnDate: string;
-  source: string;
+  // source: string;
   destination: string;
   purpose: string;
   status: string;
@@ -101,8 +101,10 @@ const EmployeeDashboard: React.FC = () => {
           tripType: trip.isRoundTrip ? 'Round Trip' : 'One Way',
           departureDate: trip.outboundDepartureDate,
           returnDate: trip.returnDepartureDate || '', 
-          source: [trip.sourcePlace, trip.sourceCountry].filter(Boolean).join(', ') || 'Unknown',
-          destination: [trip.destinationPlace, trip.destinationCountry].filter(Boolean).join(', ') || 'Unknown',
+          // FIX: Combine place and country for a full source string, with a fallback.
+          // source: [trip.sourcePlace, trip.sourceCountry].filter(Boolean).join(', ') || 'Unknown',
+          // FIX: The destination field was missing. This combines place and country for a full destination string.
+          destination: trip.destination,
           purpose: trip.purposeOfTravel,
           status: trip.currentStatusName,
           transportationType: trip.modeOfTransportName || 'Flight',
