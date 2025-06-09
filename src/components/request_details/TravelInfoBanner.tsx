@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 import { Briefcase, Check, Users, Plane, TrainFront, Loader2, AlertCircle, Phone } from "lucide-react";
 
 interface TravelRequestApiResponse {
@@ -42,7 +42,7 @@ const TravelInfoBanner: React.FC<TravelInfoBannerProps> = ({
   requestId, 
 }) => {
   const apiUrl = 'http://localhost:5030/api/TravelRequest/infobanner';
-  const [travelRequest, setTravelRequest] = useState<TravelRequestData | null>();
+  const [travelRequest, setTravelRequest] = useState<TravelRequestData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -83,18 +83,28 @@ const TravelInfoBanner: React.FC<TravelInfoBannerProps> = ({
           
           setTravelRequest(transformedData);
         } else {
-          // Handle API success but no data
-          if (response.data.errorMessages.length > 0) {
+          if (response.data.errorMessages && response.data.errorMessages.length > 0) {
             setError(response.data.errorMessages.join(', '));
-          } else {
+          } else if (response.data.isSuccess && response.data.result.length === 0) {
             setError("No travel request found");
+          } else {
+            setError("Failed to retrieve travel request data.");
           }
         }
       } catch (err) {
         if (axios.isAxiosError(err)) {
-          setError(err.response?.data?.message || err.message || "Failed to fetch travel request");
+          const axiosErr = err as AxiosError<any>;
+          if (axiosErr.response) {
+            setError(axiosErr.response.data?.message || axiosErr.response.data?.errorMessages?.join(', ') || axiosErr.message || "An error occurred with the server response.");
+          } else if (axiosErr.request) {
+            setError(axiosErr.message || "Network error: Could not connect to server.");
+          } else {
+            setError(axiosErr.message || "Error setting up request.");
+          }
+        } else if (err instanceof Error) {
+          setError(err.message || "An unexpected error occurred.");
         } else {
-          setError("An unexpected error occurred");
+          setError("An unknown error occurred.");
         }
       } finally {
         setLoading(false);
@@ -158,7 +168,7 @@ const TravelInfoBanner: React.FC<TravelInfoBannerProps> = ({
 
   // Success state - render the banner
   return (
-    <div className="card relative bg-white rounded-lg px-6 py-4 flex justify-between items-center w-full">
+    <div className="card relative bg-white rounded-lg px-6 py-4 flex justify-between items-center w-full" data-testid="travel-info-banner-success">
       {/* Left Section - Employee Info */}
       <div className="flex-none">
         {/* Employee Name Row */}
