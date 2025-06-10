@@ -6,7 +6,7 @@ import TravelInfo from '../TravelInfo';
 jest.mock('axios');
 const mockedAxios = axios as jest.Mocked<typeof axios>;
 
-// --- Test Data ---
+// --- Updated Test Data ---
 const mockApiSuccessResultItem = {
   requestId: 'REQ001',
   outboundDepartureDate: '2023-10-01T10:00:00Z',
@@ -19,8 +19,9 @@ const mockApiSuccessResultItem = {
   purposeOfTravel: 'Business Meeting',
   isAccommodationRequired: true,
   isVegetarian: false,
-  isDropOffRequired: true,
-  isPickUpRequired: true,
+  // --- CHANGE: Use location strings instead of booleans ---
+  pickUpLocation: 'Airport Terminal 2',
+  dropOffLocation: 'Client Office Downtown',
 };
 
 const mockApiSuccessResponse = {
@@ -39,6 +40,20 @@ const mockApiSuccessResponseNoReturn = {
     statusCode: 200,
     errorMessages: [],
   },
+};
+
+// --- NEW MOCK: To test null location rendering ---
+const mockApiSuccessResponseWithNullLocations = {
+    data: {
+      isSuccess: true,
+      result: [{
+        ...mockApiSuccessResultItem,
+        pickUpLocation: null,
+        dropOffLocation: null,
+      }],
+      statusCode: 200,
+      errorMessages: [],
+    },
 };
 
 const mockApiSuccessResponseNoData = {
@@ -62,27 +77,51 @@ const mockApiErrorResponse = {
 describe('TravelInfo Component', () => {
   beforeEach(() => {
     mockedAxios.get.mockReset();
-    jest.useRealTimers();
   });
 
+  // --- UPDATED TEST ---
   test('displays loading state initially and then data on successful fetch', async () => {
     mockedAxios.get.mockResolvedValueOnce(mockApiSuccessResponse);
     render(<TravelInfo requestId="REQ001" />);
+    
     expect(screen.getByTestId('loading-indicator')).toBeInTheDocument();
+    
     await waitFor(() => expect(screen.getByText('Business Meeting')).toBeInTheDocument());
+    
     expect(screen.getByTestId('travel-info-success')).toBeInTheDocument();
-    expect(screen.getByTestId('flight-icon')).toBeInTheDocument(); // Check specific icon
+    expect(screen.getByText('Airport Terminal 2')).toBeInTheDocument(); // Check for pickup location
+    expect(screen.getByText('Client Office Downtown')).toBeInTheDocument(); // Check for dropoff location
+    expect(screen.getByTestId('flight-icon')).toBeInTheDocument();
   });
+
+  // --- NEW TEST ---
+  test('displays "-" for null pickup and dropoff locations', async () => {
+    mockedAxios.get.mockResolvedValueOnce(mockApiSuccessResponseWithNullLocations);
+    render(<TravelInfo requestId="REQ_NULL_LOCATIONS" />);
+
+    await waitFor(() => expect(screen.getByText('Business Meeting')).toBeInTheDocument());
+
+    const pickupLabel = screen.getByText('Pick-up Location');
+    const pickupValue = pickupLabel.parentElement?.querySelector('p.font-medium');
+    expect(pickupValue).toHaveTextContent('-');
+
+    const dropoffLabel = screen.getByText('Drop-off Location');
+    const dropoffValue = dropoffLabel.parentElement?.querySelector('p.font-medium');
+    expect(dropoffValue).toHaveTextContent('-');
+  });
+
+  // --- NO CHANGES NEEDED FOR THE TESTS BELOW ---
 
   test('displays "-" for null return dates', async () => {
     mockedAxios.get.mockResolvedValueOnce(mockApiSuccessResponseNoReturn);
     render(<TravelInfo requestId="REQ_NO_RETURN" />);
     await waitFor(() => expect(screen.getByText('Business Meeting')).toBeInTheDocument());
+    
     const returnDepartureLabel = screen.getByText('Return Departure');
-    const returnDepartureValue = returnDepartureLabel.parentElement?.querySelector('p.font-medium.text-gray-900');
+    const returnDepartureValue = returnDepartureLabel.parentElement?.querySelector('p.font-medium');
     
     const returnArrivalLabel = screen.getByText('Return Arrival');
-    const returnArrivalValue = returnArrivalLabel.parentElement?.querySelector('p.font-medium.text-gray-900');
+    const returnArrivalValue = returnArrivalLabel.parentElement?.querySelector('p.font-medium');
 
     expect(returnDepartureValue).toHaveTextContent('-');
     expect(returnArrivalValue).toHaveTextContent('-');
@@ -97,27 +136,30 @@ describe('TravelInfo Component', () => {
   test('displays error state on API failure', async () => {
     mockedAxios.get.mockResolvedValueOnce(mockApiErrorResponse);
     render(<TravelInfo requestId="REQ_API_ERROR" />);
+    
     expect(screen.getByTestId('loading-indicator')).toBeInTheDocument();
     await waitFor(() => expect(screen.getByTestId('error-message-container')).toBeInTheDocument());
+    
     expect(screen.getByText(/Travel info not found via API/i)).toBeInTheDocument();
   });
 
   test('displays "Travel request details not found." when API success but empty result', async () => {
     mockedAxios.get.mockResolvedValueOnce(mockApiSuccessResponseNoData);
     render(<TravelInfo requestId="REQ_EMPTY_RESULT" />);
+    
     expect(screen.getByTestId('loading-indicator')).toBeInTheDocument();
     await waitFor(() => expect(screen.getByTestId('error-message-container')).toBeInTheDocument());
+    
     expect(screen.getByText('Travel request details not found.')).toBeInTheDocument();
   });
 
-  test('displays "No travel information available" as a fallback when no data and no specific error', async () => {
-    mockedAxios.get.mockImplementationOnce(async () => {
-      await new Promise(resolve => setTimeout(resolve, 10)); 
-      return Promise.resolve({ data: { isSuccess: false, result: null, errorMessages: [] }}); 
-    });
+  test('displays "Failed to retrieve travel data structure." as a fallback', async () => {
+    mockedAxios.get.mockResolvedValueOnce({ data: { isSuccess: false, result: null, errorMessages: [] }});
     render(<TravelInfo requestId="REQ_UNHANDLED_NO_DATA" />);
+    
     expect(screen.getByTestId('loading-indicator')).toBeInTheDocument();
     await waitFor(() => expect(screen.getByTestId('error-message-container')).toBeInTheDocument());
+    
     expect(screen.getByText('Failed to retrieve travel data structure.')).toBeInTheDocument();
   });
 
@@ -161,7 +203,7 @@ describe('TravelInfo Component', () => {
     await waitFor(() => expect(screen.getByText('Business Meeting')).toBeInTheDocument());
     
     const requestDateLabel = screen.getByText('Request Date');
-    const requestDateValueElement = requestDateLabel.closest('div')?.querySelector('p.font-medium.text-gray-900');
+    const requestDateValueElement = requestDateLabel.closest('div')?.querySelector('p.font-medium');
     expect(requestDateValueElement).toHaveTextContent('Invalid Date');
   });
 });
