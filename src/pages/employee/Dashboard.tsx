@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
+import toast, { Toaster } from 'react-hot-toast';
 import {
   Upload,
   FileText,
@@ -21,7 +22,6 @@ interface TravelRequest {
   tripType?: 'One Way' | 'Round Trip';
   departureDate: string;
   returnDate: string;
-//   source: string;
   destination: string;
   purpose: string;
   status: string;
@@ -72,7 +72,6 @@ const EmployeeDashboard: React.FC = () => {
  
   // State to hold the specific ID required for the POST /edit endpoint
   const [selectedRequestIdForEdit, setSelectedRequestIdForEdit] = useState<string | null>(null);
-  // NEW: State to hold the status of the request being edited
   const [selectedRequestStatus, setSelectedRequestStatus] = useState<string | null>(null);
  
  
@@ -90,7 +89,6 @@ const EmployeeDashboard: React.FC = () => {
     if (!user?.userId || !user?.token) return;
    
     const endpoint = `http://localhost:5030/api/TravelRequest/ByUser/${user.userId}`;
-    console.log("Fetching travel requests from API endpoint:", endpoint);
  
     try {
       const response = await fetch(
@@ -99,8 +97,6 @@ const EmployeeDashboard: React.FC = () => {
       );
       const data = await response.json();
      
-      console.log("API Response Data (List):", data);
- 
       if (data.isSuccess) {
         const mappedRequests = data.result.map((trip: any): TravelRequest => ({
           id: trip.requestId,
@@ -110,7 +106,6 @@ const EmployeeDashboard: React.FC = () => {
           tripType: trip.isRoundTrip ? 'Round Trip' : 'One Way',
           departureDate: trip.outboundDepartureDate,
           returnDate: trip.returnDepartureDate || '',
-        //   source: [trip.sourcePlace, trip.sourceCountry].filter(Boolean).join(', ') || 'Unknown',
           destination: trip.destination,
           purpose: trip.purposeOfTravel,
           status: trip.currentStatusName,
@@ -125,9 +120,12 @@ const EmployeeDashboard: React.FC = () => {
           priority: 'Medium',
         }));
         setTravelRequests(mappedRequests);
+      } else {
+        toast.error("Could not load travel requests.");
       }
     } catch (error) {
       console.error('Error fetching travel requests:', error);
+      toast.error("Failed to fetch travel requests.");
     }
   }, [user?.userId, user?.token, user?.userName, currentUser.department]);
  
@@ -193,48 +191,51 @@ const EmployeeDashboard: React.FC = () => {
       } catch (error) {
         console.error('Error fetching documents:', error);
         setDocumentsError('Error loading documents');
+        toast.error('Failed to load your documents.');
       } finally {
         setDocumentsLoading(false);
       }
     };
  
     fetchUserDocuments();
-}, []);
+  }, []);
+ 
   // --- EVENT HANDLERS ---
   const handleRowClick = (item: TravelRequest) => navigate(`/manager/my-requests/${item.id}`);
  
   const handleEditClick = async (e: React.MouseEvent, request: TravelRequest) => {
     e.stopPropagation();
     if (!user?.token) {
-      alert("Authentication error. Please log in again.");
+      toast.error("Authentication error. Please log in again.");
       return;
     }
    
     setIsFetchingDetails(true);
+    const loadingToast = toast.loading('Fetching request details...');
     try {
       const endpoint = `http://localhost:5030/api/TravelRequest/${request.id}`;
-      console.log(`Fetching details from: ${endpoint}`);
      
       const response = await axios.get(endpoint, {
         headers: { Authorization: `Bearer ${user.token}` },
       });
      
+      toast.dismiss(loadingToast);
       if (response.data.isSuccess) {
-        console.log("Fetched detailed data for modal:", response.data.result);
         setSelectedRequestForEdit(response.data.result);
         setSelectedRequestIdForEdit(request.humanReadableId);
-        setSelectedRequestStatus(request.status); // Store the status for the modal
+        setSelectedRequestStatus(request.status);
         setIsEditModalOpen(true);
       } else {
         console.error("Failed to fetch details:", response.data.errorMessages);
-        alert(`Could not fetch request details: ${response.data.errorMessages.join(', ')}`);
+        toast.error(`Could not fetch details: ${response.data.errorMessages.join(', ')}`);
       }
     } catch (error) {
+      toast.dismiss(loadingToast);
       console.error("Error fetching detailed travel request:", error);
       const errorMessage = axios.isAxiosError(error) && error.response
         ? error.response.data.message || 'A server error occurred.'
         : 'An unknown error occurred.';
-      alert(`Error: ${errorMessage}`);
+      toast.error(`Error: ${errorMessage}`);
     } finally {
       setIsFetchingDetails(false);
     }
@@ -244,19 +245,17 @@ const EmployeeDashboard: React.FC = () => {
       const humanReadableId = selectedRequestIdForEdit;
      
       if (!humanReadableId) {
-          console.error("No human-readable request ID found for update.");
-          alert("Error: No request ID was found. Please try again.");
+          toast.error("Error: No request ID was found. Please try again.");
           return;
       }
       if (!user?.token) {
-          console.error("User token not found.");
-          alert("Authentication error. Please log in again.");
+          toast.error("Authentication error. Please log in again.");
           return;
       }
  
       const endpoint = `http://localhost:5030/api/travelrequests/${humanReadableId}/edit`;
-      console.log("Submitting POST update to:", endpoint);
      
+      const loadingToast = toast.loading('Updating request...');
       try {
         const response = await axios.post(endpoint, updatedData, {
             headers: {
@@ -265,17 +264,19 @@ const EmployeeDashboard: React.FC = () => {
             },
         });
  
+        toast.dismiss(loadingToast);
         if (response.status === 200 || response.status === 204) {
-            alert('Travel request updated successfully!');
+            toast.success('Travel request updated successfully!');
             setIsEditModalOpen(false);
             setSelectedRequestForEdit(null);
             setSelectedRequestIdForEdit(null);
-            setSelectedRequestStatus(null); // Clear the stored status
+            setSelectedRequestStatus(null);
             await fetchTravelRequests();
         } else {
-            alert(`Update failed with status: ${response.status}`);
+            toast.error(`Update failed with status: ${response.status}`);
         }
       } catch (error) {
+        toast.dismiss(loadingToast);
         console.error("Error updating travel request:", error);
        
         const errorMessage = (axios.isAxiosError(error) && error.response)
@@ -285,7 +286,7 @@ const EmployeeDashboard: React.FC = () => {
             `Request failed with status: ${error.response.status}`
           : 'An unknown error occurred.';
          
-        alert(`Update failed: ${errorMessage}`);
+        toast.error(`Update failed: ${errorMessage}`);
       }
   };
  
@@ -300,32 +301,30 @@ const EmployeeDashboard: React.FC = () => {
         return {
           title: `Visa: ${doc.documentNumber || ''}`,
           subtitle: doc.issuingCountry ? `Country: ${doc.issuingCountry}` : '',
-          additionalInfo: doc.visaClass ? `Class: ${doc.visaClass}` : '',
         };
       case 'Passport':
         return {
           title: `Passport: ${doc.documentNumber || ''}`,
           subtitle: doc.issuingCountry ? `Issued by: ${doc.issuingCountry}` : '',
-          additionalInfo: '',
         };
       case 'Aadhar':
         return {
           title: `Aadhar: ${doc.documentNumber || ''}`,
           subtitle: doc.fullName ? `Name: ${doc.fullName}` : '',
-          additionalInfo: '',
         };
       default:
         return {
           title: `${doc.documentType}: ${doc.documentNumber || ''}`,
           subtitle: '',
-          additionalInfo: '',
         };
     }
   };
-
+ 
  
   return (
     <div className="container mx-auto p-6 space-y-6">
+      <Toaster position="top-right" reverseOrder={false} />
+ 
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white shadow-sm p-6 rounded-lg">
         <div className="flex items-center space-x-4">
           <User className="h-10 w-10 text-gray-600" />
@@ -426,4 +425,3 @@ const EmployeeDashboard: React.FC = () => {
 };
  
 export default EmployeeDashboard;
- 
