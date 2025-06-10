@@ -131,29 +131,58 @@ const EmployeeDashboard: React.FC = () => {
   useEffect(() => {
     const fetchUserDocuments = async () => {
       if (!user?.userId || !user?.token) {
+        console.error('User ID or token not found in local storage');
         setDocumentsError('User authentication required');
         setDocumentsLoading(false);
         return;
       }
+ 
       try {
         setDocumentsLoading(true);
+        setDocumentsError(null);
+ 
         const response = await axios.get(
           `http://localhost:5030/api/Documents/User/${user.userId}`,
-          { headers: { Authorization: `Bearer ${user.token}` } }
+          {
+            headers: {
+              Authorization: `Bearer ${user.token}`,
+              'Content-Type': 'application/json',
+            },
+          }
         );
-        const apiDocuments = response.data?.result || [];
-        const mappedDocuments = apiDocuments.map((doc: any) => ({
-          id: String(doc.id),
-          documentType: doc.idType,
-          documentUrl: doc.documentPath,
-          documentNumber: doc.visaNumber || doc.passportNumber || doc.aadharNumber || '',
-          issueDate: doc.visaIssueDate || doc.passportIssueDate || doc.uploadDate,
-          expiryDate: doc.visaExpiryDate || doc.passportExpiryDate,
-          issuingCountry: doc.issuingCountry,
-          fullName: doc.fullName,
-          visaClass: doc.visaClass,
-        }));
-        setUserDocuments({ userId: user.userId, userName: user.userName, documents: mappedDocuments });
+        const apiDocuments = Array.isArray(response.data)
+          ? response.data
+          : response.data.documents || response.data.result || [];
+ 
+        if (apiDocuments && apiDocuments.length > 0) {
+         
+          const mappedDocuments = apiDocuments.map((apiDoc: any) => ({
+            id: String(apiDoc.id),
+            documentType: apiDoc.idType,
+            documentUrl: apiDoc.documentPath,
+            documentNumber: apiDoc.visaNumber || apiDoc.passportNumber || apiDoc.aadharNumber || '',
+            issueDate: apiDoc.visaIssueDate || apiDoc.passportIssueDate || apiDoc.uploadDate,
+            expiryDate: apiDoc.visaExpiryDate || apiDoc.passportExpiryDate,
+            issuingCountry: apiDoc.issuingCountry,
+            fullName: apiDoc.fullName,
+            visaClass: apiDoc.visaClass,
+          }));
+ 
+          const newUserDocuments = {
+            userId: user.userId,
+            userName: user.userName,
+            documents: mappedDocuments,
+          };
+ 
+          setUserDocuments(newUserDocuments);
+         
+        } else {
+          setUserDocuments({
+            userId: user.userId,
+            userName: user.userName,
+            documents: [],
+          });
+        }
       } catch (error) {
         console.error('Error fetching documents:', error);
         setDocumentsError('Error loading documents');
@@ -161,8 +190,10 @@ const EmployeeDashboard: React.FC = () => {
         setDocumentsLoading(false);
       }
     };
+ 
     fetchUserDocuments();
-  }, [user?.userId, user?.token, user?.userName]);
+}, []);
+ 
 
   // --- EVENT HANDLERS ---
   const handleRowClick = (item: TravelRequest) => navigate(`/manager/my-requests/${item.id}`);
@@ -241,10 +272,34 @@ const EmployeeDashboard: React.FC = () => {
     return nonEditableStatuses.includes(status);
   };
   
-  const getDocumentDisplayInfo = (doc: Document) => ({
-      title: `${doc.documentType}: ${doc.documentNumber || ''}`,
-      subtitle: doc.issuingCountry ? `Issued by: ${doc.issuingCountry}` : `Name: ${doc.fullName || ''}`,
-  });
+   const getDocumentDisplayInfo = (doc: Document) => {
+    switch (doc.documentType) {
+      case 'Visa':
+        return {
+          title: `Visa: ${doc.documentNumber || ''}`,
+          subtitle: doc.issuingCountry ? `Country: ${doc.issuingCountry}` : '',
+          additionalInfo: doc.visaClass ? `Class: ${doc.visaClass}` : '',
+        };
+      case 'Passport':
+        return {
+          title: `Passport: ${doc.documentNumber || ''}`,
+          subtitle: doc.issuingCountry ? `Issued by: ${doc.issuingCountry}` : '',
+          additionalInfo: '',
+        };
+      case 'Aadhar':
+        return {
+          title: `Aadhar: ${doc.documentNumber || ''}`,
+          subtitle: doc.fullName ? `Name: ${doc.fullName}` : '',
+          additionalInfo: '',
+        };
+      default:
+        return {
+          title: `${doc.documentType}: ${doc.documentNumber || ''}`,
+          subtitle: '',
+          additionalInfo: '',
+        };
+    }
+  };
 
   return (
     <div className="container mx-auto p-6 space-y-6">
