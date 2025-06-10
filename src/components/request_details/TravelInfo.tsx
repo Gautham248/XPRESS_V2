@@ -14,7 +14,10 @@ import {
   Clock,
   Navigation,
   Loader2,
+  MessageSquare,
+  MessageCircle,
 } from 'lucide-react';
+import CommentsModal from './CommentsModal';
 
 interface ApiTravelInfoItem {
   requestId: string;
@@ -32,6 +35,11 @@ interface ApiTravelInfoItem {
   isPickUpRequired: boolean;
   dropOffLocation: string | null;
   pickUpLocation: string | null;
+  travelFeedback: string | null;
+  comments: Comment[];
+  travelerName: string;
+  initialComments: string | null;
+  foodComment: string | null;
 }
 
 interface TravelInfoApiResponse {
@@ -55,17 +63,28 @@ interface TravelRequestData {
   foodPreference: string;
   pickUpLocation: string | null;
   dropOffLocation: string | null;
+  travelFeedback: string | null;
+  comments: Comment[];
+  // travelerName: string;
+  // initialComments: string | null;
+  // foodComment: string | null;
 }
 
 interface TravelInfoProps {
   requestId?: string;
 }
 
+interface Comment {
+  employeeName: string;
+  commentText: string;
+  timestamp: string;
+}
 
 const TravelInfo: React.FC<TravelInfoProps> = ({ requestId }) => {
   const [travelRequest, setTravelRequest] = useState<TravelRequestData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isCommentsModalOpen, setIsCommentsModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchTravelData = async () => {
@@ -86,6 +105,33 @@ const TravelInfo: React.FC<TravelInfoProps> = ({ requestId }) => {
 
         if (response.data.isSuccess && response.data.result && response.data.result.length > 0) {
           const apiData = response.data.result[0];
+          const combinedComments: Comment[] = [];
+
+          // 1. Add the initial request comment if it exists
+          if (apiData.initialComments) {
+            combinedComments.push({
+              employeeName: apiData.travelerName, // Attribute to the traveler
+              commentText: `Initial Request Note: ${apiData.initialComments}`, // Add context
+              timestamp: apiData.requestCreateDate, // Use the request creation time
+            });
+          }
+
+          // 2. Add the food preference comment if it exists
+          if (apiData.foodComment) {
+            combinedComments.push({
+              employeeName: apiData.travelerName,
+              commentText: `Food Preference Note: ${apiData.foodComment}`,
+              timestamp: apiData.requestCreateDate,
+            });
+          }
+
+          // 3. Add all comments from the audit log
+          if (apiData.comments && apiData.comments.length > 0) {
+            combinedComments.push(...apiData.comments);
+          }
+
+          // 4. Sort all comments by timestamp to ensure correct chronological order
+          combinedComments.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
           const mappedData: TravelRequestData = {
             id: apiData.requestId,
             outboundDepartureDate: apiData.outboundDepartureDate,
@@ -100,6 +146,8 @@ const TravelInfo: React.FC<TravelInfoProps> = ({ requestId }) => {
             foodPreference: apiData.isVegetarian ? "Vegetarian" : "Non-Vegetarian",
             pickUpLocation: apiData.pickUpLocation,
             dropOffLocation: apiData.dropOffLocation,
+            travelFeedback: apiData.travelFeedback,
+            comments: combinedComments,
           };
           setTravelRequest(mappedData);
         } else {
@@ -200,116 +248,109 @@ const TravelInfo: React.FC<TravelInfoProps> = ({ requestId }) => {
     );
   }
 
-  return (
-    <div data-testid="travel-info-success" className="card mb-6 p-6 border border-gray-200 rounded-lg bg-white shadow-sm">
-      <h3 className="text-xl font-semibold mb-6 text-gray-900">Travel Information</h3>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-        <div className="space-y-4">
-          <div>
-            <p className="text-sm text-gray-600 mb-1 flex items-center">
-              <Calendar className="h-4 w-4 mr-2" />
-              Outbound Departure
-            </p>
-            <p className="font-medium text-gray-900">{formatDate(travelRequest.outboundDepartureDate)}</p>
-          </div>
-          <div>
-            <p className="text-sm text-gray-600 mb-1 flex items-center">
-              <Calendar className="h-4 w-4 mr-2" />
-              Outbound Arrival
-            </p>
-            <p className="font-medium text-gray-900">{formatDate(travelRequest.outboundArrivalDate)}</p>
-          </div>
-        </div>
-        <div className="space-y-4">
-          <div>
-            <p className="text-sm text-gray-600 mb-1 flex items-center">
-              <Calendar className="h-4 w-4 mr-2" />
-              Return Departure
-            </p>
-            <p className="font-medium text-gray-900">{formatDate(travelRequest.returnDepartureDate)}</p>
-          </div>
-          <div>
-            <p className="text-sm text-gray-600 mb-1 flex items-center">
-              <Calendar className="h-4 w-4 mr-2" />
-              Return Arrival
-            </p>
-            <p className="font-medium text-gray-900">{formatDate(travelRequest.returnArrivalDate)}</p>
-          </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-        <div className="space-y-4">
-          <div>
-            <p className="text-sm text-gray-600 mb-1 flex items-center">
-              {getTransportationIcon(travelRequest.transportationType)}
-              Transportation
-            </p>
-            <p className="font-medium text-gray-900">{travelRequest.transportationType || '-'}</p>
-          </div>
-          <div>
-            <p className="text-sm text-gray-600 mb-1 flex items-center">
-              <Navigation className="h-4 w-4 mr-2" />
-              Travel Type
-            </p>
-            <p className="font-medium text-gray-900">{travelRequest.travelType || '-'}</p>
-          </div>
-          <div>
-            <p className="text-sm text-gray-600 mb-1 flex items-center">
-              <Backpack className="h-4 w-4 mr-2" />
-              Purpose of Travel
-            </p>
-            <p className="font-medium text-gray-900">{travelRequest.purpose || '-'}</p>
-          </div>
-        </div>
+    return (
+    <>
+      <div data-testid="travel-info-success" className="card mb-6 p-6 border border-gray-200 rounded-lg bg-white shadow-sm">
         
-        <div className="space-y-4">
-          <div>
-            <p className="text-sm text-gray-600 mb-1 flex items-center">
-              <Hotel className="h-4 w-4 mr-2" />
-              Accommodation
-            </p>
-            <p className="font-medium text-gray-900">{travelRequest.accommodationType || '-'}</p>
-          </div>
-          <div>
-            <p className="text-sm text-gray-600 mb-1 flex items-center">
-              <Utensils className="h-4 w-4 mr-2" />
-              Food Preference
-            </p>
-            <p className="font-medium text-gray-900">{travelRequest.foodPreference || '-'}</p>
-          </div>
-          <div>
-            <p className="text-sm text-gray-600 mb-1 flex items-center">
-              <Clock className="h-4 w-4 mr-2" />
-              Request Date
-            </p>
-            <p className="font-medium text-gray-900">{formatDate(travelRequest.requestDate)}</p>
-          </div>
+        {/* --- HEADER --- */}
+        <div className="flex justify-between items-start mb-6">
+            <h3 className="text-xl font-semibold text-gray-900">Travel Information</h3>
+            {/* "View Comments" button only appears if there are comments */}
+            {travelRequest.comments && travelRequest.comments.length > 0 && (
+                <button
+                    onClick={() => setIsCommentsModalOpen(true)}
+                    className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-200 transition-colors"
+                >
+                    <MessageSquare size={14} />
+                    View Comments ({travelRequest.comments.length})
+                </button>
+            )}
         </div>
+
+        {/* --- DATES --- */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-6 mb-6">
+            <div>
+              <p className="text-sm text-gray-600 mb-1 flex items-center"><Calendar className="h-4 w-4 mr-2" />Outbound Departure</p>
+              <p className="font-medium text-gray-900">{formatDate(travelRequest.outboundDepartureDate)}</p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-600 mb-1 flex items-center"><Calendar className="h-4 w-4 mr-2" />Return Departure</p>
+              <p className="font-medium text-gray-900">{formatDate(travelRequest.returnDepartureDate)}</p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-600 mb-1 flex items-center"><Calendar className="h-4 w-4 mr-2" />Outbound Arrival</p>
+              <p className="font-medium text-gray-900">{formatDate(travelRequest.outboundArrivalDate)}</p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-600 mb-1 flex items-center"><Calendar className="h-4 w-4 mr-2" />Return Arrival</p>
+              <p className="font-medium text-gray-900">{formatDate(travelRequest.returnArrivalDate)}</p>
+            </div>
+        </div>
+
+        {/* --- DETAILS --- */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-6 mb-6">
+            <div>
+              <p className="text-sm text-gray-600 mb-1 flex items-center">{getTransportationIcon(travelRequest.transportationType)}Transportation</p>
+              <p className="font-medium text-gray-900">{travelRequest.transportationType || '-'}</p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-600 mb-1 flex items-center"><Hotel className="h-4 w-4 mr-2" />Accommodation</p>
+              <p className="font-medium text-gray-900">{travelRequest.accommodationType || '-'}</p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-600 mb-1 flex items-center"><Navigation className="h-4 w-4 mr-2" />Travel Type</p>
+              <p className="font-medium text-gray-900">{travelRequest.travelType || '-'}</p>
+            </div>
+             <div>
+              <p className="text-sm text-gray-600 mb-1 flex items-center"><Utensils className="h-4 w-4 mr-2" />Food Preference</p>
+              <p className="font-medium text-gray-900">{travelRequest.foodPreference || '-'}</p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-600 mb-1 flex items-center"><Backpack className="h-4 w-4 mr-2" />Purpose of Travel</p>
+              <p className="font-medium text-gray-900">{travelRequest.purpose || '-'}</p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-600 mb-1 flex items-center"><Clock className="h-4 w-4 mr-2" />Request Date</p>
+              <p className="font-medium text-gray-900">{formatDate(travelRequest.requestDate)}</p>
+            </div>
+        </div>
+
+        {/* --- LOCATIONS --- */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-6">
+            <div>
+              <p className="text-sm text-gray-600 mb-1 flex items-center"><CarTaxiFront className="h-4 w-4 mr-2" />Pick-up Location</p>
+              <p className="font-medium text-gray-900">{travelRequest.pickUpLocation || '-'}</p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-600 mb-1 flex items-center"><CarTaxiFront className="h-4 w-4 mr-2" />Drop-off Location</p>
+              <p className="font-medium text-gray-900">{travelRequest.dropOffLocation || '-'}</p>
+            </div>
+        </div>
+
+        {/* --- TRAVELER FEEDBACK --- */}
+        {travelRequest.travelFeedback && (
+          <>
+            <div className="border-t border-gray-200 my-6"></div>
+            <div>
+              <p className="text-sm text-gray-600 mb-1 flex items-center">
+                <MessageCircle className="h-4 w-4 mr-2" />
+                Traveler Feedback
+              </p>
+              <p className="font-medium text-gray-800 bg-gray-50 p-3 rounded-md border border-gray-200 italic">
+                "{travelRequest.travelFeedback}"
+              </p>
+            </div>
+          </>
+        )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div>
-          <p className="text-sm text-gray-600 mb-1 flex items-center">
-            <CarTaxiFront className="h-4 w-4 mr-2" />
-            Pick-up Location
-          </p>
-          <p className="font-medium text-gray-900">
-            {travelRequest.pickUpLocation || '-'}
-          </p>
-        </div>
-        <div>
-          <p className="text-sm text-gray-600 mb-1 flex items-center">
-            <CarTaxiFront className="h-4 w-4 mr-2" />
-            Drop-off Location
-          </p>
-          <p className="font-medium text-gray-900">
-            {travelRequest.dropOffLocation || '-'}
-          </p>
-        </div>
-      </div>
-    </div>
+      {/* --- RENDER THE COMMENTS MODAL --- */}
+      <CommentsModal
+        isOpen={isCommentsModalOpen}
+        onClose={() => setIsCommentsModalOpen(false)}
+        comments={travelRequest.comments}
+      />
+    </>
   );
 };
 

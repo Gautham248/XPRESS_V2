@@ -2,7 +2,8 @@ import React, { useState, useEffect, useCallback, ReactNode } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import {
-  Check, X, FileText, ChevronLeft, Download, MessageSquare, Lock, Loader2
+  Check, X, FileText, ChevronLeft, Download, MessageSquare, Lock, Loader2,
+  Slash
 } from 'lucide-react';
 import ApprovalTimeline from './ApprovalTimeline';
 import TravelInfo from './TravelInfo';
@@ -47,7 +48,7 @@ export interface ComponentTravelRequest {
   selectedTicketOptionId?: number;
   createdAt?: string;
   currentStatusId: number;
-  status: 'PendingReview' | 'Verified' | 'OptionsListed' | 'OptionSelected' |
+  status: 'PendingReview' | 'Approved' | 'OptionsListed' | 'OptionSelected' |
            'DUApproved' | 'BUApproved' | 'TicketsDispatched' | 'InTransit' |
            'Returned' | 'Closed' | 'Cancelled' | 'Rejected' | 'Modified';
 }
@@ -60,14 +61,14 @@ interface DocumentInfo {
 }
 
 export const STATUS_ORDER_ARRAY: ReadonlyArray<ComponentTravelRequest['status']> = [
-  'PendingReview','Verified','OptionsListed','OptionSelected','DUApproved','BUApproved','TicketsDispatched','InTransit','Returned','Closed','Cancelled','Rejected','Modified'
+  'PendingReview','Approved','OptionsListed','OptionSelected','DUApproved','BUApproved','TicketsDispatched','InTransit','Returned','Closed','Cancelled','Rejected','Modified'
 ] as const;
 export const INDEX_TO_STATUS_MAP: Readonly<Record<number, ComponentTravelRequest['status']>> =
   STATUS_ORDER_ARRAY.reduce((acc, status, index) => ({...acc, [index + 1]: status}), {} as Record<number, ComponentTravelRequest['status']>);
 export const STATUS_TO_INDEX_MAP: Readonly<Record<ComponentTravelRequest['status'], number>> =
   STATUS_ORDER_ARRAY.reduce((acc, status, index) => ({...acc, [status]: index + 1}), {} as Record<ComponentTravelRequest['status'], number>);
 const STATUS_DISPLAY_NAMES_HEADER: Record<ComponentTravelRequest['status'] | string, string> = {
-  PendingReview: 'Pending Review', Verified: 'Verified', OptionsListed: 'Options Listed', OptionSelected: 'Option Selected', DUApproved: 'DU Approved', BUApproved: 'BU Approved', TicketsDispatched: 'Ticket Dispatched', InTransit: 'In Transit', Returned: 'Returned', Closed: 'Closed', Cancelled: 'Cancelled', Rejected: 'Rejected', Modified: 'Modified',
+  PendingReview: 'Pending Review', Approved: 'Approved', OptionsListed: 'Options Listed', OptionSelected: 'Option Selected', DUApproved: 'DU Approved', BUApproved: 'BU Approved', TicketsDispatched: 'Ticket Dispatched', InTransit: 'In Transit', Returned: 'Returned', Closed: 'Closed', Cancelled: 'Cancelled', Rejected: 'Rejected', Modified: 'Modified',
 };
 const getDisplayStatusName = (rawStatus?: ComponentTravelRequest['status'] | string): string => {
   if (rawStatus && typeof rawStatus === 'string') return STATUS_DISPLAY_NAMES_HEADER[rawStatus] || rawStatus.replace(/([A-Z])/g, ' $1').trim();
@@ -77,7 +78,7 @@ const getStatusBadgeStyles = (status?: ComponentTravelRequest['status'] | string
     if (!status) return 'bg-gray-200 text-gray-800 border border-gray-400';
     switch (status) {
       case 'PendingReview': return 'bg-yellow-100 text-yellow-700 border border-yellow-300';
-      case 'Verified': return 'bg-blue-100 text-blue-700 border border-blue-300';
+      case 'Approved': return 'bg-blue-100 text-blue-700 border border-blue-300';
       case 'OptionsListed': return 'bg-indigo-100 text-indigo-700 border border-indigo-300';
       case 'OptionSelected': return 'bg-purple-100 text-purple-700 border border-purple-300';
       case 'DUApproved': case 'BUApproved': return 'bg-teal-100 text-teal-700 border border-teal-300';
@@ -85,7 +86,7 @@ const getStatusBadgeStyles = (status?: ComponentTravelRequest['status'] | string
       case 'InTransit': return 'bg-sky-100 text-sky-700 border border-sky-300';
       case 'Returned': return 'bg-orange-100 text-orange-700 border border-orange-300';
       case 'Closed': return 'bg-green-100 text-green-700 border border-green-300';
-      case 'Cancelled': return 'bg-gray-100 text-gray-700 border border-gray-300';
+      case 'Cancelled': return 'bg-gray-300 text-gray-700 border border-gray-300';
       case 'Rejected': return 'bg-red-100 text-red-700 border border-red-300';
       case 'Modified': return 'bg-pink-100 text-pink-700 border border-pink-300';
       default: return 'bg-gray-200 text-gray-800 border border-gray-400';
@@ -134,18 +135,15 @@ const TravelRequestDetails: React.FC = () => {
       
       const data = await response.json();
 
-      // --- FIX 1: DEBUGGING & EXPLICIT STATE SETTING ---
-      // This log helps you verify if the API is sending the employeeName
       console.log("API response for TravelRequestDetails:", data.result);
 
       if (data.isSuccess && data.result) {
         const apiData = data.result;
         setTravelRequestData({
-          ...apiData, // Spread all properties from the api response
-          id: apiData.requestId, // Explicitly map fields with different names
+          ...apiData,
+          id: apiData.requestId,
           purpose: apiData.purposeOfTravel,
           status: INDEX_TO_STATUS_MAP[apiData.currentStatusId] || 'PendingReview',
-          // Ensure employeeName is correctly assigned from the API data
           employeeName: apiData.employeeName,
         });
       } else {
@@ -216,7 +214,7 @@ const TravelRequestDetails: React.FC = () => {
       const zip = new JSZip();
       files.forEach(file => zip.file(file.name, file.blob));
 
-      // --- FIX 2: SANITIZE EMPLOYEE NAME FOR FILENAME ---
+      // SANITIZE EMPLOYEE NAME FOR FILENAME ---
       const employeeName = travelRequestData.employeeName?.replace(/\s+/g, '_') || 'Employee';
       const zipFilename = `${employeeName}-TravelDocs-${id}.zip`;
 
@@ -258,6 +256,22 @@ const TravelRequestDetails: React.FC = () => {
     fetchTravelRequest();
     handleCloseModal();
   };
+   const handleSubmitCancelRequest = async () => {
+    const CANCELLED_STATUS_ID = 11;
+    if (!modalInputText.trim()) {
+      alert("A reason for cancellation is required.");
+      return;
+    }
+    await axios.put(`http://localhost:5030/api/TravelRequest/${id}/updatestatus`, {
+      requestId: id,
+      newStatusId: CANCELLED_STATUS_ID,
+      userId: userId,
+      comments: modalInputText,
+      actionType: "CancelRequest"
+    });
+    fetchTravelRequest();
+    handleCloseModal();
+  };
 
   if (isLoading) return <div className="p-8 flex justify-center items-center"><Loader2 className="h-8 w-8 animate-spin text-gray-500" /></div>;
   if (error) return <div className="p-8 text-center text-red-600">Error: {error}</div>;
@@ -268,6 +282,23 @@ const TravelRequestDetails: React.FC = () => {
   let modalButtons: ButtonConfig[] = [];
 
   switch (activeModal) {
+    case 'cancel':
+      modalTitle = 'Cancel Travel Request';
+      modalContent = (<>
+        <p className="text-sm text-gray-600 mb-3">Please provide a reason for cancelling this request. This action cannot be undone.</p>
+        <textarea
+          className="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-300"
+          placeholder="Reason for cancellation (required)..."
+          rows={4}
+          value={modalInputText}
+          onChange={(e) => setModalInputText(e.target.value)}
+        />
+      </>);
+      modalButtons = [
+        { text: 'Back', bgColor: 'bg-gray-300', textColor: 'text-black', onClick: handleCloseModal },
+        { text: 'Confirm Cancellation', bgColor: 'bg-red-600', onClick: handleSubmitCancelRequest }
+      ];
+      break;
     case 'download':
       modalTitle = 'Download Documents';
       modalContent = (
@@ -320,6 +351,9 @@ const TravelRequestDetails: React.FC = () => {
   const showCloseRequestButton = isAdmin && travelRequestData.status === 'Returned' && !requestClosed;
   const showManagerActionButtons = isManager && travelRequestData.status === 'PendingReview' && !actionTaken;
   const areAnyDocumentsAvailable = !!travelRequestData.uploadedTicketPdfPath || (travelRequestData.userId > 0);
+  // The status is active if it's before 'Closed' (index 10)
+  const isRequestActive = travelRequestData.currentStatusId < 10;
+  const showCancelButton = (isManager || isEmployee) && isRequestActive;
 
   return (
     <div className="space-y-6 animate-fadeIn">
@@ -334,7 +368,6 @@ const TravelRequestDetails: React.FC = () => {
           </div>
         </div>
 
-        {/* --- FIX 3: RESTORED ONCLICK LOGIC FOR BUTTONS --- */}
         <div className="flex flex-wrap gap-3 md:ml-auto">
           {showCloseRequestButton && (
             <button className="btn-secondary flex items-center" onClick={() => { setModalInputText(''); setActiveModal('closeRequest'); showModalContainer(<></>); }}>
@@ -348,13 +381,22 @@ const TravelRequestDetails: React.FC = () => {
           )}
           {showManagerActionButtons && (
             <>
-              <button className="bg-green-600 hover:bg-green-700 text-white rounded-md px-4 py-2 text-sm font-medium flex items-center" onClick={() => { setModalInputText(''); setActiveModal('approve'); showModalContainer(<></>); }}>
+              <button className="bg-green-600 hover:bg-green-700 text-white rounded-md px-3 py-2 text-sm font-medium flex items-center" onClick={() => { setModalInputText(''); setActiveModal('approve'); showModalContainer(<></>); }}>
                 <Check className="h-4 w-4 mr-2" />Approve
               </button>
-              <button className="bg-red-600 hover:bg-red-700 text-white rounded-md px-4 py-2 text-sm font-medium flex items-center" onClick={() => { setModalInputText(''); setActiveModal('reject'); showModalContainer(<></>); }}>
+              <button className="bg-red-600 hover:bg-red-700 text-white rounded-md px-3 py-2 text-sm font-medium flex items-center" onClick={() => { setModalInputText(''); setActiveModal('reject'); showModalContainer(<></>); }}>
                 <X className="h-4 w-4 mr-2" />Reject
               </button>
             </>
+          )}
+          {showCancelButton && (
+             <button
+                className="bg-gray-500 hover:bg-gray-600 text-white rounded-md px-3 py-2 text-sm font-medium flex items-center"
+                onClick={() => { setModalInputText(''); setActiveModal('cancel'); showModalContainer(<></>); }}
+              >
+                <Slash className="h-4 w-4 mr-2" />
+                Cancel Request
+              </button>
           )}
           <button className="btn-primary flex items-center" onClick={handleOpenDownloadModal} disabled={!areAnyDocumentsAvailable || isPreparingDocs}>
             {isPreparingDocs ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Preparing...</> : <><Download className="h-4 w-4 mr-2" />Travel Docs</>}

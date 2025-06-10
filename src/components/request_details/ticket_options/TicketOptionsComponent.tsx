@@ -497,6 +497,9 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId }) => {
     if (travelRequestStatus === 'Rejected') {
       return <StatusMessage title="Request Rejected" message="Your travel request has been rejected." icon={<Clock className="h-6 w-6" />} bgColor="bg-red-50" borderColor="border-red-200" iconColor="text-red-500" titleColor="text-red-800" textColor="text-red-700" />;
     }
+    if (travelRequestStatus === 'Cancelled') {
+      return <StatusMessage title="Request Cancelled" message="This travel request has been cancelled." bgColor="bg-gray-50" borderColor="border-gray-200" iconColor="text-gray-500" titleColor="text-gray-800" textColor="text-gray-700" icon={<Clock className="h-6 w-6" />} />;
+    }
 
     switch (currentUser.role) {
       case 'admin': return renderAdminContent(travelRequestStatus);
@@ -593,7 +596,7 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId }) => {
               icon: <Edit size={16} />,
               onClick: () => {
                 const currentlySelected = uiTicketOptions.find(o => o.selected);
-                if (currentlySelected) {
+                if (currentlySelected) {    
                     setPendingSelectedOptionId(currentlySelected.id);
                 }
                 setIsEditModeDUHead(true);
