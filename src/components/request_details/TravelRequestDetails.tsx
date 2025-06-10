@@ -14,6 +14,7 @@ import ConfirmationModal, { ButtonConfig } from './confirmation_modal/Confirmati
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import TicketPreviewModal from './ticket_options/TicketPreviewModal';
+import toast, { Toaster } from 'react-hot-toast';
 
 // --- TYPE DEFINITIONS ---
 export interface ComponentTravelRequest {
@@ -197,7 +198,7 @@ const TravelRequestDetails: React.FC = () => {
       if (response.ok) {
         (await response.json())?.forEach((doc: any) => docs.push({ id: `doc_${doc.id}`, url: doc.documentPath, friendlyName: getFriendlyFilename(doc), docData: doc }));
       }
-      if (docs.length === 0) { alert('No documents available.'); return; }
+      if (docs.length === 0) { toast.error('No documents available.'); return; }
       setAvailableDocs(docs);
       setSelectedDocs(new Set(docs.map(d => d.id)));
       setActiveModal('download');
@@ -227,7 +228,7 @@ const TravelRequestDetails: React.FC = () => {
       handleCloseModal();
     } catch (error) {
       console.error("Failed to create or download zip file:", error);
-      alert("An error occurred while creating the zip file. Please try again.");
+      toast.error("An error occurred while creating the zip file. Please try again.");
     } finally {
       setIsZipping(false);
     }
@@ -241,7 +242,7 @@ const TravelRequestDetails: React.FC = () => {
       
       setIsTicketPreviewModalOpen(true);
     } else {
-      alert("No ticket document is available for preview.");
+      toast.error("No ticket document is available for preview.");
       console.warn("Preview requested, but 'uploadedTicketPdfPath' is missing from travelRequestData.");
     }
   };
@@ -268,7 +269,7 @@ const TravelRequestDetails: React.FC = () => {
     handleCloseModal();
   };
   const handleSubmitRejection = async () => {
-    if (!modalInputText.trim()) { alert('Please provide a rejection reason.'); return; }
+    if (!modalInputText.trim()) { toast.error('Please provide a rejection reason.'); return; }
     await fetch(`http://localhost:5030/api/Approvals/${id}/manager/reject`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ rejectingUserId: userId, comments: modalInputText }) });
     setActionTaken(true);
     fetchTravelRequest();
@@ -277,7 +278,7 @@ const TravelRequestDetails: React.FC = () => {
    const handleSubmitCancelRequest = async () => {
     const CANCELLED_STATUS_ID = 11;
     if (!modalInputText.trim()) {
-      alert("A reason for cancellation is required.");
+      toast.error("A reason for cancellation is required.");
       return;
     }
     await axios.put(`http://localhost:5030/api/TravelRequest/${id}/updatestatus`, {
@@ -374,6 +375,7 @@ const TravelRequestDetails: React.FC = () => {
 
   return (
     <div className="space-y-6 animate-fadeIn">
+            <Toaster position="top-right" reverseOrder={false} containerStyle={{ top: 70 }}/>
       <ConfirmationModal isOpen={isOpen} onClose={handleCloseModal} title={modalTitle} content={modalContent} buttons={modalButtons} />
       {id && (
         <TicketPreviewModal
