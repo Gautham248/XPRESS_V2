@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 import SelectedView from './component_view/SelectedView';
 import SelectTicketView from './component_view/SelectTicketView';
 import UploadTicketView from './component_view/UploadTicketView';
@@ -9,11 +9,12 @@ import ConfirmationModal from '../confirmation_modal/ConfirmationModal';
 import { Edit, Loader2, Check, Clock } from 'lucide-react';
 import StatusMessage from './StatusMessage';
 import { INDEX_TO_STATUS_MAP } from '../TravelRequestDetails';
+import { TravelRequestApiResponse, TravelRequestData } from '../TravelInfoBanner';
 
 // --- API Related Interfaces ---
 interface ApiTravelRequestDetail {
   currentStatusId: number;
-  transportationType: string;
+  transportation: string;
   uploadedTicketPdfPath?: string;
 }
 
@@ -72,7 +73,7 @@ const API_BASE_URL = 'http://localhost:5030/api';
 const TicketOptionComponent: React.FC<TicketProps> = ({ requestId, onPreviewTicket, ticketDocumentPath }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [travelRequestStatus, setTravelRequestStatus] = useState<string | null>(null);
-  const [transportationType, setTransportationType] = useState<'flight' | 'train' | 'bus' | 'cab'>();
+  const [transportationType, setTransportationType] = useState('');
   const [ticketOptionsFromApi, setTicketOptionsFromApi] = useState<ApiTicketOptionItem[]>([]);
 
   const [newOptionText, setNewOptionText] = useState<string>('');
@@ -88,6 +89,8 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId, onPreviewTick
   const [isLoadingOptions, setIsLoadingOptions] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [, setTravelRequestDetails] = useState<ApiTravelRequestDetail | null>(null);
+  const [travelRequest, setTravelRequest] = useState<TravelRequestData | null>(null);
+  const [loading, setLoading] = useState(false);
 
   const {
     isOpen: isConfirmModalOpen,
@@ -108,6 +111,75 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId, onPreviewTick
     }
   }, []);
 
+  const apiUrl = 'http://localhost:5030/api/TravelRequest/infobanner';
+
+  useEffect(() => {
+
+  if (!requestId) {
+        setError("No request ID provided");
+        setLoading(false);
+        return;
+      }
+
+    const fetchTravelRequest = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const url = `${apiUrl}/${requestId}`;
+        const response = await axios.get<TravelRequestApiResponse>(url);
+        setTransportationType(response.data.result[0]?.travelModeName);
+        
+        if (response.data.isSuccess && response.data.result.length > 0) {
+            const apiData = response.data.result[0];
+            // console.log(apiData);
+          
+          // Transform API data to component format
+          const transformedData: TravelRequestData = {
+            requestId: apiData.requestId,
+            travelerName: apiData.employeeName,
+            departmentCode: apiData.departmentName,
+            projectManager: apiData.projectManager,
+            projectCode: apiData.projectCode,
+            transportationType: apiData.travelModeName,
+            source: `${apiData.sourcePlace}, ${apiData.sourceCountry}`,
+            destination: `${apiData.destinationPlace}, ${apiData.destinationCountry}`,
+            phoneNumber: apiData.phoneNumber
+          };
+          
+          setTravelRequest(transformedData);
+        } else {
+          if (response.data.errorMessages && response.data.errorMessages.length > 0) {
+            setError(response.data.errorMessages.join(', '));
+          } else if (response.data.isSuccess && response.data.result.length === 0) {
+            setError("No travel request found");
+          } else {
+            setError("Failed to retrieve travel request data.");
+          }
+        }
+      } catch (err) {
+        if (axios.isAxiosError(err)) {
+          const axiosErr = err as AxiosError<any>;
+          if (axiosErr.response) {
+            setError(axiosErr.response.data?.message || axiosErr.response.data?.errorMessages?.join(', ') || axiosErr.message || "An error occurred with the server response.");
+          } else if (axiosErr.request) {
+            setError(axiosErr.message || "Network error: Could not connect to server.");
+          } else {
+            setError(axiosErr.message || "Error setting up request.");
+          }
+        } else if (err instanceof Error) {
+          setError(err.message || "An unexpected error occurred.");
+        } else {
+          setError("An unknown error occurred.");
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTravelRequest();
+  }, [requestId, apiUrl]);
+
+  console.log(transportationType);
   const fetchTravelRequestData = useCallback(async () => {
     if (!requestId) {
       setError("Request ID is missing.");
@@ -123,16 +195,16 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId, onPreviewTick
       if (response.data.isSuccess && response.data.result) {
         setTravelRequestDetails(response.data.result);
         const statusId = response.data.result.currentStatusId;
-        const statusName = INDEX_TO_STATUS_MAP[statusId] || 'PendingReview';
+        const statusName = INDEX_TO_STATUS_MAP[statusId];
 
-        const transportType = response.data.result.transportationType?.toLowerCase() || 'flight';
-            
-        if (['flight', 'train', 'bus', 'cab'].includes(transportType)) {
-            setTransportationType(transportType as 'flight' | 'train' | 'bus' | 'cab');
-        } else {
-            console.warn(`Unexpected transportation type: ${transportType}, defaulting to flight`);
-            setTransportationType('flight');
-        }
+        const transportType = response.data.result.transportation?.toLowerCase() || '';
+        setTransportationType(transportType);
+        // if (['flight', 'train', 'bus', 'cab'].includes(transportType)) {
+        //     setTransportationType(transportType as 'flight' | 'train' | 'bus' | 'cab');
+        // } else {
+        //     console.warn(`Unexpected transportation type: ${transportType}, defaulting to flight`);
+        //     setTransportationType('flight');
+        // }
 
         setTravelRequestStatus(statusName);
 
@@ -706,7 +778,7 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId, onPreviewTick
       <UploadTicketsModal
         isOpen={isUploadTicketsFileModalOpen} onClose={() => setIsUploadTicketsFileModalOpen(false)}
         onConfirm={handleUploadActualTickets}
-        transportationType={transportationType ?? 'flight'}
+        transportationType={transportationType}
       />
     </>
   );

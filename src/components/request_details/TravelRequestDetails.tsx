@@ -375,7 +375,7 @@ const TravelRequestDetails: React.FC = () => {
 
   return (
     <div className="space-y-6 animate-fadeIn">
-      <Toaster position="top-right" reverseOrder={false} containerStyle={{ top: 70 }}/>
+            <Toaster position="top-right" reverseOrder={false} containerStyle={{ top: 70 }}/>
       <ConfirmationModal isOpen={isOpen} onClose={handleCloseModal} title={modalTitle} content={modalContent} buttons={modalButtons} />
       {id && (
         <TicketPreviewModal
@@ -436,7 +436,7 @@ const TravelRequestDetails: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
           {id && <TravelInfo requestId={id} />}
-          {id && <TicketComponent requestId={id} onPreviewTicket={handlePreviewTicket} ticketDocumentPath={travelRequestData.ticketDocumentPath}/>}
+          {id && <TicketComponent requestId={id}  onPreviewTicket={handlePreviewTicket} ticketDocumentPath={travelRequestData.ticketDocumentPath}/>}
         </div>
         <div className="lg:col-span-1">{id && <ApprovalTimeline requestId={id} />}</div>
       </div>

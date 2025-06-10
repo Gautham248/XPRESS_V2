@@ -120,9 +120,10 @@ const EmployeeDashboard: React.FC = () => {
           priority: 'Medium',
         }));
         setTravelRequests(mappedRequests);
-      } else {
-        toast.error("Could not load travel requests.");
       }
+      //  else {
+      //   toast.error("Could not load travel requests.");
+      // }
     } catch (error) {
       console.error('Error fetching travel requests:', error);
       toast.error("Failed to fetch travel requests.");
