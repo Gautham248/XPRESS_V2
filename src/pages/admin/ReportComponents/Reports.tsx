@@ -232,7 +232,7 @@ const Reports: React.FC = () => {
         <div className="relative">
           <StatCard title="Total Requests" value={statusData?.totalRequestCount ?? 0} subtitle="Requests" icon={<Briefcase />} iconClass="text-blue-600" iconBgClass="bg-blue-100">
             <div className="grid grid-cols-2 gap-6 text-center">
-              <div className="bg-blue-50 py-2 rounded"><span className="text-xs">Approved</span><p className="font-medium">{statusData?.confirmedOrOtherCount ?? 0}</p></div>
+              <div className="bg-blue-50 py-2 rounded"><span className="text-xs">Ticketed</span><p className="font-medium">{statusData?.confirmedOrOtherCount ?? 0}</p></div>
               <div className="bg-red-50 py-2 rounded"><span className="text-xs">Rejected</span><p className="font-medium">{statusData?.rejectedCount ?? 0}</p></div>
             </div>
           </StatCard>
