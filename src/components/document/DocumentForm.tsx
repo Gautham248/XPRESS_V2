@@ -60,6 +60,9 @@ function DocumentForm({ docType, formState, dispatch, recordId, onSave }: Docume
                   required={field.required}
                   disabled={isSaving}
                   autoComplete="off"
+                  showMonthDropdown
+                  showYearDropdown
+                  dropdownMode="select"
                 />
               ) : (
                 <input
