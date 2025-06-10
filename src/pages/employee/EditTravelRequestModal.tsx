@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, isValid } from 'date-fns'; 
 import Select from 'react-select';
 import {
   Plane,
@@ -150,15 +150,40 @@ const EditTravelRequestModal: React.FC<EditTravelRequestModalProps> = ({ isOpen,
                     default: return 'Flight';
                 }
             };
+           
+            // --- UPDATED FUNCTION TO HANDLE INVALID DATES ---
             const splitISODate = (isoDate: string | null) => {
-                if (!isoDate) return { date: '', time: '' };
+                if (!isoDate) {
+                    return { date: '', time: '' };
+                }
+               
                 try {
                     const dateObj = parseISO(isoDate);
+ 
+                    // Check if the parsed date is valid. If not, default to today.
+                    if (!isValid(dateObj)) {
+                        console.warn(`Invalid date string received: "${isoDate}". Defaulting to today.`);
+                        const today = new Date();
+                        return {
+                            date: format(today, 'yyyy-MM-dd'),
+                            time: format(today, 'HH:mm'),
+                        };
+                    }
+ 
+                    // If valid, format and return the date and time.
                     return {
                         date: format(dateObj, 'yyyy-MM-dd'),
                         time: format(dateObj, 'HH:mm'),
                     };
-                } catch (error) { return { date: '', time: '' }; }
+                } catch (error) {
+                    // Fallback for any other unexpected errors during parsing
+                    console.error(`Error parsing date: "${isoDate}". Defaulting to today.`, error);
+                    const today = new Date();
+                    return {
+                        date: format(today, 'yyyy-MM-dd'),
+                        time: format(today, 'HH:mm'),
+                    };
+                }
             };
  
             const outbound = splitISODate(request.outboundDepartureDate);
@@ -262,8 +287,6 @@ const EditTravelRequestModal: React.FC<EditTravelRequestModalProps> = ({ isOpen,
             ldCertificatePath: request?.ldCertificatePath ?? "string"
         };
        
-        console.log("Generated API Payload for Update:", JSON.stringify(mappedData, null, 2));
-       
         onUpdate(mappedData);
     };
    
@@ -324,8 +347,7 @@ const EditTravelRequestModal: React.FC<EditTravelRequestModalProps> = ({ isOpen,
                                 <div><label className="block text-sm font-medium text-gray-700 mb-1">Time</label><IconInput icon={Clock} type="time" name="returnArrivalTime" value={formData.returnArrivalTime} onChange={handleChange} /></div>
                             </div>
                         </div>
-                    )}
-                   
+                    )}          
                     <div className="bg-white p-5 rounded-lg border space-y-4">
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">Mode of Transport</label>
@@ -367,13 +389,11 @@ const EditTravelRequestModal: React.FC<EditTravelRequestModalProps> = ({ isOpen,
                                 )}
                             </div>
                         </div>
-                    </div>
-                   
+                    </div>          
                     <div className="sticky bottom-0 bg-white border-t p-4 flex justify-end"><button type="submit" className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700">Update Request</button></div>
                 </form>
             </div>
         </div>
     );
 };
- 
 export default EditTravelRequestModal;
