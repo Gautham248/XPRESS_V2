@@ -23,6 +23,10 @@ interface BarChartItem {
   value: number; 
   cost?: number; 
   travelType?: 'international' | 'domestic';
+  internationalCount?: number;
+  domesticCount?: number;
+  internationalCost?: number;
+  domesticCost?: number;
 }
 
 interface TableDataItem {
@@ -49,7 +53,6 @@ const TravelAgencyBarChart: React.FC<TravelAgencyBarChartProps> = ({
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-
   useEffect(() => {
     const fetchTravelAgencyData = async () => {
       if (!startDate || !endDate) return;
@@ -69,14 +72,40 @@ const TravelAgencyBarChart: React.FC<TravelAgencyBarChartProps> = ({
         const data: TravelAgencyApiResponse = await response.json();
         
         if (data.isSuccess && data.result) {
+          // Group by agency name and sum up the values
+          const groupedData: { [key: string]: BarChartItem } = {};
           
-          const transformedData: BarChartItem[] = data.result.map(item => ({
-            name: `${item.travelAgencyName} (${item.travelType})`,
-            value: item.requestCount,
-            cost: item.totalExpense,
-            travelType: item.travelType.toLowerCase() as 'international' | 'domestic'
-          }));
+          data.result.forEach(item => {
+            const agencyName = item.travelAgencyName;
+            const isInternational = item.travelType.toLowerCase() === 'international';
+            
+            if (!groupedData[agencyName]) {
+              groupedData[agencyName] = {
+                name: agencyName,
+                value: 0,
+                cost: 0,
+                internationalCount: 0,
+                domesticCount: 0,
+                internationalCost: 0,
+                domesticCost: 0
+              };
+            }
+            
+            // Add to totals
+            groupedData[agencyName].value += item.requestCount;
+            groupedData[agencyName].cost! += item.totalExpense;
+            
+            // Track by type for filtering
+            if (isInternational) {
+              groupedData[agencyName].internationalCount! += item.requestCount;
+              groupedData[agencyName].internationalCost! += item.totalExpense;
+            } else {
+              groupedData[agencyName].domesticCount! += item.requestCount;
+              groupedData[agencyName].domesticCost! += item.totalExpense;
+            }
+          });
           
+          const transformedData: BarChartItem[] = Object.values(groupedData);
           setChartData(transformedData);
         } else {
           const errorMessage = data.errorMessages?.join(', ') || 'Unknown API error occurred';
@@ -93,13 +122,29 @@ const TravelAgencyBarChart: React.FC<TravelAgencyBarChartProps> = ({
     fetchTravelAgencyData();
   }, [startDate, endDate]);
 
-
   const filteredChartData = useMemo(() => {
     if (!chartData) return [];
+    
     if (travelTypeFilter === 'all') {
       return chartData;
     }
-    return chartData.filter(item => item.travelType === travelTypeFilter);
+    
+    // Filter and transform data based on travel type
+    return chartData.map(item => {
+      if (travelTypeFilter === 'international') {
+        return {
+          ...item,
+          value: item.internationalCount || 0,
+          cost: item.internationalCost || 0
+        };
+      } else {
+        return {
+          ...item,
+          value: item.domesticCount || 0,
+          cost: item.domesticCost || 0
+        };
+      }
+    }).filter(item => item.value > 0); 
   }, [chartData, travelTypeFilter]);
 
   // Check if filtered data is empty or only contains zero values
@@ -138,8 +183,8 @@ const TravelAgencyBarChart: React.FC<TravelAgencyBarChartProps> = ({
 
   const filterOptions = [
     { value: 'all', label: 'All Bookings', icon: <Filter className="w-4 h-4" />, count: chartData?.length || 0 },
-    { value: 'international', label: 'International Only', icon: <Globe className="w-4 h-4" />, count: chartData?.filter(item => item.travelType === 'international').length || 0 },
-    { value: 'domestic', label: 'Domestic Only', icon: <MapPin className="w-4 h-4" />, count: chartData?.filter(item => item.travelType === 'domestic').length || 0 }
+    { value: 'international', label: 'International Only', icon: <Globe className="w-4 h-4" />, count: chartData?.filter(item => (item.internationalCount || 0) > 0).length || 0 },
+    { value: 'domestic', label: 'Domestic Only', icon: <MapPin className="w-4 h-4" />, count: chartData?.filter(item => (item.domesticCount || 0) > 0).length || 0 }
   ];
 
   // Loading state
@@ -241,16 +286,15 @@ const TravelAgencyBarChart: React.FC<TravelAgencyBarChartProps> = ({
 
   const tableHeaders = ['Agency', 'Bookings', 'Cost', 'Travel Type'];
   
-
   const totalBookings = filteredChartData.reduce((sum, item) => sum + item.value, 0);
   const totalCost = filteredChartData.reduce((sum, item) => sum + (item.cost || 0), 0);
   
-
   const tableData: TableDataItem[] = filteredChartData.map(item => ({
     agency: item.name, 
     bookings: item.value,
     cost: `₹${(item.cost || 0).toLocaleString()}`,
-    travel_type: item.travelType ? item.travelType.charAt(0).toUpperCase() + item.travelType.slice(1) : 'Unknown'
+    travel_type: travelTypeFilter === 'all' ? 'Combined' : 
+                travelTypeFilter.charAt(0).toUpperCase() + travelTypeFilter.slice(1)
   }));
 
   // Prepare export data configuration
@@ -381,9 +425,6 @@ const TravelAgencyBarChart: React.FC<TravelAgencyBarChartProps> = ({
               ];
               const barColor = colors[index % colors.length];
               
-              // Parse entry.name to remove "(Domestic)" or "(International)" part for display
-              const displayName = entry.name.split('(')[0].trim();
-              
               return (
                 <div key={index} className="flex flex-col items-center group relative" style={{ minWidth: `${Math.max(80, 400 / filteredChartData.length)}px` }}>
               
@@ -412,7 +453,7 @@ const TravelAgencyBarChart: React.FC<TravelAgencyBarChartProps> = ({
                   
                   {/* X-axis label (agency name) */}
                   <div className="mt-2 text-sm font-medium text-gray-700 text-center w-full px-1 break-words">
-                    {displayName}
+                    {entry.name}
                   </div>
                 </div>
               );

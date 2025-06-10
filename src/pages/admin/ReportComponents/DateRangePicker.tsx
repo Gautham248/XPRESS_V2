@@ -6,6 +6,7 @@ interface DateRangePickerProps {
   endDate: string;
   onStartDateChange: (date: string) => void;
   onEndDateChange: (date: string) => void;
+  onApply: () => void;
 }
 
 const DateRangePicker: React.FC<DateRangePickerProps> = ({
@@ -13,6 +14,7 @@ const DateRangePicker: React.FC<DateRangePickerProps> = ({
   endDate,
   onStartDateChange,
   onEndDateChange,
+  onApply, 
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [validationError, setValidationError] = useState('');
@@ -62,25 +64,24 @@ const DateRangePicker: React.FC<DateRangePickerProps> = ({
 
   const displayText = startDate && endDate
     ? `${formatDisplayDate(startDate)} - ${formatDisplayDate(endDate)}`
-    : startDate
-    ? `From ${formatDisplayDate(startDate)}`
-    : endDate
-    ? `Until ${formatDisplayDate(endDate)}`
     : "Select date range";
 
   const handleStartDateChange = (date: string) => {
     onStartDateChange(date);
-    // If end date is before the new start date, clear it
     if (date && endDate && new Date(date) > new Date(endDate)) {
       onEndDateChange('');
     }
   };
 
   const handleEndDateChange = (date: string) => {
-    // Only allow end date if it's on or after start date
     if (!startDate || !date || new Date(date) >= new Date(startDate)) {
       onEndDateChange(date);
     }
+  };
+  
+  const handleApplyClick = () => {
+    onApply(); 
+    setIsOpen(false); // Close the picker
   };
 
   const hasValidationError = validationError !== '';
@@ -107,7 +108,7 @@ const DateRangePicker: React.FC<DateRangePickerProps> = ({
       {isOpen && (
         <div
           ref={datePickerRef}
-          className="absolute mt-2 z-20 bg-white rounded-md shadow-lg border border-gray-200 p-4 w-80 opacity-100"
+          className="absolute right-0 mt-2 z-20 bg-white rounded-md shadow-lg border border-gray-200 p-4 w-80 opacity-100"
         >
           <div className="flex justify-between items-center mb-3">
             <h3 className="text-sm font-medium text-gray-800">Select Date Range</h3>
@@ -155,22 +156,12 @@ const DateRangePicker: React.FC<DateRangePickerProps> = ({
                 }`}
                 disabled={!startDate}
               />
-             
             </div>
           </div>
-          <div className="mt-4 flex justify-between">
+          <div className="mt-4 flex justify-end">
+            
             <button
-              onClick={() => {
-                onStartDateChange('');
-                onEndDateChange('');
-                setIsOpen(false); 
-              }}
-              className="px-3 py-1 bg-gray-600 text-white text-sm rounded-md hover:bg-gray-700"
-            >
-              Clear
-            </button>
-            <button
-              onClick={() => setIsOpen(false)}
+              onClick={handleApplyClick}
               className={`px-3 py-1 text-white text-sm rounded-md transition-colors ${
                 hasValidationError
                   ? 'bg-gray-400 cursor-not-allowed'

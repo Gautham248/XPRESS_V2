@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
+import toast, { Toaster } from 'react-hot-toast'; 
 import {
   Upload,
   FileText,
@@ -11,16 +12,16 @@ import { format, parseISO, differenceInDays } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { getStatusColor } from '../../data/mockData';
 import EditTravelRequestModal, { DetailedTravelRequest } from './EditTravelRequestModal';
-
+ 
 // --- INTERFACES ---
 interface TravelRequest {
   id: string;
+  humanReadableId: string;
   travelerName: string;
   travelType: 'Domestic' | 'International';
   tripType?: 'One Way' | 'Round Trip';
   departureDate: string;
   returnDate: string;
-  // source: string;
   destination: string;
   purpose: string;
   status: string;
@@ -52,25 +53,28 @@ interface UserDocuments {
   userName: string;
   documents: Document[];
 }
-
+ 
 // --- MAIN DASHBOARD COMPONENT ---
 const EmployeeDashboard: React.FC = () => {
   const navigate = useNavigate();
-
+ 
   // State for data
   const [travelRequests, setTravelRequests] = useState<TravelRequest[]>([]);
   const [userDocuments, setUserDocuments] = useState<UserDocuments | null>(null);
   const [documentsLoading, setDocumentsLoading] = useState(true);
   const [documentsError, setDocumentsError] = useState<string | null>(null);
-  
+ 
   // State for UI
   const [selectedDocForPreview, setSelectedDocForPreview] = useState<Document | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedRequestForEdit, setSelectedRequestForEdit] = useState<DetailedTravelRequest | null>(null);
   const [isFetchingDetails, setIsFetchingDetails] = useState(false);
-  const [statusForModal, setStatusForModal] = useState<string | undefined>();
-
-
+ 
+  // State to hold the specific ID required for the POST /edit endpoint
+  const [selectedRequestIdForEdit, setSelectedRequestIdForEdit] = useState<string | null>(null);
+  const [selectedRequestStatus, setSelectedRequestStatus] = useState<string | null>(null);
+ 
+ 
   const userString = localStorage.getItem('user');
   const user = userString ? JSON.parse(userString) : null;
   const currentUser = {
@@ -79,31 +83,29 @@ const EmployeeDashboard: React.FC = () => {
     role: user?.role || 'Employee',
     department: user?.userDU,
   };
-
+ 
   // --- API CALLS ---
   const fetchTravelRequests = useCallback(async () => {
     if (!user?.userId || !user?.token) return;
-    
+   
     const endpoint = `http://localhost:5030/api/TravelRequest/ByUser/${user.userId}`;
-    
+ 
     try {
       const response = await fetch(
         endpoint,
         { headers: { Authorization: `Bearer ${user.token}` } }
       );
       const data = await response.json();
-
+     
       if (data.isSuccess) {
         const mappedRequests = data.result.map((trip: any): TravelRequest => ({
           id: trip.requestId,
+          humanReadableId: trip.requestNumber || trip.requestId,
           travelerName: user.userName,
           travelType: trip.isInternational ? 'International' : 'Domestic',
           tripType: trip.isRoundTrip ? 'Round Trip' : 'One Way',
           departureDate: trip.outboundDepartureDate,
-          returnDate: trip.returnDepartureDate || '', 
-          // FIX: Combine place and country for a full source string, with a fallback.
-          // source: [trip.sourcePlace, trip.sourceCountry].filter(Boolean).join(', ') || 'Unknown',
-          // FIX: The destination field was missing. This combines place and country for a full destination string.
+          returnDate: trip.returnDepartureDate || '',
           destination: trip.destination,
           purpose: trip.purposeOfTravel,
           status: trip.currentStatusName,
@@ -111,143 +113,218 @@ const EmployeeDashboard: React.FC = () => {
           projectCode: trip.projectCode || 'Unknown',
           estimatedCost: 0,
           accommodationType: trip.isAccommodationRequired ? 'Required' : 'None',
-          requestDate: trip.outboundDepartureDate, 
+          requestDate: trip.outboundDepartureDate,
           departmentCode: currentUser.department,
           managerName: 'Unknown',
           reportingManager: 'Unknown',
           priority: 'Medium',
         }));
         setTravelRequests(mappedRequests);
+      } else {
+        toast.error("Could not load travel requests.");
       }
     } catch (error) {
       console.error('Error fetching travel requests:', error);
+      toast.error("Failed to fetch travel requests.");
     }
   }, [user?.userId, user?.token, user?.userName, currentUser.department]);
-
+ 
   useEffect(() => {
     fetchTravelRequests();
   }, [fetchTravelRequests]);
-
+ 
   useEffect(() => {
     const fetchUserDocuments = async () => {
       if (!user?.userId || !user?.token) {
+        console.error('User ID or token not found in local storage');
         setDocumentsError('User authentication required');
         setDocumentsLoading(false);
         return;
       }
+ 
       try {
         setDocumentsLoading(true);
+        setDocumentsError(null);
+ 
         const response = await axios.get(
           `http://localhost:5030/api/Documents/User/${user.userId}`,
-          { headers: { Authorization: `Bearer ${user.token}` } }
+          {
+            headers: {
+              Authorization: `Bearer ${user.token}`,
+              'Content-Type': 'application/json',
+            },
+          }
         );
-        const apiDocuments = response.data?.result || [];
-        const mappedDocuments = apiDocuments.map((doc: any) => ({
-          id: String(doc.id),
-          documentType: doc.idType,
-          documentUrl: doc.documentPath,
-          documentNumber: doc.visaNumber || doc.passportNumber || doc.aadharNumber || '',
-          issueDate: doc.visaIssueDate || doc.passportIssueDate || doc.uploadDate,
-          expiryDate: doc.visaExpiryDate || doc.passportExpiryDate,
-          issuingCountry: doc.issuingCountry,
-          fullName: doc.fullName,
-          visaClass: doc.visaClass,
-        }));
-        setUserDocuments({ userId: user.userId, userName: user.userName, documents: mappedDocuments });
+        const apiDocuments = Array.isArray(response.data)
+          ? response.data
+          : response.data.documents || response.data.result || [];
+ 
+        if (apiDocuments && apiDocuments.length > 0) {
+         
+          const mappedDocuments = apiDocuments.map((apiDoc: any) => ({
+            id: String(apiDoc.id),
+            documentType: apiDoc.idType,
+            documentUrl: apiDoc.documentPath,
+            documentNumber: apiDoc.visaNumber || apiDoc.passportNumber || apiDoc.aadharNumber || '',
+            issueDate: apiDoc.visaIssueDate || apiDoc.passportIssueDate || apiDoc.uploadDate,
+            expiryDate: apiDoc.visaExpiryDate || apiDoc.passportExpiryDate,
+            issuingCountry: apiDoc.issuingCountry,
+            fullName: apiDoc.fullName,
+            visaClass: apiDoc.visaClass,
+          }));
+ 
+          const newUserDocuments = {
+            userId: user.userId,
+            userName: user.userName,
+            documents: mappedDocuments,
+          };
+ 
+          setUserDocuments(newUserDocuments);
+         
+        } else {
+          setUserDocuments({
+            userId: user.userId,
+            userName: user.userName,
+            documents: [],
+          });
+        }
       } catch (error) {
         console.error('Error fetching documents:', error);
         setDocumentsError('Error loading documents');
+        toast.error('Failed to load your documents.');
       } finally {
         setDocumentsLoading(false);
       }
     };
+ 
     fetchUserDocuments();
-  }, [user?.userId, user?.token, user?.userName]);
+  }, []);
 
   // --- EVENT HANDLERS ---
   const handleRowClick = (item: TravelRequest) => navigate(`/manager/my-requests/${item.id}`);
-
+ 
   const handleEditClick = async (e: React.MouseEvent, request: TravelRequest) => {
     e.stopPropagation();
     if (!user?.token) {
-      alert("Authentication error. Please log in again.");
+      toast.error("Authentication error. Please log in again.");
       return;
     }
-    
+   
     setIsFetchingDetails(true);
+    const loadingToast = toast.loading('Fetching request details...');
     try {
       const endpoint = `http://localhost:5030/api/TravelRequest/${request.id}`;
       
       const response = await axios.get(endpoint, {
         headers: { Authorization: `Bearer ${user.token}` },
       });
-      
+     
+      toast.dismiss(loadingToast);
       if (response.data.isSuccess) {
         setSelectedRequestForEdit(response.data.result);
-        setStatusForModal(request.status); 
+        setSelectedRequestIdForEdit(request.humanReadableId);
+        setSelectedRequestStatus(request.status);
         setIsEditModalOpen(true);
       } else {
-        alert(`Could not fetch request details: ${response.data.errorMessages.join(', ')}`);
+        console.error("Failed to fetch details:", response.data.errorMessages);
+        toast.error(`Could not fetch details: ${response.data.errorMessages.join(', ')}`);
       }
     } catch (error) {
+      toast.dismiss(loadingToast);
+      console.error("Error fetching detailed travel request:", error);
       const errorMessage = axios.isAxiosError(error) && error.response
         ? error.response.data.message || 'A server error occurred.'
         : 'An unknown error occurred.';
-      alert(`Error: ${errorMessage}`);
+      toast.error(`Error: ${errorMessage}`);
     } finally {
       setIsFetchingDetails(false);
     }
   };
-  
+ 
   const handleUpdateRequest = async (updatedData: any) => {
-      const requestId = selectedRequestForEdit?.requestId;
-      if (!requestId) {
-          console.error("No request selected for update.");
+      const humanReadableId = selectedRequestIdForEdit;
+     
+      if (!humanReadableId) {
+          toast.error("Error: No request ID was found. Please try again.");
           return;
       }
       if (!user?.token) {
-          console.error("User token not found.");
+          toast.error("Authentication error. Please log in again.");
           return;
       }
-
-      const endpoint = `http://localhost:5030/api/TravelRequest/${requestId}`;
-
+ 
+      const endpoint = `http://localhost:5030/api/travelrequests/${humanReadableId}/edit`;
+      
+      const loadingToast = toast.loading('Updating request...');
       try {
-        const response = await axios.put(endpoint, updatedData, {
+        const response = await axios.post(endpoint, updatedData, {
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${user.token}`,
             },
         });
-
+ 
+        toast.dismiss(loadingToast);
         if (response.status === 200 || response.status === 204) {
-            alert('Travel request updated successfully!');
+            toast.success('Travel request updated successfully!');
             setIsEditModalOpen(false);
             setSelectedRequestForEdit(null);
-            await fetchTravelRequests(); 
+            setSelectedRequestIdForEdit(null);
+            setSelectedRequestStatus(null);
+            await fetchTravelRequests();
         } else {
-            alert(`Update failed with status: ${response.status}`);
+            toast.error(`Update failed with status: ${response.status}`);
         }
       } catch (error) {
-        const errorMessage = axios.isAxiosError(error) && error.response 
-            ? error.response.data.errorMessages.join(', ') || 'A server error occurred.'
-            : 'An unknown error occurred.';
-        alert(`Update failed: ${errorMessage}`);
+        toast.dismiss(loadingToast);
+        console.error("Error updating travel request:", error);
+       
+        const errorMessage = (axios.isAxiosError(error) && error.response)
+          ? error.response.data?.errorMessages?.join(', ') ||
+            error.response.data?.message ||
+            error.response.data?.title ||
+            `Request failed with status: ${error.response.status}`
+          : 'An unknown error occurred.';
+         
+        toast.error(`Update failed: ${errorMessage}`);
       }
   };
-
+ 
   const isEditDisabled = (status: string) => {
     const nonEditableStatuses = ['Returned', 'Closed', 'Cancelled', 'Rejected'];
     return nonEditableStatuses.includes(status);
   };
-  
-  const getDocumentDisplayInfo = (doc: Document) => ({
-      title: `${doc.documentType}: ${doc.documentNumber || ''}`,
-      subtitle: doc.issuingCountry ? `Issued by: ${doc.issuingCountry}` : `Name: ${doc.fullName || ''}`,
-  });
-
+ 
+   const getDocumentDisplayInfo = (doc: Document) => {
+    switch (doc.documentType) {
+      case 'Visa':
+        return {
+          title: `Visa: ${doc.documentNumber || ''}`,
+          subtitle: doc.issuingCountry ? `Country: ${doc.issuingCountry}` : '',
+        };
+      case 'Passport':
+        return {
+          title: `Passport: ${doc.documentNumber || ''}`,
+          subtitle: doc.issuingCountry ? `Issued by: ${doc.issuingCountry}` : '',
+        };
+      case 'Aadhar':
+        return {
+          title: `Aadhar: ${doc.documentNumber || ''}`,
+          subtitle: doc.fullName ? `Name: ${doc.fullName}` : '',
+        };
+      default:
+        return {
+          title: `${doc.documentType}: ${doc.documentNumber || ''}`,
+          subtitle: '',
+        };
+    }
+  };
+ 
+ 
   return (
     <div className="container mx-auto p-6 space-y-6">
+      <Toaster position="top-right" reverseOrder={false} />
+
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white shadow-sm p-6 rounded-lg">
         <div className="flex items-center space-x-4">
           <User className="h-10 w-10 text-gray-600" />
@@ -261,7 +338,7 @@ const EmployeeDashboard: React.FC = () => {
           <button onClick={() => navigate('/manager/documents')} className="border border-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-100"><Upload className="h-4 w-4 inline mr-2" /> Upload Documents</button>
         </div>
       </div>
-
+ 
       <div className="card bg-white shadow-sm p-6 rounded-lg">
         <h3 className="text-lg font-semibold mb-6">Active Travel Requests</h3>
         <div className="overflow-x-auto">
@@ -271,10 +348,10 @@ const EmployeeDashboard: React.FC = () => {
                 {travelRequests.length > 0 ? travelRequests.map((trip) => (
                   <tr key={trip.id} className="border-b last:border-0 hover:bg-gray-50 cursor-pointer" onClick={() => handleRowClick(trip)}>
                     <td className="py-3 px-4">
-                      <button 
-                        onClick={(e) => handleEditClick(e, trip)} 
-                        disabled={isEditDisabled(trip.status) || isFetchingDetails} 
-                        className={`p-2 rounded-md transition-colors ${isEditDisabled(trip.status) ? 'text-gray-400 bg-gray-100 cursor-not-allowed' : 'text-blue-600 hover:text-blue-800 hover:bg-blue-50'}`} 
+                      <button
+                        onClick={(e) => handleEditClick(e, trip)}
+                        disabled={isEditDisabled(trip.status) || isFetchingDetails}
+                        className={`p-2 rounded-md transition-colors ${isEditDisabled(trip.status) ? 'text-gray-400 bg-gray-100 cursor-not-allowed' : 'text-blue-600 hover:text-blue-800 hover:bg-blue-50'}`}
                         title={isEditDisabled(trip.status) ? `Cannot edit a '${trip.status}' request` : 'Edit request'}
                       >
                         <Edit className="h-4 w-4" />
@@ -291,7 +368,7 @@ const EmployeeDashboard: React.FC = () => {
             </table>
         </div>
       </div>
-      
+     
       <div className="card bg-white shadow-sm p-6 rounded-lg">
         <h3 className="text-lg font-semibold mb-6">Document Repository</h3>
         {documentsLoading ? <p>Loading documents...</p> : documentsError ? <p className='text-red-500'>{documentsError}</p> : userDocuments && userDocuments.documents.length > 0 ? (
@@ -313,21 +390,24 @@ const EmployeeDashboard: React.FC = () => {
           </div>
         ) : <p className="text-gray-500 text-center py-6">No documents uploaded.</p>}
       </div>
-
+ 
       <div className="card bg-white shadow-sm p-6 rounded-lg">
         <h3 className="text-lg font-semibold mb-4">Travel Policy</h3>
         <a href="https://experiontechnologies.sharepoint.com/..." className="text-blue-600 hover:text-blue-800 flex items-center space-x-2" target='_blank' rel="noopener noreferrer"><FileText className="h-5 w-5" /><span>Experion Travel Policy</span></a>
       </div>
-
+ 
       {/* RENDER MODALS */}
-      <EditTravelRequestModal 
-        isOpen={isEditModalOpen} 
-        onClose={() => setIsEditModalOpen(false)} 
-        request={selectedRequestForEdit} 
+      <EditTravelRequestModal
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setSelectedRequestStatus(null);
+        }}
+        request={selectedRequestForEdit}
         onUpdate={handleUpdateRequest}
-        statusName={statusForModal}
+        status={selectedRequestStatus}
       />
-      
+     
       {selectedDocForPreview && (
          <div className="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center p-4" onClick={() => setSelectedDocForPreview(null)}>
           <div className="relative bg-white rounded-lg p-3 max-w-4xl w-full max-h-[90vh] overflow-auto" onClick={(e) => e.stopPropagation()}>
