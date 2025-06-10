@@ -1,6 +1,6 @@
 import React from 'react';
 import { TicketOption } from '../../../../data/mockData';
-import { Download, Upload, Check, Ticket } from 'lucide-react';
+import { Upload, Check, Ticket, Eye } from 'lucide-react';
 
 interface CustomButton {
   label: string;
@@ -12,6 +12,7 @@ interface CustomButton {
 
 interface Props {
   ticketOptions: TicketOption[];
+  onPreviewTickets?: () => void;
   onDownloadTickets?: () => void;
   onUploadTickets?: () => void;
   onConfirmTicketOption?: () => void;
@@ -21,13 +22,14 @@ interface Props {
 
 const SelectedView: React.FC<Props> = ({
   ticketOptions,
-  onDownloadTickets,
+  onPreviewTickets,
   onUploadTickets,
   onConfirmTicketOption,
   buttons = [],
   customButtons = [],
 }) => {
   const selectedOption = ticketOptions.find(opt => opt.selected);
+  const canPreview = !!selectedOption?.filePath;
 
   return (
     <div className="space-y-6">
@@ -69,12 +71,12 @@ const SelectedView: React.FC<Props> = ({
       )}
       {selectedOption && (
         <div className="flex justify-end gap-3">
-          {buttons.includes('downloadTickets') && onDownloadTickets && (
+          {buttons.includes('downloadTickets') && onPreviewTickets && canPreview && (
             <button
-              className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-xl font-medium hover:bg-indigo-700 shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200"
-              onClick={onDownloadTickets}
+              className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-xl font-medium hover:bg-indigo-700 shadow-lg"
+              onClick={onPreviewTickets}
             >
-              <Download size={18} /> Download Tickets
+              <Eye size={18} /> View Ticket
             </button>
           )}
           {buttons.includes('uploadTickets') && onUploadTickets && (

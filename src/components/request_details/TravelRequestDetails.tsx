@@ -13,6 +13,7 @@ import { useModal } from './confirmation_modal/hooks/useModal';
 import ConfirmationModal, { ButtonConfig } from './confirmation_modal/ConfirmationModal';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
+import TicketPreviewModal from './ticket_options/TicketPreviewModal';
 
 // --- TYPE DEFINITIONS ---
 export interface ComponentTravelRequest {
@@ -39,7 +40,7 @@ export interface ComponentTravelRequest {
   attendedCct?: boolean;
   travelAgencyName?: string;
   totalExpense?: number;
-  uploadedTicketPdfPath?: string;
+  ticketDocumentPath?: string;
   updatedAt?: string;
   employeeName?: string;
   isInternational?: boolean;
@@ -114,10 +115,14 @@ const TravelRequestDetails: React.FC = () => {
   const [selectedDocs, setSelectedDocs] = useState<Set<string>>(new Set());
 
   const [modalInputText, setModalInputText] = useState('');
+  const [isTicketPreviewModalOpen, setIsTicketPreviewModalOpen] = useState(false);
+  const [ticketPreviewUrl, setTicketPreviewUrl] = useState<string>('');
 
   const userString = localStorage.getItem('user');
   let role = '';
   let userId: number | undefined = undefined;
+  
+  console.log(travelRequestData?.ticketDocumentPath);
 
   if (userString) {
     const user = JSON.parse(userString);
@@ -185,8 +190,8 @@ const TravelRequestDetails: React.FC = () => {
     setIsPreparingDocs(true);
     try {
       let docs: DocumentInfo[] = [];
-      if (travelRequestData.uploadedTicketPdfPath) {
-        docs.push({ id: `ticket_${id}`, url: `http://localhost:5030/api/TravelRequest/${id}/downloadticket`, friendlyName: getFriendlyFilename({ idType: 'TravelTicket', id, documentPath: travelRequestData.uploadedTicketPdfPath }), docData: {} });
+      if (travelRequestData.ticketDocumentPath) {
+        docs.push({ id: `ticket_${id}`, url: `http://localhost:5030/api/TravelRequest/${id}/downloadticket`, friendlyName: getFriendlyFilename({ idType: 'TravelTicket', id, documentPath: travelRequestData.ticketDocumentPath }), docData: {} });
       }
       const response = await fetch(`http://localhost:5030/api/Documents/User/${travelRequestData.userId}`);
       if (response.ok) {
@@ -225,6 +230,19 @@ const TravelRequestDetails: React.FC = () => {
       alert("An error occurred while creating the zip file. Please try again.");
     } finally {
       setIsZipping(false);
+    }
+  };
+
+    const handlePreviewTicket = () => {
+    if (travelRequestData && travelRequestData.ticketDocumentPath) {
+      
+      setTicketPreviewUrl(travelRequestData.ticketDocumentPath);
+      console.log("ticket url: ", ticketPreviewUrl);
+      
+      setIsTicketPreviewModalOpen(true);
+    } else {
+      alert("No ticket document is available for preview.");
+      console.warn("Preview requested, but 'uploadedTicketPdfPath' is missing from travelRequestData.");
     }
   };
 
@@ -350,14 +368,21 @@ const TravelRequestDetails: React.FC = () => {
   const showFeedbackButton = isEmployee && travelRequestData.status === 'Returned' && !feedbackSubmitted;
   const showCloseRequestButton = isAdmin && travelRequestData.status === 'Returned' && !requestClosed;
   const showManagerActionButtons = isManager && travelRequestData.status === 'PendingReview' && !actionTaken;
-  const areAnyDocumentsAvailable = !!travelRequestData.uploadedTicketPdfPath || (travelRequestData.userId > 0);
-  // The status is active if it's before 'Closed' (index 10)
+  const areAnyDocumentsAvailable = !!travelRequestData.ticketDocumentPath || (travelRequestData.userId > 0);
   const isRequestActive = travelRequestData.currentStatusId < 10;
   const showCancelButton = (isManager || isEmployee) && isRequestActive;
 
   return (
     <div className="space-y-6 animate-fadeIn">
       <ConfirmationModal isOpen={isOpen} onClose={handleCloseModal} title={modalTitle} content={modalContent} buttons={modalButtons} />
+      {id && (
+        <TicketPreviewModal
+          isOpen={isTicketPreviewModalOpen}
+          onClose={() => setIsTicketPreviewModalOpen(false)}
+          ticketUrl={ticketPreviewUrl}
+          downloadUrl={`http://localhost:5030/api/TravelRequest/${id}/downloadticket`}
+        />
+      )}
       
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div className="flex items-center gap-4">
@@ -407,7 +432,10 @@ const TravelRequestDetails: React.FC = () => {
       
       {id && <TravelInfoBanner requestId={id} />}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-6">{id && <TravelInfo requestId={id} />}{id && <TicketComponent requestId={id} />}</div>
+        <div className="lg:col-span-2 space-y-6">
+          {id && <TravelInfo requestId={id} />}
+          {id && <TicketComponent requestId={id} onPreviewTicket={handlePreviewTicket} ticketDocumentPath={travelRequestData.ticketDocumentPath}/>}
+        </div>
         <div className="lg:col-span-1">{id && <ApprovalTimeline requestId={id} />}</div>
       </div>
     </div>

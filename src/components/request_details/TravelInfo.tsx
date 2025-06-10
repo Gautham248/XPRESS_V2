@@ -107,16 +107,14 @@ const TravelInfo: React.FC<TravelInfoProps> = ({ requestId }) => {
           const apiData = response.data.result[0];
           const combinedComments: Comment[] = [];
 
-          // 1. Add the initial request comment if it exists
           if (apiData.initialComments) {
             combinedComments.push({
-              employeeName: apiData.travelerName, // Attribute to the traveler
-              commentText: `Initial Request Note: ${apiData.initialComments}`, // Add context
-              timestamp: apiData.requestCreateDate, // Use the request creation time
+              employeeName: apiData.travelerName,
+              commentText: `Initial Request Note: ${apiData.initialComments}`,
+              timestamp: apiData.requestCreateDate,
             });
           }
 
-          // 2. Add the food preference comment if it exists
           if (apiData.foodComment) {
             combinedComments.push({
               employeeName: apiData.travelerName,
@@ -125,12 +123,10 @@ const TravelInfo: React.FC<TravelInfoProps> = ({ requestId }) => {
             });
           }
 
-          // 3. Add all comments from the audit log
           if (apiData.comments && apiData.comments.length > 0) {
             combinedComments.push(...apiData.comments);
           }
 
-          // 4. Sort all comments by timestamp to ensure correct chronological order
           combinedComments.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
           const mappedData: TravelRequestData = {
             id: apiData.requestId,
