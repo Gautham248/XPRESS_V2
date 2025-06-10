@@ -52,6 +52,28 @@ const LINEAR_PROGRESSION_STATUSES = [
 
 type LinearStatus = typeof LINEAR_PROGRESSION_STATUSES[number];
 
+// Map API status types to internal status keys
+const API_TO_INTERNAL_STATUS_MAP: Record<string, string> = {
+  'Pending': 'PendingReview',
+  'PendingReview': 'PendingReview',
+  'Approved': 'Approved',
+  'Ticket Options Listed': 'OptionsListed',
+  'OptionsListed': 'OptionsListed',
+  'Ticket Option Selected': 'OptionSelected',
+  'OptionSelected': 'OptionSelected',
+  'DUApproved': 'DUApproved',
+  'BUApproved': 'BUApproved',
+  'TicketDispatched': 'TicketDispatched',
+  'InTransit': 'InTransit',
+  'Returned': 'Returned',
+  'Closed': 'Closed',
+  'Cancelled': 'Cancelled',
+  'Rejected': 'Rejected',
+  'Modified': 'Modified',
+  'OptionEdited': 'OptionEdited',
+  'Ticket Option Edited': 'OptionEdited',
+};
+
 const STATUS_DISPLAY_PROPERTIES: Record<string, { displayName: string; icon: React.ReactNode }> = {
   PendingReview: { displayName: 'Request Submitted', icon: <Check className="h-4 w-4" /> },
   Approved: { displayName: 'Approved', icon: <Check className="h-4 w-4" /> },
@@ -66,14 +88,17 @@ const STATUS_DISPLAY_PROPERTIES: Record<string, { displayName: string; icon: Rea
   Cancelled: { displayName: 'Canceled', icon: <X className="h-4 w-4" /> },
   Rejected: { displayName: 'Rejected', icon: <X className="h-4 w-4" /> },
   Modified: { displayName: 'Request Modified', icon: <Edit className="h-4 w-4" /> },
-  Pending: { displayName: 'Request Submitted', icon: <Check className="h-4 w-4" /> },
   OptionEdited: { displayName: 'Option Edited', icon: <Edit className="h-4 w-4" /> },
 };
 
-const getDisplayProperties = (rawApiStatus: string) => {
+const normalizeApiStatus = (apiStatus: string): string => {
+  return API_TO_INTERNAL_STATUS_MAP[apiStatus] || apiStatus;
+};
+
+const getDisplayProperties = (internalStatus: string) => {
   return (
-    STATUS_DISPLAY_PROPERTIES[rawApiStatus] || {
-      displayName: rawApiStatus.replace(/([A-Z])/g, ' $1').trim(),
+    STATUS_DISPLAY_PROPERTIES[internalStatus] || {
+      displayName: internalStatus.replace(/([A-Z])/g, ' $1').trim(),
       icon: <div className="h-2 w-2 bg-gray-300 rounded-full" />,
     }
   );
@@ -137,13 +162,13 @@ const ApprovalTimeline: React.FC<ApprovalTimelineProps> = ({ requestId }) => {
   const createTimelineStep = useCallback(
     (
       id: string,
-      rawApiStatus: string,
+      internalStatus: string,
       date: string,
       description: string,
       options: Partial<TimelineStep & { canceled?: boolean; details?: string | null; cycleId?: number }> = {}
     ): TimelineStep & { canceled?: boolean } => ({
       id,
-      status: getDisplayProperties(rawApiStatus).displayName,
+      status: getDisplayProperties(internalStatus).displayName,
       date,
       description,
       details: options.details || null,
@@ -163,11 +188,19 @@ const ApprovalTimeline: React.FC<ApprovalTimelineProps> = ({ requestId }) => {
 
     const { status: rawStatus, timelineEvents, requestDate } = travelRequestData;
 
-    // Filter out 'BUApproved' events
-    const filteredEvents = timelineEvents.filter(event => event.type !== 'BUApproved');
+    // Normalize the current status
+    const normalizedCurrentStatus = normalizeApiStatus(rawStatus);
+
+    // Filter out 'BUApproved' events and normalize event types
+    const normalizedEvents = timelineEvents
+      .filter(event => normalizeApiStatus(event.type) !== 'BUApproved')
+      .map(event => ({
+        ...event,
+        type: normalizeApiStatus(event.type)
+      }));
 
     // Merge duplicate events (e.g., OptionSelected)
-    const mergedEvents = filteredEvents.reduce((acc: ApiTimelineEvent[], event: ApiTimelineEvent) => {
+    const mergedEvents = normalizedEvents.reduce((acc: ApiTimelineEvent[], event: ApiTimelineEvent) => {
       if (event.type === 'OptionSelected' && acc[acc.length - 1]?.type === 'OptionSelected') {
         const prev = acc[acc.length - 1];
         const prevDate = parse(prev.date, DATE_FORMAT, new Date());
@@ -181,15 +214,9 @@ const ApprovalTimeline: React.FC<ApprovalTimelineProps> = ({ requestId }) => {
       return acc;
     }, []);
 
-    const isGloballyRejected = rawStatus === 'Rejected';
-    const isGloballyCanceled = rawStatus === 'Cancelled';
-    const isTerminal = isGloballyRejected || isGloballyCanceled || rawStatus === 'Closed';
-
-    // Adjust rawStatus if it's 'BUApproved'
-    let adjustedStatus = rawStatus;
-    if (rawStatus === 'BUApproved') {
-      adjustedStatus = 'TicketDispatched';
-    }
+    const isGloballyRejected = normalizedCurrentStatus === 'Rejected';
+    const isGloballyCanceled = normalizedCurrentStatus === 'Cancelled';
+    const isTerminal = isGloballyRejected || isGloballyCanceled || normalizedCurrentStatus === 'Closed';
 
     // Track modification cycles
     let currentCycle = 0;
@@ -205,13 +232,14 @@ const ApprovalTimeline: React.FC<ApprovalTimelineProps> = ({ requestId }) => {
     // Create event steps with cycle tracking
     const eventSteps: (TimelineStep & { canceled?: boolean })[] = [];
     let latestCycleLinearIndex = -1;
+    
     mergedEvents.forEach((event: ApiTimelineEvent, index: number) => {
       const isModified = event.type === 'Modified';
       const isRejectedEvent = event.type === 'Rejected';
       const isCanceledEvent = event.type === 'Cancelled';
       const isOptionEdited = event.type === 'OptionEdited';
-      const isPendingReview = event.type === 'Pending' || event.type === 'PendingReview';
-      const eventLinearIndex = LINEAR_PROGRESSION_STATUSES.indexOf((event.type === 'Pending' ? 'PendingReview' : event.type) as LinearStatus);
+      const isPendingReview = event.type === 'PendingReview';
+      const eventLinearIndex = LINEAR_PROGRESSION_STATUSES.indexOf(event.type as LinearStatus);
 
       // Find the cycle for this event
       const cycle = cycleIndices.find(c => index >= c.startIndex && index <= c.endIndex);
@@ -222,7 +250,8 @@ const ApprovalTimeline: React.FC<ApprovalTimelineProps> = ({ requestId }) => {
         completed = true; // Always complete Request Submitted
       } else if (!isModified && !isRejectedEvent && !isCanceledEvent && !isOptionEdited && eventLinearIndex !== -1) {
         if (cycleId === currentCycle) {
-          completed = eventLinearIndex <= LINEAR_PROGRESSION_STATUSES.indexOf(adjustedStatus as LinearStatus);
+          const currentStatusIndex = LINEAR_PROGRESSION_STATUSES.indexOf(normalizedCurrentStatus as LinearStatus);
+          completed = eventLinearIndex <= currentStatusIndex;
           if (completed && eventLinearIndex > latestCycleLinearIndex) {
             latestCycleLinearIndex = eventLinearIndex;
           }
@@ -236,7 +265,7 @@ const ApprovalTimeline: React.FC<ApprovalTimelineProps> = ({ requestId }) => {
       eventSteps.push(
         createTimelineStep(
           event.id || `event-${index}`,
-          event.type === 'Pending' ? 'PendingReview' : event.type,
+          event.type,
           safeFormatDate(event.date),
           event.description,
           {
@@ -280,19 +309,30 @@ const ApprovalTimeline: React.FC<ApprovalTimelineProps> = ({ requestId }) => {
 
     // Add all linear progression steps for the latest cycle
     const currentCycleStatuses = addedDisplayStatusesPerCycle.get(currentCycle) || new Set<string>();
-    LINEAR_PROGRESSION_STATUSES.forEach((rawStatus, index) => {
-      const displayProps = getDisplayProperties(rawStatus);
-      if (!currentCycleStatuses.has(displayProps.displayName) && rawStatus !== 'BUApproved') {
+    const currentStatusIndex = LINEAR_PROGRESSION_STATUSES.indexOf(normalizedCurrentStatus as LinearStatus);
+    
+    LINEAR_PROGRESSION_STATUSES.forEach((linearStatus, index) => {
+      const displayProps = getDisplayProperties(linearStatus);
+      if (!currentCycleStatuses.has(displayProps.displayName) && linearStatus !== 'BUApproved') {
         let stepStatus: 'completed' | 'active' | 'pending' = 'pending';
-        if (index <= latestCycleLinearIndex) {
-          stepStatus = 'completed';
-        } else if (index === latestCycleLinearIndex + 1 && !isTerminal) {
-          stepStatus = 'active';
+        
+        if (currentStatusIndex >= 0) {
+          if (index <= currentStatusIndex) {
+            stepStatus = 'completed';
+          } else if (index === currentStatusIndex + 1 && !isTerminal) {
+            stepStatus = 'active';
+          }
+        } else {
+          // If current status is not in linear progression, check if this step has occurred
+          const hasOccurred = mergedEvents.some(e => e.type === linearStatus);
+          if (hasOccurred) {
+            stepStatus = 'completed';
+          }
         }
 
         const step = createTimelineStep(
-          `step-${rawStatus}-${currentCycle}`,
-          rawStatus,
+          `step-${linearStatus}-${currentCycle}`,
+          linearStatus,
           stepStatus === 'completed' ? safeFormatDate(requestDate) : stepStatus === 'active' ? 'Pending' : 'Not Yet Started',
           stepStatus === 'completed'
             ? `${displayProps.displayName} completed.`
@@ -300,7 +340,7 @@ const ApprovalTimeline: React.FC<ApprovalTimelineProps> = ({ requestId }) => {
             ? `Awaiting ${displayProps.displayName.toLowerCase()}`
             : 'This step has not been reached.',
           {
-            completed: stepStatus === 'completed' || rawStatus === 'PendingReview',
+            completed: stepStatus === 'completed',
             active: stepStatus === 'active',
             details: null,
             cycleId: currentCycle,
@@ -334,14 +374,6 @@ const ApprovalTimeline: React.FC<ApprovalTimelineProps> = ({ requestId }) => {
         )
       );
     }
-
-    // Ensure Request Submitted is always completed (green)
-    finalTimeline.forEach((step: TimelineStep & { canceled?: boolean }) => {
-      if (step.status === 'Request Submitted') {
-        step.completed = true;
-        step.active = false;
-      }
-    });
 
     // Sort timeline by date and cycle
     finalTimeline.sort((a: TimelineStep & { canceled?: boolean }, b: TimelineStep & { canceled?: boolean }) => {
@@ -380,7 +412,11 @@ const ApprovalTimeline: React.FC<ApprovalTimelineProps> = ({ requestId }) => {
   };
 
   const renderIcon = (step: TimelineStep & { canceled?: boolean }) => {
-    const props = getDisplayProperties(step.status.replace(' ', ''));
+    const internalStatus = Object.keys(STATUS_DISPLAY_PROPERTIES).find(
+      key => STATUS_DISPLAY_PROPERTIES[key].displayName === step.status
+    ) || step.status;
+    const props = getDisplayProperties(internalStatus);
+    
     if (step.rejected || step.canceled) return props.icon;
     if (step.active) return <Clock className="h-4 w-4 animate-pulse" />;
     if (step.isModified) return props.icon;

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios, { AxiosError } from "axios";
 import { Briefcase, Check, Users, Plane, TrainFront, Loader2, AlertCircle, Phone } from "lucide-react";
 
-interface TravelRequestApiResponse {
+export interface TravelRequestApiResponse {
   isSuccess: boolean;
   result: Array<{
     requestId: string;
@@ -22,7 +22,7 @@ interface TravelRequestApiResponse {
 }
 
 // Transform API data to component data
-interface TravelRequestData {
+export interface TravelRequestData {
   requestId: string;
   travelerName: string;
   departmentCode: string;
