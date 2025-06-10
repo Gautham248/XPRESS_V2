@@ -156,9 +156,6 @@ const handleDownload = async (url: string) => {
               <strong>Issuing Country:</strong> {doc.issuingCountry || "N/A"}
             </p>
             <p>
-              <strong>Issuing Post:</strong> {doc.issuingPost || "N/A"}
-            </p>
-            <p>
               <strong>Expiry Date:</strong> {formatDate(doc.visaExpiryDate)}
             </p>
           </>
