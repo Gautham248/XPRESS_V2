@@ -3,7 +3,7 @@
 <html lang="en">
 
 <head>
-    <title>Code coverage report for components/Create Request/CreateRequestForm.tsx</title>
+    <title>Code coverage report for components/document/DocumentTabs.tsx</title>
     <meta charset="utf-8" />
     <link rel="stylesheet" href="../../prettify.css" />
     <link rel="stylesheet" href="../../base.css" />
@@ -19,34 +19,34 @@
 <body>
 <div class='wrapper'>
     <div class='pad1'>
-        <h1><a href="../../index.html">All files</a> / <a href="index.html">components/Create Request</a> CreateRequestForm.tsx</h1>
+        <h1><a href="../../index.html">All files</a> / <a href="index.html">components/document</a> DocumentTabs.tsx</h1>
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>12/12</span>
+                <span class='fraction'>5/5</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/0</span>
-            </div>
-        
-            
-            <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
-                <span class="quiet">Functions</span>
                 <span class='fraction'>2/2</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
+                <span class="quiet">Functions</span>
+                <span class='fraction'>3/3</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>12/12</span>
+                <span class='fraction'>5/5</span>
             </div>
         
             
@@ -99,19 +99,14 @@
 <a name='L34'></a><a href='#L34'>34</a>
 <a name='L35'></a><a href='#L35'>35</a>
 <a name='L36'></a><a href='#L36'>36</a>
-<a name='L37'></a><a href='#L37'>37</a>
-<a name='L38'></a><a href='#L38'>38</a>
-<a name='L39'></a><a href='#L39'>39</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
+<a name='L37'></a><a href='#L37'>37</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -119,6 +114,12 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">9x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -134,50 +135,43 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span></td><td class="text"><pre class="prettyprint lang-js">import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useTravelRequest } from './TravelRequestContext';
-import BasicInfoSection from './BasicInfoSection';
-import TravelDetailsSection from './TravelDetailsSection';
-import AdditionalServicesSection from './AdditionalServicesSection';
+<span class="cline-any cline-yes">1x</span></td><td class="text"><pre class="prettyprint lang-js">// import React from 'react';
+import { DocumentType } from './types';
 &nbsp;
+interface DocumentTabsProps {
+  activeTab: DocumentType;
+  setActiveTab: (tab: DocumentType) =&gt; void;
+}
 &nbsp;
-const CreateRequestForm: React.FC = () =&gt; {
-  const navigate = useNavigate();
-  const { handleSubmit } = useTravelRequest();
+function DocumentTabs({ activeTab, setActiveTab }: DocumentTabsProps) {
+  const tabs: { id: DocumentType; label: string }[] = [
+    { id: 'Passport', label: 'Passport' },
+    { id: 'Visa', label: 'Visa' },
+    { id: 'Aadhar', label: 'Aadhar' },
+  ];
 &nbsp;
   return (
-    &lt;form onSubmit={handleSubmit} className="space-y-6"&gt;
-      &lt;BasicInfoSection /&gt;
-      &lt;TravelDetailsSection /&gt;
-      &lt;AdditionalServicesSection /&gt;
-&nbsp;
-&nbsp;
-      &lt;div className="flex justify-end space-x-4"&gt;
-        &lt;button
-          type="button"
-          className="px-4 py-2 text-sm font-medium text-muted-foreground bg-muted hover:bg-muted/70 rounded-md"
-          onClick={() =&gt; navigate(-1)}
-        &gt;
-          Cancel
-        &lt;/button&gt;
-        &lt;button
-          type="submit"
-          className="btn-primary"
-        &gt;
-          Submit Request
-        &lt;/button&gt;
+    &lt;div className="border-b border-gray-200 mb-6"&gt;
+      &lt;div className="flex space-x-4"&gt;
+        {tabs.map((tab) =&gt; (
+          &lt;button
+            key={tab.id}
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+              activeTab === tab.id
+                ? 'border-blue-600 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+            onClick={() =&gt; setActiveTab(tab.id)}
+          &gt;
+            {tab.label}
+          &lt;/button&gt;
+        ))}
       &lt;/div&gt;
-    &lt;/form&gt;
+    &lt;/div&gt;
   );
-};
+}
 &nbsp;
-export default CreateRequestForm;</pre></td></tr></table></pre>
+export default DocumentTabs;</pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
             </div><!-- /wrapper -->
