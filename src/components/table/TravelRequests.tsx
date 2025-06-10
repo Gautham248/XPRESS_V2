@@ -29,8 +29,8 @@ const TravelRequests: React.FC = () => {
   const [headers, setHeaders] = useState<Header[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [role, setRole] = useState<string>(''); // State for role
-  const [statusOptions, setStatusOptions] = useState<string[]>([]); // State for status options
+  const [role, setRole] = useState<string>('');
+  const [statusOptions, setStatusOptions] = useState<string[]>([]);
 
   useEffect(() => {
     const fetchTravelRequests = async () => {
@@ -38,7 +38,6 @@ const TravelRequests: React.FC = () => {
         setLoading(true);
         setError(null);
 
-        // Retrieve user data from local storage
         const userString = localStorage.getItem('user');
         if (!userString) {
           throw new Error('User data not found in local storage. Please log in again.');
@@ -51,9 +50,8 @@ const TravelRequests: React.FC = () => {
 
         const email = user.userEmail;
         const token = user.token;
-        setRole(user.role); // Set the role state
+        setRole(user.role);
 
-        // Determine the API endpoint based on the user's role
         let apiUrl = '';
         if (user.role === 'admin') {
           apiUrl = 'http://localhost:5030/api/TravelRequest/travelrequests';
@@ -77,7 +75,6 @@ const TravelRequests: React.FC = () => {
 
         const data = await response.json();
 
-        // Handle response based on the role
         let travelRequestData: any[];
         if (user.role === 'admin') {
           if (!Array.isArray(data)) {
@@ -91,7 +88,6 @@ const TravelRequests: React.FC = () => {
           travelRequestData = data.result;
         }
 
-        // Define the priority fields in the specified order
         const priorityFields = [
           { key: 'requestId', displayName: 'Request ID', sortable: true, filterable: true },
           { key: 'currentStatusName', displayName: 'Status', sortable: true, filterable: false },
@@ -107,9 +103,9 @@ const TravelRequests: React.FC = () => {
           { key: 'duId', displayName: 'Department', sortable: true, filterable: true },
           { key: 'purposeOfTravel', displayName: 'Purpose', sortable: true, filterable: true },
           { key: 'comments', displayName: 'Comments', sortable: true, filterable: true },
+          { key: 'createdAt', displayName: 'Created At', sortable: true, filterable: true }, // This uses the formatted date for display
         ];
 
-        // Dynamically generate headers for remaining fields
         const dynamicHeaders: Header[] = [];
         const sampleItem = travelRequestData[0];
         if (sampleItem) {
@@ -124,7 +120,6 @@ const TravelRequests: React.FC = () => {
             'travelAgencyName',
             'totalExpense',
             'uploadedTicketPdfPath',
-            'createdAt',
             'updatedAt',
             'outboundDepartureDate',
             'returnDepartureDate',
@@ -135,7 +130,6 @@ const TravelRequests: React.FC = () => {
             'destinationCountry'
           ]);
 
-          // Add remaining fields from the API response
           Object.keys(sampleItem).forEach((key) => {
             if (priorityKeys.has(key) || excludedKeys.has(key)) {
               return;
@@ -168,16 +162,32 @@ const TravelRequests: React.FC = () => {
         const mappedData: TravelRequest[] = travelRequestData.map((item: any) => {
           const convertUtcToIst = (utcDate: string | null): string | null => {
             if (!utcDate) return null;
-            const date = parseISO(utcDate);
-            const istOffset = 5.5 * 60 * 60 * 1000; // IST is UTC+5:30
-            const istDate = new Date(date.getTime() + istOffset);
-            return format(istDate, 'dd-MM-yyyy');
+            try {
+              const date = parseISO(utcDate);
+              // Note: IST conversion might not be necessary if the API provides local time.
+              // For simplicity and consistency, using local time parsing.
+              return format(date, 'dd-MM-yyyy');
+            } catch (e) {
+              return null;
+            }
+          };
+          
+          const formatDateTime = (dateString: string | null): string => {
+              if (!dateString) return 'N/A';
+              try {
+                  return format(new Date(dateString), 'dd-MM-yyyy HH:mm:ss');
+              } catch (e) {
+                  return 'N/A';
+              }
           };
 
           const departureDateIst = convertUtcToIst(item.outboundDepartureDate);
           const returnDateIst = convertUtcToIst(item.returnDepartureDate);
           const outboundArrivalDateIst = convertUtcToIst(item.outboundArrivalDate);
           const returnArrivalDateIst = convertUtcToIst(item.returnArrivalDate);
+          
+          // ** FIX **: Format createdAt for display, but keep the original for filtering.
+          const createdAtFormatted = formatDateTime(item.createdAt);
 
           return {
             ...item,
@@ -189,7 +199,7 @@ const TravelRequests: React.FC = () => {
             travelDates: departureDateIst && returnDateIst 
               ? `${departureDateIst} - ${returnDateIst}` 
               : 'N/A',
-            departureDate: item.outboundDepartureDate,
+            departureDate: item.outboundDepartureDate, // Keep raw date for travel date filtering if needed later
             returnDate: item.returnDepartureDate,
             outboundDepartureDate: departureDateIst || 'N/A',
             outboundArrivalDate: outboundArrivalDateIst || 'N/A',
@@ -197,10 +207,14 @@ const TravelRequests: React.FC = () => {
             returnArrivalDate: returnArrivalDateIst || 'N/A',
             comments: item.comments || 'N/A',
             departmentCode: item.duId ? item.duId.toString() : 'N/A',
+            
+            // ** FIX **: Use the formatted date for the 'createdAt' display column
+            createdAt: createdAtFormatted, 
+            // ** FIX **: Add a new field with the RAW date for filtering
+            requestCreationDate: item.createdAt, 
           };
         });
 
-        // Extract all unique statuses from the data
         const uniqueStatuses = [...new Set(mappedData.map(item => item.currentStatusName))].filter(status => status != null).sort();
         setStatusOptions(uniqueStatuses);
 
@@ -217,7 +231,6 @@ const TravelRequests: React.FC = () => {
     fetchTravelRequests();
   }, []);
 
-  // Function to get the page title based on the user's role
   const getPageTitle = () => {
     if (!role) return 'Dashboard';
     return `${role.charAt(0).toUpperCase() + role.slice(1)} Dashboard`;
@@ -297,7 +310,8 @@ const TravelRequests: React.FC = () => {
       searchableFields={['projectName', 'employeeName', 'source', 'destination']}
       statusOptions={statusOptions}
       typeOptions={['Domestic', 'International']}
-      dateFilterKey="departureDate"
+      // ** FIX **: Point the date filter to the new raw date field
+      dateFilterKey="requestCreationDate"
       getStatusColor={getStatusColor}
       getTypeColor={(type: string) =>
         type === 'Domestic' ? 'bg-primary/10 text-primary' : 'bg-secondary/10 text-secondary'

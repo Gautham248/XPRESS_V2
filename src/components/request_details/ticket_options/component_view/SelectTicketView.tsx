@@ -103,7 +103,7 @@ const SelectTicketView: React.FC<Props> = ({
               onClick={onUploadOptions}
             >
               <Upload size={18} />
-              Upload Selected Options
+              Submit Selected Option
             </button>
           </div>
         </div>

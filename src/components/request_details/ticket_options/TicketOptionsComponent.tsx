@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 import SelectedView from './component_view/SelectedView';
 import SelectTicketView from './component_view/SelectTicketView';
 import UploadTicketView from './component_view/UploadTicketView';
@@ -9,11 +9,13 @@ import ConfirmationModal from '../confirmation_modal/ConfirmationModal';
 import { Edit, Loader2, Check, Clock } from 'lucide-react';
 import StatusMessage from './StatusMessage';
 import { INDEX_TO_STATUS_MAP } from '../TravelRequestDetails';
+import { TravelRequestApiResponse, TravelRequestData } from '../TravelInfoBanner';
 
 // --- API Related Interfaces ---
 interface ApiTravelRequestDetail {
   currentStatusId: number;
-  transportationType: string;
+  transportation: string;
+  uploadedTicketPdfPath?: string;
 }
 
 interface TravelRequestDetailApiResponse {
@@ -51,6 +53,8 @@ interface SelectTicketOptionPayload {
 // --- Component Specific Types ---
 interface TicketProps {
   requestId: string;
+  onPreviewTicket: () => void;
+  ticketDocumentPath?: string;
 }
 interface User {
   userId: string;
@@ -61,14 +65,15 @@ interface UITicketOption {
   id: string;
   description: string;
   selected: boolean;
+  filePath?: string;
 }
 
 const API_BASE_URL = 'http://localhost:5030/api';
 
-const TicketOptionComponent: React.FC<TicketProps> = ({ requestId }) => {
+const TicketOptionComponent: React.FC<TicketProps> = ({ requestId, onPreviewTicket, ticketDocumentPath }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [travelRequestStatus, setTravelRequestStatus] = useState<string | null>(null);
-  const [transportationType, setTransportationType] = useState<'flight' | 'train' | 'bus' | 'cab'>();
+  const [transportationType, setTransportationType] = useState('');
   const [ticketOptionsFromApi, setTicketOptionsFromApi] = useState<ApiTicketOptionItem[]>([]);
 
   const [newOptionText, setNewOptionText] = useState<string>('');
@@ -83,6 +88,9 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId }) => {
   const [isLoadingStatus, setIsLoadingStatus] = useState(true);
   const [isLoadingOptions, setIsLoadingOptions] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [, setTravelRequestDetails] = useState<ApiTravelRequestDetail | null>(null);
+  const [travelRequest, setTravelRequest] = useState<TravelRequestData | null>(null);
+  const [loading, setLoading] = useState(false);
 
   const {
     isOpen: isConfirmModalOpen,
@@ -103,6 +111,75 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId }) => {
     }
   }, []);
 
+  const apiUrl = 'http://localhost:5030/api/TravelRequest/infobanner';
+
+  useEffect(() => {
+
+  if (!requestId) {
+        setError("No request ID provided");
+        setLoading(false);
+        return;
+      }
+
+    const fetchTravelRequest = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const url = `${apiUrl}/${requestId}`;
+        const response = await axios.get<TravelRequestApiResponse>(url);
+        setTransportationType(response.data.result[0]?.travelModeName);
+        
+        if (response.data.isSuccess && response.data.result.length > 0) {
+            const apiData = response.data.result[0];
+            // console.log(apiData);
+          
+          // Transform API data to component format
+          const transformedData: TravelRequestData = {
+            requestId: apiData.requestId,
+            travelerName: apiData.employeeName,
+            departmentCode: apiData.departmentName,
+            projectManager: apiData.projectManager,
+            projectCode: apiData.projectCode,
+            transportationType: apiData.travelModeName,
+            source: `${apiData.sourcePlace}, ${apiData.sourceCountry}`,
+            destination: `${apiData.destinationPlace}, ${apiData.destinationCountry}`,
+            phoneNumber: apiData.phoneNumber
+          };
+          
+          setTravelRequest(transformedData);
+        } else {
+          if (response.data.errorMessages && response.data.errorMessages.length > 0) {
+            setError(response.data.errorMessages.join(', '));
+          } else if (response.data.isSuccess && response.data.result.length === 0) {
+            setError("No travel request found");
+          } else {
+            setError("Failed to retrieve travel request data.");
+          }
+        }
+      } catch (err) {
+        if (axios.isAxiosError(err)) {
+          const axiosErr = err as AxiosError<any>;
+          if (axiosErr.response) {
+            setError(axiosErr.response.data?.message || axiosErr.response.data?.errorMessages?.join(', ') || axiosErr.message || "An error occurred with the server response.");
+          } else if (axiosErr.request) {
+            setError(axiosErr.message || "Network error: Could not connect to server.");
+          } else {
+            setError(axiosErr.message || "Error setting up request.");
+          }
+        } else if (err instanceof Error) {
+          setError(err.message || "An unexpected error occurred.");
+        } else {
+          setError("An unknown error occurred.");
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTravelRequest();
+  }, [requestId, apiUrl]);
+
+  console.log(transportationType);
   const fetchTravelRequestData = useCallback(async () => {
     if (!requestId) {
       setError("Request ID is missing.");
@@ -112,25 +189,23 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId }) => {
     setIsLoadingStatus(true);
     setError(null);
     try {
-      console.log("Fetching data for request ID:", requestId);
 
       const response = await axios.get<TravelRequestDetailApiResponse>(`${API_BASE_URL}/TravelRequest/${requestId}`);
 
       if (response.data.isSuccess && response.data.result) {
+        setTravelRequestDetails(response.data.result);
         const statusId = response.data.result.currentStatusId;
-        const statusName = INDEX_TO_STATUS_MAP[statusId] || 'PendingReview';
+        const statusName = INDEX_TO_STATUS_MAP[statusId];
 
-        const transportType = response.data.result.transportationType?.toLowerCase() || 'flight';
-            
-        // Validate and set the transportation type
-        if (['flight', 'train', 'bus', 'car'].includes(transportType)) {
-            setTransportationType(transportType as 'flight' | 'train' | 'bus' | 'cab');
-        } else {
-            console.warn(`Unexpected transportation type: ${transportType}, defaulting to flight`);
-            setTransportationType('flight');
-        }
+        const transportType = response.data.result.transportation?.toLowerCase() || '';
+        setTransportationType(transportType);
+        // if (['flight', 'train', 'bus', 'cab'].includes(transportType)) {
+        //     setTransportationType(transportType as 'flight' | 'train' | 'bus' | 'cab');
+        // } else {
+        //     console.warn(`Unexpected transportation type: ${transportType}, defaulting to flight`);
+        //     setTransportationType('flight');
+        // }
 
-        // console.log(`Mapped status ID ${statusId} to:`, statusName);
         setTravelRequestStatus(statusName);
 
         await fetchTicketOptions(requestId);
@@ -183,17 +258,25 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId }) => {
   }, [fetchTravelRequestData]);
 
 
-  const mapApiToUIOptions = (apiOptions: ApiTicketOptionItem[]): UITicketOption[] => {
-    return apiOptions.map(option => ({
+  const mapApiToUIOptions = (
+  apiOptions: ApiTicketOptionItem[],
+): UITicketOption[] => {
+  return apiOptions.map(option => {
+    const uiOption: UITicketOption = {
       id: option.optionId.toString(),
       description: option.optionDescription,
       selected: option.isSelected,
-    }));
-  };
+    };
+
+    if (option.isSelected && ticketDocumentPath) {
+      uiOption.filePath = ticketDocumentPath;
+    }
+
+    return uiOption;
+  });
+};
 
   const uiTicketOptions: UITicketOption[] = mapApiToUIOptions(ticketOptionsFromApi);
-  // console.log("UI Ticket Options: ", uiTicketOptions);
-
   const handleAddOption = async () => {
     if (!newOptionText.trim() || !currentUser || !requestId) return;
     const id = parseInt(currentUser.userId, 10);
@@ -472,15 +555,15 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId }) => {
     }
   };
 
-  const handleDownloadTicket = () => {
-    if (!requestId) {
-      setError("Cannot download ticket: Request ID is missing.");
-      return;
-    }
-    const downloadUrl = `${API_BASE_URL}/TravelRequest/${requestId}/downloadticket`;
+  // const handleDownloadTicket = () => {
+  //   if (!requestId) {
+  //     setError("Cannot download ticket: Request ID is missing.");
+  //     return;
+  //   }
+  //   const downloadUrl = `${API_BASE_URL}/TravelRequest/${requestId}/downloadticket`;
     
-    window.open(downloadUrl, '_blank');
-  };
+  //   window.open(downloadUrl, '_blank');
+  // };
 
   const renderContent = () => {
     if (isLoadingStatus || !currentUser) {
@@ -496,6 +579,9 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId }) => {
     }
     if (travelRequestStatus === 'Rejected') {
       return <StatusMessage title="Request Rejected" message="Your travel request has been rejected." icon={<Clock className="h-6 w-6" />} bgColor="bg-red-50" borderColor="border-red-200" iconColor="text-red-500" titleColor="text-red-800" textColor="text-red-700" />;
+    }
+    if (travelRequestStatus === 'Cancelled') {
+      return <StatusMessage title="Request Cancelled" message="This travel request has been cancelled." bgColor="bg-gray-50" borderColor="border-gray-200" iconColor="text-gray-500" titleColor="text-gray-800" textColor="text-gray-700" icon={<Clock className="h-6 w-6" />} />;
     }
 
     switch (currentUser.role) {
@@ -523,9 +609,8 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId }) => {
       return (
         <SelectedView
           ticketOptions={uiTicketOptions}
-          onDownloadTickets={handleDownloadTicket}
+          onPreviewTickets={onPreviewTicket}
           buttons={['downloadTickets']}
-          customButtons={[]}
         />
       );
     }
@@ -539,7 +624,7 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId }) => {
       );
     }
 
-    if (status === 'Verified' || status === 'OptionsListed') {
+    if (status === 'Approved' || status === 'OptionsListed') {
       return (
         <UploadTicketView
           ticketOptions={uiTicketOptions}
@@ -559,7 +644,6 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId }) => {
       );
     }
 
-    // Default fallback message
     return <StatusMessage title="Awaiting Action" message={`Request status: ${status}. Options management may be pending or completed.`} icon={<Clock className="h-6 w-6" />} bgColor="bg-gray-50" borderColor="border-gray-200" iconColor="text-gray-500" titleColor="text-gray-800" textColor="text-gray-700" />;
   };
 
@@ -593,7 +677,7 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId }) => {
               icon: <Edit size={16} />,
               onClick: () => {
                 const currentlySelected = uiTicketOptions.find(o => o.selected);
-                if (currentlySelected) {
+                if (currentlySelected) {    
                     setPendingSelectedOptionId(currentlySelected.id);
                 }
                 setIsEditModeDUHead(true);
@@ -639,7 +723,7 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId }) => {
       return (
         <SelectedView
           ticketOptions={uiTicketOptions}
-          onDownloadTickets={handleDownloadTicket}
+          onPreviewTickets={onPreviewTicket}
           customButtons={[]}
         />
       );
@@ -648,7 +732,7 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId }) => {
       return (
         <SelectedView
           ticketOptions={uiTicketOptions}
-          onDownloadTickets={handleDownloadTicket}
+          onPreviewTickets={onPreviewTicket}
           buttons={['downloadTickets']}
           customButtons={[]}
         />
@@ -669,7 +753,7 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId }) => {
     return (
       <SelectedView
         ticketOptions={uiTicketOptions}
-        onDownloadTickets={handleDownloadTicket}
+        onPreviewTickets={onPreviewTicket}
         buttons={selectedOption ? ['downloadTickets'] : []}
         customButtons={[]}
       />
@@ -694,7 +778,7 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId }) => {
       <UploadTicketsModal
         isOpen={isUploadTicketsFileModalOpen} onClose={() => setIsUploadTicketsFileModalOpen(false)}
         onConfirm={handleUploadActualTickets}
-        transportationType={transportationType ?? 'flight'}
+        transportationType={transportationType}
       />
     </>
   );

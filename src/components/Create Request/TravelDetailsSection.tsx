@@ -185,7 +185,7 @@ const TravelDetailsSection: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Source Location
+              Source Location *
             </label>
             <div className="relative">
               <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5 z-10 pointer-events-none" />
@@ -205,7 +205,7 @@ const TravelDetailsSection: React.FC = () => {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Destination
+              Destination *
             </label>
             <div className="relative">
               <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5 z-10 pointer-events-none" />
@@ -389,7 +389,7 @@ const TravelDetailsSection: React.FC = () => {
               <div className="flex gap-4">
                 <div className="flex-1">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Departure Date
+                    Return Date *
                   </label>
                   <div className="relative">
                     <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5 z-10" />
@@ -460,7 +460,7 @@ const TravelDetailsSection: React.FC = () => {
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-3">
-            Mode of Transport
+            Mode of Transport *
           </label>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {transportOptions.map(({ value, label, icon: Icon }) => (
@@ -484,7 +484,7 @@ const TravelDetailsSection: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Purpose of Travel
+              Purpose of Travel *
             </label>
             <textarea
               className="block w-full rounded-md border border-gray-200 bg-gray-50 px-4 py-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition resize-none"

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import toast, { Toaster } from 'react-hot-toast'; 
+import toast, { Toaster } from 'react-hot-toast';
 import {
   Upload,
   FileText,
@@ -123,6 +123,9 @@ const EmployeeDashboard: React.FC = () => {
       } else {
         toast.error("Could not load travel requests.");
       }
+      //  else {
+      //   toast.error("Could not load travel requests.");
+      // }
     } catch (error) {
       console.error('Error fetching travel requests:', error);
       toast.error("Failed to fetch travel requests.");
@@ -199,7 +202,7 @@ const EmployeeDashboard: React.FC = () => {
  
     fetchUserDocuments();
   }, []);
-
+ 
   // --- EVENT HANDLERS ---
   const handleRowClick = (item: TravelRequest) => navigate(`/manager/my-requests/${item.id}`);
  
@@ -214,7 +217,7 @@ const EmployeeDashboard: React.FC = () => {
     const loadingToast = toast.loading('Fetching request details...');
     try {
       const endpoint = `http://localhost:5030/api/TravelRequest/${request.id}`;
-      
+     
       const response = await axios.get(endpoint, {
         headers: { Authorization: `Bearer ${user.token}` },
       });
@@ -254,7 +257,7 @@ const EmployeeDashboard: React.FC = () => {
       }
  
       const endpoint = `http://localhost:5030/api/travelrequests/${humanReadableId}/edit`;
-      
+     
       const loadingToast = toast.loading('Updating request...');
       try {
         const response = await axios.post(endpoint, updatedData, {
@@ -324,7 +327,7 @@ const EmployeeDashboard: React.FC = () => {
   return (
     <div className="container mx-auto p-6 space-y-6">
       <Toaster position="top-right" reverseOrder={false} />
-
+ 
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white shadow-sm p-6 rounded-lg">
         <div className="flex items-center space-x-4">
           <User className="h-10 w-10 text-gray-600" />

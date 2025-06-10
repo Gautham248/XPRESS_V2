@@ -250,7 +250,7 @@ const validateTravelLocationsConsistency = (state: TravelRequestState): string |
   return null;
 };
 
-// Utility function to get user ID from localStorage
+
 const getUserIdFromLocalStorage = (): number | null => {
   try {
     const userString = localStorage.getItem('user');
@@ -265,6 +265,24 @@ const getUserIdFromLocalStorage = (): number | null => {
   }
 };
 
+const LoadingToast: React.FC<{ message: string }> = ({ message }) => {
+  return (
+    <div className="fixed bottom-4 right-4 z-50 max-w-sm">
+      <div className="bg-blue-500 text-white px-6 py-4 rounded-lg shadow-lg flex items-center space-x-3 transform transition-all duration-300 ease-out">
+        <div className="flex-shrink-0">
+          <svg className="w-6 h-6 animate-spin" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+        </div>
+        <div className="flex-1">
+          <p className="font-medium">{message}</p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const SuccessPopup: React.FC<{ message: string; onClose: () => void }> = ({ message, onClose }) => {
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -274,7 +292,7 @@ const SuccessPopup: React.FC<{ message: string; onClose: () => void }> = ({ mess
   }, [onClose]);
 
   return (
-    <div className="fixed top-4 right-4 z-50 max-w-sm">
+    <div className="fixed bottom-4 right-4 z-50 max-w-sm">
       <div className="bg-green-500 text-white px-6 py-4 rounded-lg shadow-lg flex items-center space-x-3 transform transition-all duration-300 ease-out">
         <div className="flex-shrink-0">
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -322,13 +340,14 @@ export const TravelRequestProvider: React.FC<TravelRequestProviderProps> = ({
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
 
+
   const validateForm = (): string | null => {
     if (!state.source || !state.source.city || !state.source.country) {
-      return 'Please select a valid source location (city and country).';
+      return 'Source: This field is required and must be filled.';
     }
     
     if (!state.destination || !state.destination.city || !state.destination.country) {
-      return 'Please select a valid destination location (city and country).';
+      return 'Destination: This field is required and must be filled.';
     }
     
     if (state.source.value && state.destination.value && state.source.value === state.destination.value) {
@@ -341,7 +360,7 @@ export const TravelRequestProvider: React.FC<TravelRequestProviderProps> = ({
     }
 
     if (!state.outboundDepartureDate) {
-      return 'Please select an outbound departure date.';
+      return 'Outbound Departure Date: This field is required and must be filled.';
     }
     
     const today = new Date();
@@ -352,7 +371,7 @@ export const TravelRequestProvider: React.FC<TravelRequestProviderProps> = ({
 
     if (state.tripType === 'roundTrip') {
       if (!state.returnDepartureDate) {
-        return 'Please select a return departure date for round trip.';
+        return 'Return Departure Date: This field must be filled for a round trip.';
       }
       if (state.outboundDepartureDate && state.returnDepartureDate && state.returnDepartureDate < state.outboundDepartureDate) {
         return 'Return departure date must be on or after outbound departure date.';
@@ -360,31 +379,32 @@ export const TravelRequestProvider: React.FC<TravelRequestProviderProps> = ({
     }
 
     if (!state.transportMode) {
-      return 'Please select a mode of transport.';
+      return 'Mode of Transport: This field is required and must be selected.';
     }
 
     if (!state.projectCode.trim()) {
-      return 'Please enter a project code.';
+      return 'Project Code: This field is required and must be filled.';
     }
     
     if (!state.reason.trim()) {
-      return 'Please enter the purpose of travel.';
+      return 'Purpose of Travel: This field is required and must be filled.';
     }
 
     if (state.requiresPickup && !state.pickupLocation.trim()) {
-      return 'Please specify a pickup location when "Requires Pickup" is selected.';
+      return 'Pickup Location: This must be filled when "Requires Pickup" is selected.';
     }
     
     if (state.requiresDropoff && !state.dropoffLocation.trim()) {
-      return 'Please specify a drop-off location when "Requires Drop-off" is selected.';
+      return 'Drop-off Location: This must be filled when "Requires Drop-off" is selected.';
     }
 
     if (state.requiresFoodPreference && !state.foodPreference) {
-      return 'Please select a food preference.';
+      return 'Food Preference: This is required and must be selected.';
     }
 
     return null; 
   };
+  
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -458,6 +478,10 @@ export const TravelRequestProvider: React.FC<TravelRequestProviderProps> = ({
       }}>
         {children}
       </TravelRequestContext.Provider>
+
+      {isSubmitting && (
+        <LoadingToast message="Submitting travel request..." />
+      )}
 
       {showSuccessPopup && (
         <SuccessPopup

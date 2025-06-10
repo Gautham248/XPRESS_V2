@@ -62,14 +62,13 @@ const DataTable = <T extends Record<string, any>>({
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
-  const [sortBy, setSortBy] = useState<string | null>(null); // Changed to null to indicate no user sorting
+  const [sortBy, setSortBy] = useState<string | null>(null);
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [statusFilter, setStatusFilter] = useState<Set<string>>(new Set());
   const [typeFilter, setTypeFilter] = useState<string>('All');
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
   const [columnFilters, setColumnFilters] = useState<{ [key: string]: string }>({});
-  const [dateFilterType, setDateFilterType] = useState<'requestDate' | 'travelDates'>('requestDate');
 
   const [visibleColumns, setVisibleColumns] = useState<string[]>(() => {
     const savedColumns = localStorage.getItem(`${title}TableColumns`);
@@ -169,7 +168,7 @@ const DataTable = <T extends Record<string, any>>({
     setColumnFilters({});
     setActiveColumnFilterKey(null);
     setCurrentPage(1);
-    setSortBy(null); // Reset sorting to preserve API order
+    setSortBy(null);
     if (location.search) navigate(location.pathname, { replace: true });
   };
 
@@ -207,68 +206,51 @@ const DataTable = <T extends Record<string, any>>({
   const dateFilteredData = filteredData.filter(item => {
     if (!dateFilterKey || (!startDate && !endDate)) return true;
 
-    if (dateFilterType === 'requestDate') {
-      const itemDateValue = item[dateFilterKey];
-      if (!itemDateValue) return false;
-      const dateValue = new Date(itemDateValue);
-      if (isNaN(dateValue.getTime())) return false;
+    const itemDateValue = item[dateFilterKey];
+    if (!itemDateValue) return false;
 
-      const sDate = startDate ? new Date(new Date(startDate).setHours(0, 0, 0, 0)) : null;
-      const eDate = endDate ? new Date(new Date(endDate).setHours(23, 59, 59, 999)) : null;
+    const dateValue = new Date(itemDateValue);
+    if (isNaN(dateValue.getTime())) return false;
+    
+    const sDate = startDate ? new Date(new Date(startDate).setHours(0, 0, 0, 0)) : null;
+    const eDate = endDate ? new Date(new Date(endDate).setHours(23, 59, 59, 999)) : null;
 
-      const itemDay = new Date(new Date(dateValue).setHours(0, 0, 0, 0));
-
-      if (sDate && eDate && sDate.getTime() === new Date(new Date(eDate).setHours(0, 0, 0, 0)).getTime()) {
-        return itemDay.getTime() === sDate.getTime();
-      }
-      if (sDate && eDate) return dateValue >= sDate && dateValue <= eDate;
-      if (sDate) return dateValue >= sDate;
-      if (eDate) return dateValue <= eDate;
-      return true;
-    } else {
-      const departureDate = item.departureDate ? new Date(item.departureDate) : null;
-      const returnDate = item.returnDate ? new Date(item.returnDate) : null;
-      if (!departureDate || !returnDate || isNaN(departureDate.getTime()) || isNaN(returnDate.getTime())) return false;
-
-      const sDate = startDate ? new Date(new Date(startDate).setHours(0, 0, 0, 0)) : null;
-      const eDate = endDate ? new Date(new Date(endDate).setHours(23, 59, 59, 999)) : null;
-
-      const departureDay = departureDate ? new Date(new Date(departureDate).setHours(0, 0, 0, 0)) : null;
-      const returnDay = returnDate ? new Date(new Date(returnDate).setHours(0, 0, 0, 0)) : null;
-
-      if (sDate && eDate && sDate.getTime() === new Date(new Date(eDate).setHours(0, 0, 0, 0)).getTime()) {
-        return departureDay && returnDay && departureDay.getTime() <= sDate.getTime() && returnDay.getTime() >= sDate.getTime();
-      }
-      if (sDate && eDate) {
-        return departureDate <= eDate && returnDate >= sDate;
-      }
-      if (sDate) return returnDate >= sDate;
-      if (eDate) return departureDate <= eDate;
-      return true;
+    if (sDate && eDate) {
+      return dateValue >= sDate && dateValue <= eDate;
     }
+    if (sDate) {
+      return dateValue >= sDate;
+    }
+    if (eDate) {
+      return dateValue <= eDate;
+    }
+
+    return true;
   });
 
   const sortedData = sortBy ? [...dateFilteredData].sort((a, b) => {
-    const aSortValue = a[sortBy];
-    const bSortValue = b[sortBy];
+    // ** Note: For sorting, we must also use the raw date field **
+    const keyToSort = sortBy === 'createdAt' ? 'requestCreationDate' : sortBy;
+    const aSortValue = a[keyToSort];
+    const bSortValue = b[keyToSort];
+
+    // Date sorting logic
     if (sortBy === 'createdAt') {
       const aDate = new Date(aSortValue);
       const bDate = new Date(bSortValue);
       if (isNaN(aDate.getTime()) || isNaN(bDate.getTime())) {
-        return String(aSortValue ?? '').localeCompare(String(bSortValue ?? ''));
+        return 0;
       }
       return sortOrder === 'asc' ? aDate.getTime() - bDate.getTime() : bDate.getTime() - aDate.getTime();
     }
+    
+    // Generic sorting for other columns
     if (sortOrder === 'asc') {
-      if (typeof aSortValue === 'string' && typeof bSortValue === 'string') return aSortValue.localeCompare(bSortValue);
-      if (typeof aSortValue === 'number' && typeof bSortValue === 'number') return aSortValue - bSortValue;
-      return String(aSortValue ?? '').localeCompare(String(bSortValue ?? ''));
+      return String(aSortValue ?? '').localeCompare(String(bSortValue ?? ''), undefined, { numeric: true });
     } else { 
-      if (typeof aSortValue === 'string' && typeof bSortValue === 'string') return bSortValue.localeCompare(aSortValue);
-      if (typeof aSortValue === 'number' && typeof bSortValue === 'number') return bSortValue - aSortValue;
-      return String(bSortValue ?? '').localeCompare(String(aSortValue ?? ''));
+      return String(bSortValue ?? '').localeCompare(String(aSortValue ?? ''), undefined, { numeric: true });
     }
-  }) : dateFilteredData; // Preserve API order if no sortBy is set
+  }) : dateFilteredData;
 
   const totalPages = Math.max(1, Math.ceil(sortedData.length / itemsPerPage));
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -298,13 +280,7 @@ const DataTable = <T extends Record<string, any>>({
       const exportItem: any = {};
       headers.forEach(header => {
         if (visibleColumns.includes(header.key)) {
-          if (header.key === 'travelDates' && item.departureDate && item.returnDate) { 
-            exportItem[header.displayName] = `${formatDateForDisplay(item.departureDate)} - ${formatDateForDisplay(item.returnDate)}`;
-          } else if (header.key === 'createdAt') {
-            exportItem[header.displayName] = item[header.key] ?? 'N/A';
-          } else {
-            exportItem[header.displayName] = item[header.key] ?? 'N/A';
-          }
+          exportItem[header.displayName] = item[header.key] ?? 'N/A';
         }
       });
       return exportItem;
@@ -349,6 +325,7 @@ const DataTable = <T extends Record<string, any>>({
             </div>
             <input type="text"
               className="pl-10 pr-4 py-2 w-full rounded-md bg-muted focus:outline-none focus:ring-1 focus:ring-primary"
+              placeholder="Search by Project, Traveler, Source, or Destination..."
               value={searchTerm} onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
             />
           </div>
@@ -411,14 +388,7 @@ const DataTable = <T extends Record<string, any>>({
         <div className="flex flex-wrap items-center gap-3 mb-4">
           {dateFilterKey && (
             <div className="flex items-center gap-2">
-              <select
-                value={dateFilterType}
-                onChange={(e) => { setDateFilterType(e.target.value as 'requestDate' | 'travelDates'); setCurrentPage(1); }}
-                className="px-2.5 py-1.5 bg-gray-100 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-              >
-                <option value="requestDate">Request Date</option>
-                <option value="travelDates">Travel Dates</option>
-              </select>
+              <span className="text-sm font-medium text-gray-700">Request Date:</span>
               <DatePicker
                 selected={startDate}
                 onChange={(date) => { setStartDate(date); setCurrentPage(1); }}
@@ -465,14 +435,15 @@ const DataTable = <T extends Record<string, any>>({
           {hasActiveFilters() && (
             <button onClick={clearAllFilters} title="Clear all filters"
               className="flex items-center gap-1.5 px-2.5 py-1.5 bg-red-100 hover:bg-red-200 text-red-700 rounded-md text-sm transition-colors">
-              <X className="h-4 w-4" /><span>Clear All Filters</span>
+              <X className="h-4 w-4" /><span>Clear Filters</span>
             </button>
           )}
         </div>
 
         <div className="overflow-x-auto w-full border border-gray-200 rounded-md">
           <table className="w-full min-w-full table-auto">
-            <thead>
+            {/* ... The rest of the table JSX remains the same ... */}
+             <thead>
               <tr className="border-b">
                 {headers.map(header => visibleColumns.includes(header.key) && (
                   <th key={header.key} className="text-left py-3 px-4 font-medium text-muted-foreground whitespace-nowrap relative group">
@@ -603,7 +574,7 @@ const DataTable = <T extends Record<string, any>>({
         </div>
       </div>
     </div>
-  ); 
+  );
 };
 
 export default DataTable;

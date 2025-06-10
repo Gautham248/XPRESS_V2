@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { format, parseISO, isValid } from 'date-fns'; // Import isValid
+import { format, parseISO, isValid } from 'date-fns'; 
 import Select from 'react-select';
 import {
   Plane,
@@ -12,7 +12,7 @@ import {
   MapPin,
   MessageSquare,
 } from 'lucide-react';
-
+ 
 // --- INTERFACES ---
 export interface DetailedTravelRequest {
   requestId: string;
@@ -45,11 +45,11 @@ export interface DetailedTravelRequest {
   updatedAt: string;
   isActive: boolean;
 }
-
+ 
 export interface Address { city?: string; state?: string; country?: string; label?: string; custom?: boolean; }
 interface Suggestion { display_name: string; address: { city?: string; town?: string; village?: string; state?: string; country?: string; postcode?: string; }; }
 interface ProjectCodeOption { value: string; label: string; }
-
+ 
 // --- LOCATION SEARCH SUB-COMPONENT ---
 interface LocationSearchProps { onSelect: (location: Address & { custom?: boolean }) => void; placeholder?: string; className?: string; initialValue?: string; disabled?: boolean; }
 const LocationSearch: React.FC<LocationSearchProps> = ({ onSelect, placeholder = "Type a city...", className = "", initialValue = "", disabled = false }) => {
@@ -93,14 +93,14 @@ const LocationSearch: React.FC<LocationSearchProps> = ({ onSelect, placeholder =
     </div>
   );
 };
-
-
+ 
+ 
 // --- MAIN MODAL COMPONENT ---
-interface EditTravelRequestModalProps { 
-  isOpen: boolean; 
-  onClose: () => void; 
-  request: DetailedTravelRequest | null; 
-  onUpdate: (updatedData: any) => void; 
+interface EditTravelRequestModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  request: DetailedTravelRequest | null;
+  onUpdate: (updatedData: any) => void;
   status: string | null;
 }
 const EditTravelRequestModal: React.FC<EditTravelRequestModalProps> = ({ isOpen, onClose, request, onUpdate, status }) => {
@@ -116,20 +116,20 @@ const EditTravelRequestModal: React.FC<EditTravelRequestModalProps> = ({ isOpen,
         requiresDropoff: false, dropoffLocation: '',
         requiresFoodPreference: false, foodPreference: '' as 'veg' | 'non-veg' | '', foodPreferenceComment: '',
     });
-
+ 
     const [projectCodesList, setProjectCodesList] = useState<ProjectCodeOption[]>([]);
     const [projectCodesLoading, setProjectCodesLoading] = useState<boolean>(true);
     const [projectCodesError, setProjectCodesError] = useState<string | null>(null);
-
+ 
     const isPartiallyLocked = status === 'InTransit';
-
+ 
     useEffect(() => {
         const fetchProjectCodes = async () => {
           setProjectCodesLoading(true); setProjectCodesError(null);
           try {
-            const response = await fetch('http://localhost:5030/api/RMT/project-codes'); 
+            const response = await fetch('http://localhost:5030/api/RMT/project-codes');
             if (!response.ok) { throw new Error(`HTTP error! status: ${response.status}`); }
-            const data: string[] = await response.json(); 
+            const data: string[] = await response.json();
             setProjectCodesList(data.map((code: string) => ({ value: code, label: code })));
           } catch (error) {
             console.error("Failed to fetch project codes:", error);
@@ -138,7 +138,7 @@ const EditTravelRequestModal: React.FC<EditTravelRequestModalProps> = ({ isOpen,
         };
         fetchProjectCodes();
     }, []);
-
+ 
     useEffect(() => {
         if (request) {
             const getTravelModeName = (id: number): 'Flight' | 'Train' | 'Bus' | 'Cab' => {
@@ -150,16 +150,16 @@ const EditTravelRequestModal: React.FC<EditTravelRequestModalProps> = ({ isOpen,
                     default: return 'Flight';
                 }
             };
-            
+           
             // --- UPDATED FUNCTION TO HANDLE INVALID DATES ---
             const splitISODate = (isoDate: string | null) => {
                 if (!isoDate) {
                     return { date: '', time: '' };
                 }
-                
+               
                 try {
                     const dateObj = parseISO(isoDate);
-
+ 
                     // Check if the parsed date is valid. If not, default to today.
                     if (!isValid(dateObj)) {
                         console.warn(`Invalid date string received: "${isoDate}". Defaulting to today.`);
@@ -169,7 +169,7 @@ const EditTravelRequestModal: React.FC<EditTravelRequestModalProps> = ({ isOpen,
                             time: format(today, 'HH:mm'),
                         };
                     }
-
+ 
                     // If valid, format and return the date and time.
                     return {
                         date: format(dateObj, 'yyyy-MM-dd'),
@@ -185,15 +185,15 @@ const EditTravelRequestModal: React.FC<EditTravelRequestModalProps> = ({ isOpen,
                     };
                 }
             };
-
+ 
             const outbound = splitISODate(request.outboundDepartureDate);
             const outboundArrival = splitISODate(request.outboundArrivalDate);
             const returnDep = splitISODate(request.returnDepartureDate);
             const returnArr = splitISODate(request.returnArrivalDate);
-
+ 
             const sourceDisplay = [request.sourcePlace, request.sourceCountry].filter(Boolean).join(', ');
             const destinationDisplay = [request.destinationPlace, request.destinationCountry].filter(Boolean).join(', ');
-
+ 
             setFormData({
                 travelType: request.isInternational ? 'International' : 'Domestic',
                 tripType: request.isRoundTrip ? 'Round Trip' : 'One Way',
@@ -202,46 +202,46 @@ const EditTravelRequestModal: React.FC<EditTravelRequestModalProps> = ({ isOpen,
                 sourceText: sourceDisplay,
                 destinationText: destinationDisplay,
                 projectCode: request.projectCode || '',
-                
+               
                 departureDate: outbound.date,
                 departureTime: outbound.time,
                 departureArrivalDate: outboundArrival.date,
                 departureArrivalTime: outboundArrival.time,
-
+ 
                 returnDepartureDate: returnDep.date,
                 returnDepartureTime: returnDep.time,
                 returnArrivalDate: returnArr.date,
                 returnArrivalTime: returnArr.time,
-
+ 
                 modeOfTransport: getTravelModeName(request.travelModeId),
                 purpose: request.purposeOfTravel || '',
                 comments: request.comments || '',
-                
+               
                 requiresAccommodation: request.isAccommodationRequired,
-                
+               
                 requiresPickup: request.isPickUpRequired,
                 pickupLocation: request.pickUpPlace || '',
-                
+               
                 requiresDropoff: request.isDropOffRequired,
                 dropoffLocation: request.dropOffPlace || '',
-                
+               
                 requiresFoodPreference: request.isVegetarian || !!request.foodComment,
                 foodPreference: request.isVegetarian ? 'veg' : 'non-veg',
-                foodPreferenceComment: request.foodComment || '', 
+                foodPreferenceComment: request.foodComment || '',
             });
         }
     }, [request]);
-
+ 
     if (!isOpen) return null;
-
+ 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value, type } = e.target;
         setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value }));
     };
-
+ 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        
+       
         const extractLocationData = (locationLabel: string) => {
             if (!locationLabel) return { place: '', country: '' };
             const parts = locationLabel.split(', ').filter(Boolean);
@@ -250,17 +250,17 @@ const EditTravelRequestModal: React.FC<EditTravelRequestModalProps> = ({ isOpen,
             const place = parts.slice(0, -1).join(', ') || parts[0];
             return { place, country };
         };
-
+ 
         const createISODate = (date: string, time: string) => {
             if (!date) return null;
             return new Date(`${date}T${time || '00:00'}:00`).toISOString();
         };
-
+ 
         const getTravelModeId = (mode: string) => ({ Flight: 1, Train: 2, Bus: 3, Cab: 4 }[mode] || 0);
-
+ 
         const sourceData = extractLocationData(formData.source?.label || formData.sourceText);
         const destinationData = extractLocationData(formData.destination?.label || formData.destinationText);
-        
+       
         const mappedData = {
             travelModeId: getTravelModeId(formData.modeOfTransport),
             isInternational: formData.travelType === 'International',
@@ -286,23 +286,23 @@ const EditTravelRequestModal: React.FC<EditTravelRequestModalProps> = ({ isOpen,
             attendedCCT: request?.attendedCCT ?? true,
             ldCertificatePath: request?.ldCertificatePath ?? "string"
         };
-        
+       
         onUpdate(mappedData);
     };
-    
+   
     // --- Render Logic ---
     const transportOptions = [ { value: 'Flight', label: 'Flight', icon: Plane }, { value: 'Train', label: 'Train', icon: Train }, { value: 'Bus', label: 'Bus', icon: Bus }, { value: 'Cab', label: 'Cab', icon: Car } ];
     const availableTransportOptions = formData.travelType === 'International' ? transportOptions.filter(opt => opt.value === 'Flight') : transportOptions;
-    
+   
     const renderSegmentedButton = (name: 'travelType' | 'tripType', value: string, label: string, disabled: boolean = false) => ( <button type="button" disabled={disabled} onClick={() => setFormData(prev => ({...prev, [name]: value as any}))} className={`px-4 py-2 text-sm font-medium border first:rounded-l-md last:rounded-r-md focus:z-10 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${formData[name] === value ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 hover:bg-gray-50'} ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}>{label}</button>);
     const renderTransportButton = (value: 'Flight' | 'Train' | 'Bus' | 'Cab', label: string, Icon: React.ElementType) => ( <button type="button" onClick={() => setFormData(prev => ({ ...prev, modeOfTransport: value }))} className={`flex-1 p-3 text-sm font-medium border rounded-md flex items-center justify-center gap-2 focus:z-10 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${formData.modeOfTransport === value ? 'bg-blue-100 text-blue-700 border-blue-500' : 'bg-white text-gray-700 hover:bg-gray-50'}`}><Icon className="h-4 w-4" /> {label}</button>);
     const IconInput = ({ icon: Icon, type, name, value, onChange, disabled, ...props }: any) => ( <div className="relative"><Icon className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-5 w-5 pointer-events-none" /><input type={type} name={name} value={value} onChange={onChange} className={`w-full p-2 pl-10 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${disabled ? 'bg-gray-200 cursor-not-allowed' : 'bg-gray-50'}`} disabled={disabled} {...props} /></div>);
-    
+   
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60" onClick={onClose}>
             <div className="relative bg-gray-50 rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
                 <div className="sticky top-0 bg-white border-b p-4 flex justify-between items-center z-10"><h2 className="text-xl font-bold text-gray-800">Edit Travel Request</h2><button onClick={onClose} className="p-2 rounded-full text-gray-500 hover:bg-gray-200 hover:text-gray-800 transition-colors"><X className="w-6 h-6" /></button></div>
-                
+               
                 <form onSubmit={handleSubmit} className="p-6 space-y-6">
                     <div className="bg-white p-5 rounded-lg border space-y-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -347,7 +347,7 @@ const EditTravelRequestModal: React.FC<EditTravelRequestModalProps> = ({ isOpen,
                                 <div><label className="block text-sm font-medium text-gray-700 mb-1">Time</label><IconInput icon={Clock} type="time" name="returnArrivalTime" value={formData.returnArrivalTime} onChange={handleChange} /></div>
                             </div>
                         </div>
-                    )}           
+                    )}          
                     <div className="bg-white p-5 rounded-lg border space-y-4">
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">Mode of Transport</label>
@@ -358,7 +358,7 @@ const EditTravelRequestModal: React.FC<EditTravelRequestModalProps> = ({ isOpen,
                             <div><label htmlFor="comments" className="block text-sm font-medium text-gray-700 mb-1">Additional Comments</label><textarea name="comments" id="comments" rows={4} value={formData.comments} onChange={handleChange} className="w-full p-2 border rounded-md bg-gray-50" placeholder="Any special requirements..."></textarea></div>
                         </div>
                     </div>
-                    
+                   
                     <div className="bg-white p-5 rounded-lg border">
                         <h3 className="font-semibold text-gray-800 text-lg mb-4">Additional Services</h3>
                         <div className="space-y-4">
