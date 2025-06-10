@@ -552,7 +552,7 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId, onPreviewTick
       );
     }
 
-    if (status === 'Verified' || status === 'OptionsListed') {
+    if (status === 'Approved' || status === 'OptionsListed') {
       return (
         <UploadTicketView
           ticketOptions={uiTicketOptions}
