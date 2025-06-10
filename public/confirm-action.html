@@ -19,7 +19,10 @@
         #cancelButton { background-color: #6c757d; color: white; }
         #cancelButton:hover { background-color: #5a6268; }
         button:disabled { background-color: #e9ecef; color: #6c757d; cursor: not-allowed; transform: none; }
-        #message { margin-top: 25px; font-weight: bold; font-size: 1.1em; padding: 10px; border-radius: 4px; }
+        #commentsSection { margin-top: 20px; margin-bottom: 20px; text-align: left; }
+        #commentsSection label { display: block; margin-bottom: 5px; font-weight: 500; }
+        #commentsTextArea { width: calc(100% - 22px); min-height: 60px; padding: 10px; border-radius: 4px; border: 1px solid #ced4da; font-family: inherit; font-size: 1em; }
+        #message { margin-top: 25px; font-weight: bold; font-size: 1.1em; padding: 10px; border-radius: 4px; word-break: break-word; }
         .message-success { color: #155724; background-color: #d4edda; border: 1px solid #c3e6cb;}
         .message-error { color: #721c24; background-color: #f8d7da; border: 1px solid #f5c6cb;}
         .message-info { color: #0c5460; background-color: #d1ecf1; border: 1px solid #bee5eb;}
@@ -30,6 +33,12 @@
         <h1 id="actionTitle">Confirm Action</h1>
         <p id="requestInfo">Loading request information...</p>
         <p id="confirmationQuestion">Are you sure you want to proceed?</p>
+
+        <div id="commentsSection" style="display: none;">
+            <label for="commentsTextArea">Additional Comments (Optional for Approve, Required for Reject):</label>
+            <textarea id="commentsTextArea" placeholder="Enter comments here..."></textarea>
+        </div>
+
         <div class="button-group">
             <button id="confirmButton" disabled>Confirm</button>
             <button id="cancelButton" onclick="closeWindow()">Cancel & Close</button>
@@ -39,15 +48,15 @@
 
     <script>
         // --- Configuration ---
-        // !!! IMPORTANT: Adjust this to your actual ASP.NET Core API's base URL for the ApprovalsController !!!
-        const API_DOMAIN = 'https://localhost:5030'; // Example: Your .NET API domain (running on Kestrel)
-        const APPROVALS_API_BASE_PATH = '/api/Approvals'; // The route prefix for your ApprovalsController
+        // !!! IMPORTANT: Adjust this to your actual ASP.NET Core API's base URL !!!
+        const API_DOMAIN = 'https://localhost:5030'; // Example: Your .NET API domain (e.g., https://localhost:7051 or http://localhost:5000)
+        const APPROVALS_API_BASE_PATH = '/api/Approvals';       // For manager/duhead approvals/rejections
+        const TICKETOPTIONS_API_BASE_PATH = '/api/travelrequests'; // For ticket options (e.g., /api/travelrequests/{reqId}/ticketoptions/{optId}/select)
 
         // --- Get Parameters from URL ---
         const urlParams = new URLSearchParams(window.location.search);
         const actionTypeParam = urlParams.get('action');
         const requestIdParam = urlParams.get('requestId');
-        const intendedActorEmailParam = urlParams.get('intendedActor');
         const optionIdParam = urlParams.get('optionId'); // Only for select-ticket
 
         // --- DOM Elements ---
@@ -57,64 +66,102 @@
         const cancelButtonEl = document.getElementById('cancelButton');
         const messageEl = document.getElementById('message');
         const confirmationQuestionEl = document.getElementById('confirmationQuestion');
+        const commentsSectionEl = document.getElementById('commentsSection');
+        const commentsTextAreaEl = document.getElementById('commentsTextArea');
 
         // --- State Variables ---
         let apiPath = '';
-        let httpMethod = 'PUT'; // Default for approvals/rejections
+        let httpMethod = 'PUT';
         let actionDisplayableText = 'Unknown Action';
+        let requiresCommentsForRejection = false;
+        let currentApiBase = APPROVALS_API_BASE_PATH; // Default to Approvals controller
 
         // --- Initialization ---
         function initializePage() {
-            if (!actionTypeParam || !requestIdParam || !intendedActorEmailParam) {
-                requestInfoEl.textContent = '';
-                actionTitleEl.textContent = 'Error';
-                confirmationQuestionEl.textContent = 'Invalid action link. Required information is missing.';
-                confirmButtonEl.disabled = true;
-                return;
+            if (!actionTypeParam || !requestIdParam) {
+                requestInfoEl.textContent = ''; actionTitleEl.textContent = 'Error';
+                confirmationQuestionEl.textContent = 'Invalid action link: Required information (action or requestId) missing.';
+                messageEl.className = 'message-error'; confirmButtonEl.disabled = true; return;
             }
 
+            // --- Check for Logged-In User from localStorage ---
+            const loggedInUserString = localStorage.getItem('user'); // Key for your user object
+            if (!loggedInUserString) {
+                actionTitleEl.textContent = 'Authentication Required';
+                confirmationQuestionEl.innerHTML = 'You must be logged in to perform this action. Please <strong>log in to the main application</strong> and then click the link from your email again, or open this link in a browser where you are already logged in.';
+                messageEl.className = 'message-error'; confirmButtonEl.disabled = true;
+                // Optional: Redirect to login page
+                // const loginUrl = "http://localhost:5173/login"; // Your React app's login route
+                // window.location.href = `${loginUrl}?returnUrl=${encodeURIComponent(window.location.href)}`;
+                return;
+            }
+            try {
+                const userObject = JSON.parse(loggedInUserString);
+                const userId = userObject?.userId || userObject?.UserId; // Check common casings
+                if (!userId || typeof userId !== 'number') {
+                    throw new Error("Valid UserId not found in local storage. Please log in again.");
+                }
+                // User ID is valid, proceed with page setup
+            } catch (e) {
+                actionTitleEl.textContent = 'User Data Error';
+                confirmationQuestionEl.textContent = 'Could not retrieve valid user information from local storage. Please ensure you are logged in correctly to the main application.';
+                messageEl.className = 'message-error'; console.error("Error accessing user from localStorage:", e);
+                confirmButtonEl.disabled = true; return;
+            }
+            // --- End User Check ---
+
             requestInfoEl.textContent = `For Travel Request ID: ${requestIdParam}`;
-            confirmButtonEl.disabled = false; // Enable button once basic params are present
+            confirmButtonEl.disabled = false;
 
             switch (actionTypeParam) {
                 case 'manager-approve':
                     actionDisplayableText = 'Approve Request (Manager)';
                     apiPath = `/${requestIdParam}/manager/approve`;
+                    currentApiBase = APPROVALS_API_BASE_PATH;
+                    commentsSectionEl.style.display = 'block';
                     break;
                 case 'manager-reject':
                     actionDisplayableText = 'Reject Request (Manager)';
                     apiPath = `/${requestIdParam}/manager/reject`;
+                    currentApiBase = APPROVALS_API_BASE_PATH;
+                    commentsSectionEl.style.display = 'block';
+                    requiresCommentsForRejection = true;
+                    confirmationQuestionEl.textContent = 'Please provide comments for rejection. Are you sure you want to reject?';
                     break;
                 case 'duhead-approve':
                     actionDisplayableText = 'Approve Request (DU Head)';
                     apiPath = `/${requestIdParam}/duhead/approve`;
+                    currentApiBase = APPROVALS_API_BASE_PATH;
+                    commentsSectionEl.style.display = 'block';
                     break;
                 case 'duhead-reject':
                     actionDisplayableText = 'Reject Request (DU Head)';
                     apiPath = `/${requestIdParam}/duhead/reject`;
+                    currentApiBase = APPROVALS_API_BASE_PATH;
+                    commentsSectionEl.style.display = 'block';
+                    requiresCommentsForRejection = true;
+                    confirmationQuestionEl.textContent = 'Please provide comments for rejection. Are you sure you want to reject?';
                     break;
-                case 'select-ticket':
+                case 'select-ticket': // Manager selects a ticket option
                     if (!optionIdParam) {
-                        actionDisplayableText = 'Error: Missing Option ID for ticket selection.';
-                        apiPath = null; // Prevent action
-                        confirmButtonEl.disabled = true;
+                        actionDisplayableText = 'Error: Missing Option ID'; apiPath = null; confirmButtonEl.disabled = true;
                     } else {
                         actionDisplayableText = `Select Ticket Option ${optionIdParam} (Manager)`;
-                        apiPath = `/${requestIdParam}/manager/select-ticket/${optionIdParam}`;
+                        // Path according to your TicketOptionsController structure
+                        apiPath = `/${requestIdParam}/ticketoptions/${optionIdParam}/select`;
+                        currentApiBase = TRAVELREQUESTS_API_BASE_PATH; // Controller route is /api/travelrequests/...
                     }
                     break;
                 default:
-                    apiPath = null; // Prevent action
-                    confirmButtonEl.disabled = true;
+                    actionDisplayableText = 'Error: Unknown Action Type'; apiPath = null; confirmButtonEl.disabled = true;
             }
 
-            if (!apiPath) { // If actionType was invalid or params missing for it
-                messageEl.textContent = `Error: Action '${actionTypeParam}' is not recognized or is missing required parameters.`;
-                messageEl.className = 'message-error';
-                confirmationQuestionEl.style.display = 'none';
+            if (!apiPath) {
+                messageEl.textContent = `Error: Action '${actionTypeParam}' is not recognized or is missing parameters.`;
+                messageEl.className = 'message-error'; confirmationQuestionEl.style.display = 'none';
             } else {
                 actionTitleEl.textContent = `Confirm: ${actionDisplayableText}`;
-                confirmButtonEl.textContent = actionDisplayableText.split('(')[0].trim(); // e.g., "Approve Request"
+                confirmButtonEl.textContent = actionDisplayableText.split('(')[0].trim();
             }
         }
 
@@ -122,94 +169,125 @@
         confirmButtonEl.addEventListener('click', async () => {
             if (confirmButtonEl.disabled || !apiPath) return;
 
-            messageEl.textContent = 'Processing...';
-            messageEl.className = 'message-info';
-            confirmButtonEl.disabled = true;
-            cancelButtonEl.disabled = true;
+            const comments = commentsTextAreaEl.value.trim();
+            if (requiresCommentsForRejection && comments === "") {
+                messageEl.textContent = 'Comments are required for rejection.';
+                messageEl.className = 'message-error'; return;
+            }
 
-            const requestBody = {
-                actorEmail: intendedActorEmailParam, // Pass the email of the intended actor
-                comments: "" // TODO: Optionally add a textarea to this HTML page for comments
-            };
+            messageEl.textContent = 'Processing...'; messageEl.className = 'message-info';
+            confirmButtonEl.disabled = true; cancelButtonEl.disabled = true;
+
+            const loggedInUserString = localStorage.getItem('user'); // Key for your user object
+            let actingUserId;
+            if (loggedInUserString) {
+                try {
+                    const userObject = JSON.parse(loggedInUserString);
+                    actingUserId = userObject?.userId || userObject?.UserId; // Adjust to match your localStorage structure
+                    if (!actingUserId || typeof actingUserId !== 'number') {
+                        throw new Error("Valid UserId not found in localStorage. Please ensure you are logged in.");
+                    }
+                } catch (e) {
+                    messageEl.textContent = 'Error: Could not retrieve valid UserID from local storage. Please log in again.';
+                    messageEl.className = 'message-error'; console.error("Error getting UserId from localStorage:", e);
+                    confirmButtonEl.disabled = false; cancelButtonEl.disabled = false; return;
+                }
+            } else { // Should have been caught by initializePage, but double-check
+                messageEl.textContent = 'Error: User not logged in. Please log in to the application.';
+                messageEl.className = 'message-error';
+                confirmButtonEl.disabled = false; cancelButtonEl.disabled = false; return;
+            }
+
+            // Construct requestBody based on your API DTOs
+            const requestBody = { comments: comments };
+            if (actionTypeParam.includes('approve')) {
+                requestBody.approvingUserId = actingUserId; // Matches ManagerApprovalDTO, DUHeadApprovalDTO
+            } else if (actionTypeParam.includes('reject')) {
+                requestBody.rejectingUserId = actingUserId; // Matches ManagerRejectionDTO, DUHeadRejectionDTO
+            } else if (actionTypeParam === 'select-ticket') {
+                requestBody.selectingUserId = actingUserId; // Matches SelectTicketOptionDTO
+            }
+            // If your DTOs have a generic field like 'actionPerformingUserId', use that instead.
 
             try {
-                const fullApiUrl = `${API_DOMAIN}${APPROVALS_API_BASE_PATH}${apiPath}`;
+                const fullApiUrl = `${API_DOMAIN}${currentApiBase}${apiPath}`;
                 console.log(`Attempting ${httpMethod} to: ${fullApiUrl}`);
-                console.log("Request body:", requestBody);
+                console.log("Request body being sent:", JSON.stringify(requestBody));
+
+                // const authToken = localStorage.getItem('authToken'); // If using JWT for API calls
 
                 const response = await fetch(fullApiUrl, {
                     method: httpMethod,
                     headers: {
                         'Content-Type': 'application/json',
-                        // If your API is secured by JWT and this page is on a domain
-                        // where the user might be logged in, you'd add Authorization header here.
-                        // e.g., 'Authorization': `Bearer ${localStorage.getItem('userAuthToken')}`
+                        // if (authToken) { headers['Authorization'] = `Bearer ${authToken}`; }
                     },
                     body: JSON.stringify(requestBody)
                 });
 
-                const responseText = await response.text(); // Get response text first for logging/parsing
+                const responseText = await response.text();
+                let responseData = null;
+                let isJson = false;
+                if (response.headers.get("content-type")?.includes("application/json")) {
+                    try { responseData = JSON.parse(responseText); isJson = true; }
+                    catch (e) { console.warn("Response indicated JSON but failed to parse:", responseText, e); }
+                }
 
                 if (response.ok) {
-                    console.log("API call successful. Response:", responseText);
-                    if (response.headers.get("content-type")?.includes("text/html")) {
-                        // If API returns full HTML response, replace current page content
-                        // This allows your API to render the final success/error page directly.
-                        document.open();
-                        document.write(responseText);
-                        document.close();
+                    console.log("API call successful. Status:", response.status);
+                    if (isJson && responseData && responseData.isSuccess) {
+                         messageEl.textContent = responseData.result?.message || responseData.message || 'Action completed successfully!';
+                         messageEl.className = 'message-success';
+                    } else if (response.headers.get("content-type")?.includes("text/html") && responseText.toLowerCase().includes("action successful")) {
+                        // If API directly returns HTML for success (from GenerateHtmlResponse)
+                        document.open(); document.write(responseText); document.close(); return;
                     } else {
-                        // If API returns JSON or plain text success
-                        messageEl.textContent = `Action successful! ${responseText}`;
+                        messageEl.textContent = `Action processed (Status: ${response.status}). Response: ${responseText.substring(0,200)}`;
                         messageEl.className = 'message-success';
                     }
-                } else {
+                    confirmButtonEl.style.display = 'none'; // Hide confirm after successful action
+                } else { // Error from API
                     console.error(`API Error ${response.status}:`, responseText);
-                    let displayError = `An error occurred (Status: ${response.status}).`;
-                    if (response.headers.get("content-type")?.includes("text/html")) {
+                    let displayError = `Error ${response.status}: `;
+                    if (isJson && responseData && responseData.errorMessages && responseData.errorMessages.length > 0) {
+                        displayError += responseData.errorMessages.join(' ');
+                    } else if (isJson && responseData && responseData.message) {
+                        displayError += responseData.message;
+                    } else if (response.headers.get("content-type")?.includes("text/html")) {
                         try {
-                            const parser = new DOMParser();
-                            const doc = parser.parseFromString(responseText, "text/html");
-                            const h1 = doc.querySelector('h1'); // Assuming your API error page has an H1
-                            const pMsg = doc.querySelector('p'); // And a P for the message
-                            if (h1 && pMsg) {
-                                displayError = `Error: ${h1.textContent} - ${pMsg.textContent}`;
-                            } else if (pMsg) { // Sometimes just a p tag
-                                displayError = `Error: ${pMsg.textContent}`;
-                            }
-                        } catch (e) { /* Use raw responseText if parsing HTML fails */ }
+                            const parser = new DOMParser(); const doc = parser.parseFromString(responseText, "text/html");
+                            const h1 = doc.querySelector('h1'); const pMsg = doc.querySelector('p');
+                            if (h1 && pMsg) { displayError = `${h1.textContent}: ${pMsg.textContent}`; }
+                            else if (pMsg) { displayError = `Error: ${pMsg.textContent}`; }
+                            else { displayError += "Please check server logs.";}
+                        } catch (e) { displayError += "Could not parse HTML error response."; }
                     } else if (responseText) {
-                         displayError = `Error ${response.status}: ${responseText}`;
-                    }
+                         displayError += responseText.substring(0, 200);
+                    } else { errorMsg += "An unknown error occurred from API."; }
                     messageEl.textContent = displayError;
                     messageEl.className = 'message-error';
-                    confirmButtonEl.disabled = false; // Re-enable if user might want to retry (e.g., network error)
+                    confirmButtonEl.disabled = false;
                 }
-            } catch (error) {
+            } catch (error) { // Network error or JS error before fetch
                 console.error('JavaScript Fetch API call error:', error);
-                messageEl.textContent = 'A network error occurred or the API is unreachable. Please check your connection and try again. See console for details.';
+                messageEl.textContent = 'A network error occurred or the API is unreachable. Check connection and API server. See browser console for details.';
                 messageEl.className = 'message-error';
-                confirmButtonEl.disabled = false; // Re-enable for retry
+                confirmButtonEl.disabled = false;
             } finally {
-                cancelButtonEl.disabled = false; // Always re-enable cancel
+                cancelButtonEl.disabled = false;
             }
         });
 
-        // --- Utility ---
         function closeWindow() {
-            // Try to close the window/tab. May not work in all browsers due to security.
-            window.open('', '_self', ''); // Attempt to release the window for some browsers
-            window.close();
-            if (!window.closed) { // If not closed (e.g., due to browser restrictions)
+            window.open('', '_self', ''); window.close();
+            if (!window.closed) {
                 confirmationQuestionEl.style.display = 'none';
                 confirmButtonEl.style.display = 'none';
                 cancelButtonEl.textContent = 'Close Tab';
-                messageEl.innerHTML = "You can now manually close this browser tab. <br/> <small>(Automatic closing might be blocked by your browser)</small>";
+                messageEl.innerHTML = "You can now manually close this browser tab. <br/> <small>(Automatic closing might be blocked)</small>";
                 messageEl.className = 'message-info';
             }
         }
-
-        // --- Initialize Page Logic ---
         initializePage();
     </script>
 </body>

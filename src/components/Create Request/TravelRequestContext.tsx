@@ -250,7 +250,7 @@ const validateTravelLocationsConsistency = (state: TravelRequestState): string |
   return null;
 };
 
-// Utility function to get user ID from localStorage
+
 const getUserIdFromLocalStorage = (): number | null => {
   try {
     const userString = localStorage.getItem('user');
@@ -322,13 +322,14 @@ export const TravelRequestProvider: React.FC<TravelRequestProviderProps> = ({
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
 
+
   const validateForm = (): string | null => {
     if (!state.source || !state.source.city || !state.source.country) {
-      return 'Please select a valid source location (city and country).';
+      return 'Source: This field is required and must be filled.';
     }
     
     if (!state.destination || !state.destination.city || !state.destination.country) {
-      return 'Please select a valid destination location (city and country).';
+      return 'Destination: This field is required and must be filled.';
     }
     
     if (state.source.value && state.destination.value && state.source.value === state.destination.value) {
@@ -341,7 +342,7 @@ export const TravelRequestProvider: React.FC<TravelRequestProviderProps> = ({
     }
 
     if (!state.outboundDepartureDate) {
-      return 'Please select an outbound departure date.';
+      return 'Outbound Departure Date: This field is required and must be filled.';
     }
     
     const today = new Date();
@@ -352,7 +353,7 @@ export const TravelRequestProvider: React.FC<TravelRequestProviderProps> = ({
 
     if (state.tripType === 'roundTrip') {
       if (!state.returnDepartureDate) {
-        return 'Please select a return departure date for round trip.';
+        return 'Return Departure Date: This field must be filled for a round trip.';
       }
       if (state.outboundDepartureDate && state.returnDepartureDate && state.returnDepartureDate < state.outboundDepartureDate) {
         return 'Return departure date must be on or after outbound departure date.';
@@ -360,31 +361,32 @@ export const TravelRequestProvider: React.FC<TravelRequestProviderProps> = ({
     }
 
     if (!state.transportMode) {
-      return 'Please select a mode of transport.';
+      return 'Mode of Transport: This field is required and must be selected.';
     }
 
     if (!state.projectCode.trim()) {
-      return 'Please enter a project code.';
+      return 'Project Code: This field is required and must be filled.';
     }
     
     if (!state.reason.trim()) {
-      return 'Please enter the purpose of travel.';
+      return 'Purpose of Travel: This field is required and must be filled.';
     }
 
     if (state.requiresPickup && !state.pickupLocation.trim()) {
-      return 'Please specify a pickup location when "Requires Pickup" is selected.';
+      return 'Pickup Location: This must be filled when "Requires Pickup" is selected.';
     }
     
     if (state.requiresDropoff && !state.dropoffLocation.trim()) {
-      return 'Please specify a drop-off location when "Requires Drop-off" is selected.';
+      return 'Drop-off Location: This must be filled when "Requires Drop-off" is selected.';
     }
 
     if (state.requiresFoodPreference && !state.foodPreference) {
-      return 'Please select a food preference.';
+      return 'Food Preference: This is required and must be selected.';
     }
 
     return null; 
   };
+  
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
