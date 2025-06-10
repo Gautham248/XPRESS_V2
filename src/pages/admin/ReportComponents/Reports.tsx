@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react'; // FIX: Added useCallback
 import { Briefcase, Plane, FileText, Clock, ExternalLink, Globe, Coins } from 'lucide-react';
 import StatCard from './StatCard';
@@ -201,31 +202,6 @@ const Reports: React.FC = () => {
   
   const formatExportData = (data: (TravelRequest | DocumentDetail)[], headers: string[]) => { return []; };
 
-  // Helper function to filter requests by status
-  const getFilteredRequests = (requests: TravelRequest[], statuses: string[]) => {
-    return requests.filter(request => 
-      request.status && statuses.some(status => 
-        request.status!.toLowerCase().includes(status.toLowerCase())
-      )
-    );
-  };
-
-  // Helper function to get SLA breach requests (assuming requests older than 7 days are SLA breach)
-  const getSLABreachRequests = (requests: TravelRequest[]) => {
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    
-    return requests.filter(request => {
-      if (!request.requestDate) return false;
-      const requestDate = new Date(request.requestDate);
-      return requestDate < sevenDaysAgo && 
-             request.status && 
-             !['Rejected', 'Approved', 'DUApproved'].some(status => 
-               request.status!.toLowerCase().includes(status.toLowerCase())
-             );
-    });
-  };
-
   if (loading) return <div className="text-center p-10 font-semibold">Loading Reports...</div>;
   if (error) return <div className="text-center p-10 text-red-600">Error: {error}</div>;
 
@@ -251,26 +227,8 @@ const Reports: React.FC = () => {
         <div className="relative">
           <StatCard title="Total Requests" value={statusData?.totalRequestCount ?? 0} subtitle="Requests" icon={<Briefcase />} iconClass="text-blue-600" iconBgClass="bg-blue-100">
             <div className="grid grid-cols-2 gap-6 text-center">
-              <div 
-                className="bg-blue-50 py-2 rounded cursor-pointer hover:bg-blue-100 transition-colors"
-                onClick={() => {
-                  const ticketedRequests = getFilteredRequests(statusData?.requests ?? [], ['Approved', 'DUApproved']);
-                  openModal('Ticketed Requests Details', ticketedRequests, requestHeaders);
-                }}
-              >
-                <span className="text-xs">Ticketed</span>
-                <p className="font-medium">{statusData?.confirmedOrOtherCount ?? 0}</p>
-              </div>
-              <div 
-                className="bg-red-50 py-2 rounded cursor-pointer hover:bg-red-100 transition-colors"
-                onClick={() => {
-                  const rejectedRequests = getFilteredRequests(statusData?.requests ?? [], ['Rejected']);
-                  openModal('Rejected Requests Details', rejectedRequests, requestHeaders);
-                }}
-              >
-                <span className="text-xs">Rejected</span>
-                <p className="font-medium">{statusData?.rejectedCount ?? 0}</p>
-              </div>
+              <div className="bg-blue-50 py-2 rounded"><span className="text-xs">Ticketed</span><p className="font-medium">{statusData?.confirmedOrOtherCount ?? 0}</p></div>
+              <div className="bg-red-50 py-2 rounded"><span className="text-xs">Rejected</span><p className="font-medium">{statusData?.rejectedCount ?? 0}</p></div>
             </div>
           </StatCard>
           <button onClick={() => openModal('Total Requests Details', statusData?.requests ?? [], requestHeaders)} className="absolute top-5 left-[160px] p-1 rounded-full hover:bg-gray-100 z-20" aria-label="View detailed requests"><ExternalLink className="h-5 w-5 text-gray-600" /></button>
@@ -355,29 +313,14 @@ const Reports: React.FC = () => {
           </button>
         </div>
         
-        <div className="relative">
-          <StatCard 
-            title="Processing Metrics" 
-            value={processingTimeData?.readableFormat ?? 'N/A'} 
-            subtitle="Avg Completion Time" 
-            icon={<Clock />} 
-            iconClass="text-cyan-600" 
-            iconBgClass="bg-cyan-100"
-          >
-            <div className="grid grid-cols-1 gap-2 text-center">
-              <div 
-                className="bg-red-50 py-2 rounded cursor-pointer hover:bg-red-100 transition-colors"
-                onClick={() => {
-                  const slaBreachRequests = getSLABreachRequests(statusData?.requests ?? []);
-                  openModal('SLA Breach Details', slaBreachRequests, requestHeaders);
-                }}
-              >
-                <span className="text-xs text-gray-600">SLA Breach</span>
-                <p className="font-semibold text-red-600">{getSLABreachRequests(statusData?.requests ?? []).length}</p>
-              </div>
-            </div>
-          </StatCard>
-        </div>
+        <StatCard 
+          title="Processing Metrics" 
+          value={processingTimeData?.readableFormat ?? 'N/A'} 
+          subtitle="Avg Completion Time" 
+          icon={<Clock />} 
+          iconClass="text-cyan-600" 
+          iconBgClass="bg-cyan-100"
+        />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
