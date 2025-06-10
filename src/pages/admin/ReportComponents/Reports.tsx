@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { Download, Briefcase, Plane, FileText, Clock, ExternalLink, Globe, Coins } from 'lucide-react';
+
+import React, { useState, useEffect, useCallback } from 'react'; // FIX: Added useCallback
+import { Briefcase, Plane, FileText, Clock, ExternalLink, Globe, Coins } from 'lucide-react';
 import StatCard from './StatCard';
 import AirlineDistributionChart from './AirlineDistributionChart';
 import TravelAgencyBarChart from './TravelAgencyBarChart';
-import { mockTravelRequests } from '../../../data/mockData';
 import DateRangePicker from './DateRangePicker';
 import Modal from './Modal';
+
 
 interface TravelRequest {
   id?: string; 
@@ -19,7 +20,7 @@ interface TravelRequest {
   employeeEmail?: string;
   department?: string;
   expiryDate?: string;
-  docStatus?: string;
+  docStatus?: 'Expired' | 'Not Expired';
   travelerName?: string;
   passportExpiry?: string;
   visaExpiry?: string;
@@ -79,14 +80,14 @@ interface TripDetailsData {
 
 interface ModalData {
   title: string;
-  data: TravelRequest[];
+
+  data: (TravelRequest | DocumentDetail)[]; 
   headers: string[];
 }
 
 const formatDateForInput = (date: Date): string => {
   return date.toISOString().split('T')[0];
 };
-
 
 const Reports: React.FC = () => {
   const getInitialEndDate = (): Date => new Date();
@@ -95,6 +96,10 @@ const Reports: React.FC = () => {
     date.setMonth(date.getMonth() - 1);
     return date;
   };
+
+  const [appliedStartDate, setAppliedStartDate] = useState<string>(formatDateForInput(getInitialStartDate()));
+  const [appliedEndDate, setAppliedEndDate] = useState<string>(formatDateForInput(getInitialEndDate()));
+  
   const [startDate, setStartDate] = useState<string>(formatDateForInput(getInitialStartDate()));
   const [endDate, setEndDate] = useState<string>(formatDateForInput(getInitialEndDate()));
 
@@ -110,90 +115,82 @@ const Reports: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [modalData, setModalData] = useState<ModalData | null>(null);
 
-  useEffect(() => {
-    const fetchDashboardData = async () => {
-      setLoading(true);
-      setError(null);
-      const dashboardBaseUrl = 'http://localhost:5030/api/Dashboard';
+ 
+  const fetchDashboardData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    const dashboardBaseUrl = 'http://localhost:5030/api/Dashboard';
+    const docStatusBaseUrl = 'http://localhost:5030/api/document-status';
+    const processingTimeBaseUrl = 'http://localhost:5030/api/ProcessingTime';
+    const params = `?startDate=${appliedStartDate}&endDate=${appliedEndDate}`;
     
-      const docStatusBaseUrl = 'http://localhost:5030/api/document-status';
-      const processingTimeBaseUrl = 'http://localhost:5030/api/ProcessingTime';
-      const params = `?startDate=${startDate}&endDate=${endDate}`;
-      
-      const endpoints = {
-        status: `${dashboardBaseUrl}/status-overview${params}`,
-        expense: `${dashboardBaseUrl}/expense-overview${params}`,
-        trip: `${dashboardBaseUrl}/trip-details${params}`,
-        passport: `${docStatusBaseUrl}/passport${params}`,
-        visa: `${docStatusBaseUrl}/visa${params}`,
-        processingTime: `${processingTimeBaseUrl}/average-review-to-dispatch${params}`,
-      };
+    const endpoints = {
+      status: `${dashboardBaseUrl}/status-overview${params}`,
+      expense: `${dashboardBaseUrl}/expense-overview${params}`,
+      trip: `${dashboardBaseUrl}/trip-details${params}`,
+      passport: `${docStatusBaseUrl}/passport${params}`,
+      visa: `${docStatusBaseUrl}/visa${params}`,
+      processingTime: `${processingTimeBaseUrl}/average-review-to-dispatch${params}`,
+    };
 
-      try {
-        const [statusRes, expenseRes, tripRes, passportRes, visaRes, processingTimeRes] = await Promise.all([
-          fetch(endpoints.status), 
-          fetch(endpoints.expense), 
-          fetch(endpoints.trip),
-          fetch(endpoints.passport),
-          fetch(endpoints.visa),
-          fetch(endpoints.processingTime),
-        ]);
+    try {
+      const responses = await Promise.all(Object.values(endpoints).map(url => fetch(url)));
 
-        if (!statusRes.ok || !expenseRes.ok || !tripRes.ok || !passportRes.ok || !visaRes.ok || !processingTimeRes.ok) {
+      for (const res of responses) {
+        if (!res.ok) {
           throw new Error('Network response was not ok. Please check the API server.');
         }
-
-        const [statusJson, expenseJson, tripJson, passportJson, visaJson, processingTimeJson] = await Promise.all([
-            statusRes.json(),
-            expenseRes.json(),
-            tripRes.json(),
-            passportRes.json(),
-            visaRes.json(),
-            processingTimeRes.json(),
-        ]);
-        
-      
-        if (statusJson.isSuccess && expenseJson.isSuccess && tripJson.isSuccess && passportJson.isSuccess && visaJson.isSuccess && processingTimeJson.isSuccess) {
-          setStatusData(statusJson.result);
-          setExpenseData(expenseJson.result);
-          setTripData(tripJson.result);
-          setPassportData(passportJson.result);
-          setVisaData(visaJson.result);
-          setProcessingTimeData(processingTimeJson.result);
-        } else {
-          const errorMessages = [
-            ...(statusJson.errorMessages || []), 
-            ...(expenseJson.errorMessages || []), 
-            ...(tripJson.errorMessages || []),
-            ...(passportJson.errorMessages || []),
-            ...(visaJson.errorMessages || []),
-            ...(processingTimeJson.errorMessages || []),
-          ].filter(Boolean).join(' ');
-          throw new Error(errorMessages || 'An unknown API error occurred.');
-        }
-      } catch (err: any) {
-        setError(err.message);
-        setStatusData(null); 
-        setExpenseData(null); 
-        setTripData(null);
-        setPassportData(null);
-        setVisaData(null);
-        setProcessingTimeData(null);
-      } finally {
-        setLoading(false);
       }
-    };
+
+      const [statusJson, expenseJson, tripJson, passportJson, visaJson, processingTimeJson] = await Promise.all(responses.map(res => res.json()));
+      
+      const allSuccess = [statusJson, expenseJson, tripJson, passportJson, visaJson, processingTimeJson].every(json => json.isSuccess);
+
+      if (allSuccess) {
+        setStatusData(statusJson.result);
+        setExpenseData(expenseJson.result);
+        setTripData(tripJson.result);
+        setPassportData(passportJson.result);
+        setVisaData(visaJson.result);
+        setProcessingTimeData(processingTimeJson.result);
+      } else {
+        const errorMessages = [
+          ...(statusJson.errorMessages || []), 
+          ...(expenseJson.errorMessages || []), 
+          ...(tripJson.errorMessages || []),
+          ...(passportJson.errorMessages || []),
+          ...(visaJson.errorMessages || []),
+          ...(processingTimeJson.errorMessages || []),
+        ].filter(Boolean).join(' ');
+        throw new Error(errorMessages || 'An unknown API error occurred.');
+      }
+    } catch (err: any) {
+      setError(err.message);
+      setStatusData(null); 
+      setExpenseData(null); 
+      setTripData(null);
+      setPassportData(null);
+      setVisaData(null);
+      setProcessingTimeData(null);
+    } finally {
+      setLoading(false);
+    }
+  }, [appliedStartDate, appliedEndDate]); 
+
+  
+  useEffect(() => {
     fetchDashboardData();
-  }, [startDate, endDate]);
+  }, [fetchDashboardData]);
 
-
-  const filteredRequests = mockTravelRequests.filter((request: TravelRequest) => {
-    const requestDate = new Date(request.requestDate!);
-    return requestDate >= new Date(startDate) && requestDate <= new Date(endDate);
-  });
-
-  const openModal = (title: string, data: TravelRequest[], headers: string[]) => 
+ 
+  const handleApplyDateRange = () => {
+    setAppliedStartDate(startDate);
+    setAppliedEndDate(endDate);
+  };
+  
+  const openModal = (title: string, data: (TravelRequest | DocumentDetail)[], headers: string[]) => 
     setModalData({ title, data, headers });
+  
   const closeModal = () => setModalData(null);
   
   const requestHeaders = ['ID', 'Request Date', 'Status', 'Travel Type'];
@@ -202,33 +199,31 @@ const Reports: React.FC = () => {
   
   const passportHeaders = ['Employee Name', 'Email', 'Department', 'Expiry Date', 'Status'];
   const visaHeaders = ['Employee Name', 'Email', 'Department', 'Expiry Date', 'Status'];
-  const processingHeaders = ['ID', 'Request Date', 'Status', 'Travel Type'];
   
-  const formatExportData = (data: TravelRequest[], headers: string[]) => { return []; };
-  const handleExportAllReports = () => { alert("Export functionality is not yet implemented."); };
+  const formatExportData = (data: (TravelRequest | DocumentDetail)[], headers: string[]) => { return []; };
 
   if (loading) return <div className="text-center p-10 font-semibold">Loading Reports...</div>;
   if (error) return <div className="text-center p-10 text-red-600">Error: {error}</div>;
 
   return (
     <div className="space-y-6 animate-fadeIn">
-      {/* Header Section */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div className="flex items-center space-x-3">
           <div className="w-1 h-8 bg-gradient-to-b from-blue-500 to-purple-600 rounded-full"></div>
           <h2 className="text-2xl font-bold text-gray-800">Travel Reports & Analytics</h2>
         </div>
         <div className="flex items-center gap-3">
-          <DateRangePicker startDate={startDate} endDate={endDate} onStartDateChange={setStartDate} onEndDateChange={setEndDate} />
-          <button onClick={handleExportAllReports} className="btn-primary flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
-            <Download className="h-4 w-4 mr-2" /> Export Reports
-          </button>
+          <DateRangePicker 
+            startDate={startDate} 
+            endDate={endDate} 
+            onStartDateChange={setStartDate} 
+            onEndDateChange={setEndDate}
+            onApply={handleApplyDateRange}
+          />
         </div>
       </div>
 
-      
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Total Requests Card */}
         <div className="relative">
           <StatCard title="Total Requests" value={statusData?.totalRequestCount ?? 0} subtitle="Requests" icon={<Briefcase />} iconClass="text-blue-600" iconBgClass="bg-blue-100">
             <div className="grid grid-cols-2 gap-6 text-center">
@@ -238,7 +233,6 @@ const Reports: React.FC = () => {
           </StatCard>
           <button onClick={() => openModal('Total Requests Details', statusData?.requests ?? [], requestHeaders)} className="absolute top-5 left-[160px] p-1 rounded-full hover:bg-gray-100 z-20" aria-label="View detailed requests"><ExternalLink className="h-5 w-5 text-gray-600" /></button>
         </div>
-        {/* Total Cost Card */}
         <div className="relative">
           <StatCard title="Total Cost" value={`₹${(expenseData?.totalExpense ?? 0).toLocaleString()}`} subtitle="Expenses" icon={<Coins />} iconClass="text-green-600" iconBgClass="bg-green-100">
             <div className="grid grid-cols-2 gap-2 text-center">
@@ -248,7 +242,6 @@ const Reports: React.FC = () => {
           </StatCard>
           <button onClick={() => openModal('Total Cost Details', expenseData?.requests ?? [], costHeaders)} className="absolute top-5 left-[120px] p-1 rounded-full hover:bg-gray-100 z-20" aria-label="View detailed costs"><ExternalLink className="h-5 w-5 text-gray-600" /></button>
         </div>
-        {/* Total Trips Card */}
         <div className="relative">
           <StatCard title="Total Trips" value={tripData?.totalTripCount ?? 0} subtitle="Trips" icon={<Plane />} iconClass="text-purple-600" iconBgClass="bg-purple-100">
             <div className="grid grid-cols-2 gap-2 text-center">
@@ -320,7 +313,6 @@ const Reports: React.FC = () => {
           </button>
         </div>
         
-        {/* Processing Metrics Card - Updated to show readable format */}
         <StatCard 
           title="Processing Metrics" 
           value={processingTimeData?.readableFormat ?? 'N/A'} 
@@ -331,20 +323,18 @@ const Reports: React.FC = () => {
         />
       </div>
 
-      {/* Row 3: Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="border rounded-lg p-4 bg-white shadow-sm"><TravelAgencyBarChart startDate={startDate} endDate={endDate} /></div>
-        <div className="border rounded-lg p-4 bg-white shadow-sm"><AirlineDistributionChart startDate={startDate} endDate={endDate} /></div>
+        <div className="border rounded-lg p-4 bg-white shadow-sm"><TravelAgencyBarChart startDate={appliedStartDate} endDate={appliedEndDate} /></div>
+        <div className="border rounded-lg p-4 bg-white shadow-sm"><AirlineDistributionChart startDate={appliedStartDate} endDate={appliedEndDate} /></div>
       </div>
 
-      {/* Modal Section */}
       {modalData && (
         <Modal 
           isOpen={!!modalData} 
           onClose={closeModal} 
           title={modalData.title} 
-          startDate={startDate} 
-          endDate={endDate} 
+          startDate={appliedStartDate} 
+          endDate={appliedEndDate} 
           exportData={{ headers: modalData.headers, data: formatExportData(modalData.data, modalData.headers), filename: modalData.title.toLowerCase().replace(/\s+/g, '-') + '_report' }}
         >
           {modalData.data.length > 0 ? (
@@ -353,24 +343,26 @@ const Reports: React.FC = () => {
                 <thead className="text-xs text-gray-700 uppercase bg-gray-50"><tr>{modalData.headers.map((h, i) => (<th key={i} className="px-4 py-2 whitespace-nowrap">{h}</th>))}</tr></thead>
                 <tbody>
                   {modalData.data.map((item, index) => (
-                    <tr key={`${item.id || item.employeeName}-${index}`} className="border-b hover:bg-gray-50">
+                    <tr key={index} className="border-b hover:bg-gray-50">
                       {modalData.headers.map(header => {
-                        const lowerHeader = header.toLowerCase().trim();
-                        let cellValue: string | number = 'N/A';
-                        
-                        if (lowerHeader === 'id') cellValue = item.id || 'N/A';
-                        else if (lowerHeader === 'request date') cellValue = item.requestDate ? new Date(item.requestDate).toLocaleDateString() : 'N/A';
-                        else if (lowerHeader === 'status') cellValue = item.status || item.docStatus || 'N/A';
-                        else if (lowerHeader === 'travel type') cellValue = item.travelType || 'N/A';
-                        else if (lowerHeader === 'estimated cost') cellValue = item.estimatedCost ? `₹${item.estimatedCost.toLocaleString()}` : 'N/A';
-                        else if (lowerHeader === 'airline') cellValue = item.airline || 'N/A';
-                        else if (lowerHeader === 'travel agency') cellValue = item.travelAgency || 'N/A';
-                        else if (lowerHeader === 'employee name') cellValue = item.employeeName || item.travelerName || 'N/A';
-                        else if (lowerHeader === 'email') cellValue = item.employeeEmail || 'N/A';
-                        else if (lowerHeader === 'department') cellValue = item.department || item.departmentCode || 'N/A';
-                        else if (lowerHeader === 'expiry date') cellValue = item.expiryDate ? new Date(item.expiryDate).toLocaleDateString() : 'N/A';
-                        
-                        return (<td key={`${item.id || item.employeeName}-${header}`} className="px-4 py-2 whitespace-nowrap">{cellValue}</td>);
+                        const key = header.toLowerCase().replace(/\s+/g, '');
+                        // A more robust way to get cell values
+                        const getCellValue = () => {
+                          if ('id' in item && key === 'id') return item.id;
+                          if ('requestDate' in item && key === 'requestdate') return item.requestDate ? new Date(item.requestDate).toLocaleDateString() : 'N/A';
+                          if (key === 'status') return (item as TravelRequest).status || (item as DocumentDetail).docStatus;
+                          if ('travelType' in item && key === 'traveltype') return item.travelType;
+                          if ('estimatedCost' in item && key === 'estimatedcost') return item.estimatedCost ? `₹${item.estimatedCost.toLocaleString()}` : 'N/A';
+                          if ('airline' in item && key === 'airline') return item.airline;
+                          if ('travelAgency' in item && key === 'travelagency') return item.travelAgency;
+                          if (key === 'employeename') return (item as TravelRequest).employeeName || (item as TravelRequest).travelerName || (item as DocumentDetail).employeeName;
+                          if (key === 'email') return (item as TravelRequest).employeeEmail || (item as DocumentDetail).employeeEmail;
+                          if (key === 'department') return (item as TravelRequest).department || (item as TravelRequest).departmentCode || (item as DocumentDetail).department;
+                          if ('expiryDate' in item && key === 'expirydate') return item.expiryDate ? new Date(item.expiryDate).toLocaleDateString() : 'N/A';
+                          return 'N/A';
+                        };
+
+                        return (<td key={`${index}-${header}`} className="px-4 py-2 whitespace-nowrap">{getCellValue()}</td>);
                       })}
                     </tr>
                   ))}

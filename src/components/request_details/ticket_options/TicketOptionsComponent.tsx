@@ -13,7 +13,7 @@ import { INDEX_TO_STATUS_MAP } from '../TravelRequestDetails';
 // --- API Related Interfaces ---
 interface ApiTravelRequestDetail {
   currentStatusId: number;
-  transportationType: string;
+  transportation: string;
   uploadedTicketPdfPath?: string;
 }
 
@@ -72,7 +72,7 @@ const API_BASE_URL = 'http://localhost:5030/api';
 const TicketOptionComponent: React.FC<TicketProps> = ({ requestId, onPreviewTicket, ticketDocumentPath }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [travelRequestStatus, setTravelRequestStatus] = useState<string | null>(null);
-  const [transportationType, setTransportationType] = useState<'flight' | 'train' | 'bus' | 'cab'>();
+  const [transportationType, setTransportationType] = useState('');
   const [ticketOptionsFromApi, setTicketOptionsFromApi] = useState<ApiTicketOptionItem[]>([]);
 
   const [newOptionText, setNewOptionText] = useState<string>('');
@@ -123,16 +123,16 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId, onPreviewTick
       if (response.data.isSuccess && response.data.result) {
         setTravelRequestDetails(response.data.result);
         const statusId = response.data.result.currentStatusId;
-        const statusName = INDEX_TO_STATUS_MAP[statusId] || 'PendingReview';
+        const statusName = INDEX_TO_STATUS_MAP[statusId];
 
-        const transportType = response.data.result.transportationType?.toLowerCase() || 'flight';
-            
-        if (['flight', 'train', 'bus', 'cab'].includes(transportType)) {
-            setTransportationType(transportType as 'flight' | 'train' | 'bus' | 'cab');
-        } else {
-            console.warn(`Unexpected transportation type: ${transportType}, defaulting to flight`);
-            setTransportationType('flight');
-        }
+        const transportType = response.data.result.transportation?.toLowerCase() || '';
+        setTransportationType(transportType);
+        // if (['flight', 'train', 'bus', 'cab'].includes(transportType)) {
+        //     setTransportationType(transportType as 'flight' | 'train' | 'bus' | 'cab');
+        // } else {
+        //     console.warn(`Unexpected transportation type: ${transportType}, defaulting to flight`);
+        //     setTransportationType('flight');
+        // }
 
         setTravelRequestStatus(statusName);
 
@@ -706,7 +706,7 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId, onPreviewTick
       <UploadTicketsModal
         isOpen={isUploadTicketsFileModalOpen} onClose={() => setIsUploadTicketsFileModalOpen(false)}
         onConfirm={handleUploadActualTickets}
-        transportationType={transportationType ?? 'flight'}
+        transportationType={transportationType}
       />
     </>
   );

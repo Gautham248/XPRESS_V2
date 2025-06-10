@@ -150,9 +150,9 @@ const UploadTicketView: React.FC<Props> = ({
       {ticketOptions.length > 0 && (
         <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-6 border-t border-green-200 mt-auto flex gap-3 justify-between">
           <div>
-            <h5 className="font-semibold text-gray-800 mb-1">Ready to Upload</h5>
+            <h5 className="font-semibold text-gray-800 mb-1">Uploaded</h5>
             <p className="text-sm text-gray-600">
-              {ticketOptions.length} option{ticketOptions.length !== 1 ? 's' : ''} ready to be made available
+              {ticketOptions.length} option{ticketOptions.length !== 1 ? 's' : ''}
             </p>
           </div>
           <div className="flex gap-3">
