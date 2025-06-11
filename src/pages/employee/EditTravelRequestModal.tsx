@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { format, parseISO, isValid } from 'date-fns'; 
+import { format, parseISO, isValid, isBefore } from 'date-fns'; 
 import Select from 'react-select';
 import {
   Plane,
@@ -26,7 +26,7 @@ export interface DetailedTravelRequest {
   destinationPlace: string;
   destinationCountry: string;
   outboundDepartureDate: string;
-  outboundArrivalDate: string;
+  outboundArrivalDate: string | null;
   returnDepartureDate: string | null;
   returnArrivalDate: string | null;
   isAccommodationRequired: boolean;
@@ -151,45 +151,64 @@ const EditTravelRequestModal: React.FC<EditTravelRequestModalProps> = ({ isOpen,
                 }
             };
            
-            // --- UPDATED FUNCTION TO HANDLE INVALID DATES ---
-            const splitISODate = (isoDate: string | null) => {
+            // --- UPDATED FUNCTION TO HANDLE INVALID AND INCONSISTENT DATES ---
+            const splitISODate = (isoDate: string | null, fallbackDate: string | null = null) => {
+                const today = new Date();
+                const fallback = fallbackDate && isValid(parseISO(fallbackDate)) ? parseISO(fallbackDate) : today;
+
                 if (!isoDate) {
-                    return { date: '', time: '' };
+                    // If no date provided, use fallback or today
+                    return {
+                        date: format(fallback, 'yyyy-MM-dd'),
+                        time: format(fallback, 'HH:mm'),
+                    };
                 }
                
                 try {
                     const dateObj = parseISO(isoDate);
  
-                    // Check if the parsed date is valid. If not, default to today.
+                    // Check if the parsed date is valid
                     if (!isValid(dateObj)) {
-                        console.warn(`Invalid date string received: "${isoDate}". Defaulting to today.`);
-                        const today = new Date();
+                        console.warn(`Invalid date string received: "${isoDate}". Using fallback or today.`);
                         return {
-                            date: format(today, 'yyyy-MM-dd'),
-                            time: format(today, 'HH:mm'),
+                            date: format(fallback, 'yyyy-MM-dd'),
+                            time: format(fallback, 'HH:mm'),
                         };
                     }
+
+                    // For arrival dates, check if they are before the corresponding departure date
+                    if (fallbackDate) {
+                        const departureDateObj = parseISO(fallbackDate);
+                        if (isValid(departureDateObj) && isBefore(dateObj, departureDateObj)) {
+                            console.warn(`Arrival date "${isoDate}" is before departure date "${fallbackDate}". Using departure date as fallback.`);
+                            return {
+                                date: format(departureDateObj, 'yyyy-MM-dd'),
+                                time: format(departureDateObj, 'HH:mm'),
+                            };
+                        }
+                    }
  
-                    // If valid, format and return the date and time.
+                    // If valid and consistent, format and return the date and time
                     return {
                         date: format(dateObj, 'yyyy-MM-dd'),
                         time: format(dateObj, 'HH:mm'),
                     };
                 } catch (error) {
                     // Fallback for any other unexpected errors during parsing
-                    console.error(`Error parsing date: "${isoDate}". Defaulting to today.`, error);
-                    const today = new Date();
+                    console.error(`Error parsing date: "${isoDate}". Using fallback or today.`, error);
                     return {
-                        date: format(today, 'yyyy-MM-dd'),
-                        time: format(today, 'HH:mm'),
+                        date: format(fallback, 'yyyy-MM-dd'),
+                        time: format(fallback, 'HH:mm'),
                     };
                 }
             };
  
+            // Use outboundDepartureDate as fallback for outboundArrivalDate
             const outbound = splitISODate(request.outboundDepartureDate);
-            const outboundArrival = splitISODate(request.outboundArrivalDate);
+            const outboundArrival = splitISODate(request.outboundArrivalDate, request.outboundDepartureDate);
+            // Use returnDepartureDate as fallback for returnArrivalDate, if it exists
             const returnDep = splitISODate(request.returnDepartureDate);
-            const returnArr = splitISODate(request.returnArrivalDate);
+            const returnArr = splitISODate(request.returnArrivalDate, request.returnDepartureDate);
  
             const sourceDisplay = [request.sourcePlace, request.sourceCountry].filter(Boolean).join(', ');
             const destinationDisplay = [request.destinationPlace, request.destinationCountry].filter(Boolean).join(', ');
