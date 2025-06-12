@@ -123,7 +123,7 @@ const TravelRequestDetails: React.FC = () => {
   let role = '';
   let userId: number | undefined = undefined;
   
-  console.log(travelRequestData?.ticketDocumentPath);
+  // console.log(travelRequestData?.ticketDocumentPath);
 
   if (userString) {
     const user = JSON.parse(userString);
@@ -141,7 +141,7 @@ const TravelRequestDetails: React.FC = () => {
       
       const data = await response.json();
 
-      console.log("API response for TravelRequestDetails:", data.result);
+      // console.log("API response for TravelRequestDetails:", data.result);
 
       if (data.isSuccess && data.result) {
         const apiData = data.result;
@@ -292,7 +292,7 @@ const TravelRequestDetails: React.FC = () => {
     handleCloseModal();
   };
 
-  if (isLoading) return <div className="p-8 flex justify-center items-center"><Loader2 className="h-8 w-8 animate-spin text-gray-500" /></div>;
+  if (isLoading) return <div data-testid="loader-container" className="p-8 flex justify-center items-center"><Loader2 className="h-8 w-8 animate-spin text-gray-500" /></div>;
   if (error) return <div className="p-8 text-center text-red-600">Error: {error}</div>;
   if (!travelRequestData) return <div className="p-8 text-center text-gray-600">Travel request not found.</div>;
 
