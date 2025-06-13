@@ -396,7 +396,7 @@ const EmployeeDashboard: React.FC = () => {
  
       <div className="card bg-white shadow-sm p-6 rounded-lg">
         <h3 className="text-lg font-semibold mb-4">Travel Policy</h3>
-        <a href="https://experiontechnologies.sharepoint.com/..." className="text-blue-600 hover:text-blue-800 flex items-center space-x-2" target='_blank' rel="noopener noreferrer"><FileText className="h-5 w-5" /><span>Experion Travel Policy</span></a>
+        <a href="https://experiontechnologies.sharepoint.com/sites/QualityManagementSystem/Quality%20Management%20System/Forms/AllItems.aspx?id=%2Fsites%2FQualityManagementSystem%2FQuality%20Management%20System%2F04%2EPolicies%2FPL03%20Travel%20Policy%2Epdf&parent=%2Fsites%2FQualityManagementSystem%2FQuality%20Management%20System%2F04%2EPolicies" className="text-blue-600 hover:text-blue-800 flex items-center space-x-2" target='_blank' rel="noopener noreferrer"><FileText className="h-5 w-5" /><span>Experion Travel Policy</span></a>
       </div>
  
       {/* RENDER MODALS */}
