@@ -7,14 +7,14 @@ import {
 } from 'lucide-react';
 import ApprovalTimeline from './ApprovalTimeline';
 import TravelInfo from './TravelInfo';
-import DocumentTabs from './IterinaryTabs'; 
 import TravelInfoBanner from './TravelInfoBanner';
 import { useModal } from './confirmation_modal/hooks/useModal';
 import ConfirmationModal, { ButtonConfig } from './confirmation_modal/ConfirmationModal';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
-import TicketPreviewModal from './ticket_options/TicketPreviewModal';
+import DocumentTabs from './IterinaryTabs';
 import toast, { Toaster } from 'react-hot-toast';
+import TicketPreviewModal from './ticket_options/TicketPreviewModal';
 
 // --- TYPE DEFINITIONS ---
 export interface ComponentTravelRequest {
@@ -101,33 +101,42 @@ const getStatusBadgeStyles = (status?: ComponentTravelRequest['status'] | string
 
 
 const TravelRequestDetails: React.FC = () => {
-    const { id } = useParams<{ id: string }>();
-    const navigate = useNavigate();
-    const { isOpen, openModal: showModalContainer, closeModal: hideModalContainer } = useModal();
-    const [travelRequestData, setTravelRequestData] = useState<ComponentTravelRequest | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-    const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
-    const [actionTaken, setActionTaken] = useState(false);
-    const [requestClosed, setRequestClosed] = useState(false);
-    const [activeModal, setActiveModal] = useState<string | null>(null);
-    const [isPreparingDocs, setIsPreparingDocs] = useState(false);
-    const [isZipping, setIsZipping] = useState(false);
-    const [availableDocs, setAvailableDocs] = useState<DocumentInfo[]>([]);
-    const [selectedDocs, setSelectedDocs] = useState<Set<string>>(new Set());
-    const [modalInputText, setModalInputText] = useState('');
-    const [isTicketPreviewModalOpen, setIsTicketPreviewModalOpen] = useState(false);
-    const [ticketPreviewUrl, setTicketPreviewUrl] = useState<string>('');
-    const userString = localStorage.getItem('user');
-    let role = '';
-    let userId: number | undefined = undefined;
-    if (userString) {
-        const user = JSON.parse(userString);
-        role = user.role;
-        userId = parseInt(user.userId, 10);
-    }
-    
-    const fetchTravelRequest = useCallback(async () => {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const { isOpen, openModal: showModalContainer, closeModal: hideModalContainer } = useModal();
+
+  const [travelRequestData, setTravelRequestData] = useState<ComponentTravelRequest | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
+  const [actionTaken, setActionTaken] = useState(false);
+  const [requestClosed, setRequestClosed] = useState(false);
+
+  const [activeModal, setActiveModal] = useState<string | null>(null);
+
+  const [isPreparingDocs, setIsPreparingDocs] = useState(false);
+  const [isZipping, setIsZipping] = useState(false);
+  const [availableDocs, setAvailableDocs] = useState<DocumentInfo[]>([]);
+  const [selectedDocs, setSelectedDocs] = useState<Set<string>>(new Set());
+
+  const [modalInputText, setModalInputText] = useState('');
+  const [isTicketPreviewModalOpen, setIsTicketPreviewModalOpen] = useState(false);
+  const [ticketPreviewUrl, setTicketPreviewUrl] = useState<string>('');
+
+  const userString = localStorage.getItem('user');
+  let role = '';
+  let userId: number | undefined = undefined;
+  
+  // console.log(travelRequestData?.ticketDocumentPath);
+
+  if (userString) {
+    const user = JSON.parse(userString);
+    role = user.role;
+    userId = parseInt(user.userId, 10);
+  }
+
+  const fetchTravelRequest = useCallback(async () => {
     if (!id) { setIsLoading(false); setError("Travel Request ID is missing."); return; }
     setIsLoading(true);
     setError(null);
@@ -137,6 +146,8 @@ const TravelRequestDetails: React.FC = () => {
       
       const data = await response.json();
 
+      // console.log("API response for TravelRequestDetails:", data.result);
+
       if (data.isSuccess && data.result) {
         const apiData = data.result;
         setTravelRequestData({
@@ -145,7 +156,6 @@ const TravelRequestDetails: React.FC = () => {
           purpose: apiData.purposeOfTravel,
           status: INDEX_TO_STATUS_MAP[apiData.currentStatusId] || 'PendingReview',
           employeeName: apiData.employeeName,
-          // NOTE: Your API should return these fields
           // accommodationDocumentPath: apiData.accommodationDocumentPath, 
           // insuranceDocumentPath: apiData.insuranceDocumentPath,
         });
@@ -276,13 +286,13 @@ const TravelRequestDetails: React.FC = () => {
     };
 
 
-    if (isLoading) return <div className="p-8 flex justify-center items-center"><Loader2 className="h-8 w-8 animate-spin text-gray-500" /></div>;
-    if (error) return <div className="p-8 text-center text-red-600">Error: {error}</div>;
-    if (!travelRequestData) return <div className="p-8 text-center text-gray-600">Travel request not found.</div>;
-    
-    let modalTitle: string | undefined;
-    let modalContent: ReactNode = '';
-    let modalButtons: ButtonConfig[] = [];
+  if (isLoading) return <div className="p-8 flex justify-center items-center"><Loader2 className="h-8 w-8 animate-spin text-gray-500" /></div>;
+  if (error) return <div className="p-8 text-center text-red-600">Error: {error}</div>;
+  if (!travelRequestData) return <div className="p-8 text-center text-gray-600">Travel request not found.</div>;
+
+  let modalTitle: string | undefined;
+  let modalContent: ReactNode = '';
+  let modalButtons: ButtonConfig[] = [];
 
     switch (activeModal) {
         case 'cancel':
