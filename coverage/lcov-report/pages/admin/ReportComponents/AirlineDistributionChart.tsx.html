@@ -925,7 +925,7 @@ const AirlineDistributionChart: React.FC&lt;AirlineDistributionChartProps&gt; = 
       
       try {
         const response = await fetch(
-          `http://localhost:5030/api/AirlineReports?startDate=${startDate}&amp;endDate=${endDate}`
+          `https://xpress-deployment.onrender.com/api/AirlineReports?startDate=${startDate}&amp;endDate=${endDate}`
         );
         
         <span class="missing-if-branch" title="if path not taken" >I</span>if (!response.ok) {

@@ -816,11 +816,11 @@ const TravelRequests: React.FC = () =&gt; {
         // Determine the API endpoint based on the user's role
         let apiUrl = <span class="cstat-no" title="statement not covered" >'';</span>
 <span class="cstat-no" title="statement not covered" >        if (user.role === 'admin') {</span>
-<span class="cstat-no" title="statement not covered" >          apiUrl = 'http://localhost:5030/api/TravelRequest/travelrequests';</span>
+<span class="cstat-no" title="statement not covered" >          apiUrl = 'https://xpress-deployment.onrender.com/api/TravelRequest/travelrequests';</span>
         } else <span class="cstat-no" title="statement not covered" >if (user.role === 'duhead') {</span>
-<span class="cstat-no" title="statement not covered" >          apiUrl = `http://localhost:5030/api/TravelRequest/ByDUH/${encodeURIComponent(email)}`;</span>
+<span class="cstat-no" title="statement not covered" >          apiUrl = `https://xpress-deployment.onrender.com/api/TravelRequest/ByDUH/${encodeURIComponent(email)}`;</span>
         } else {
-<span class="cstat-no" title="statement not covered" >          apiUrl = `http://localhost:5030/api/TravelRequest/ByProjectManager/${encodeURIComponent(email)}`;</span>
+<span class="cstat-no" title="statement not covered" >          apiUrl = `https://xpress-deployment.onrender.com/api/TravelRequest/ByProjectManager/${encodeURIComponent(email)}`;</span>
         }
 &nbsp;
         const response = <span class="cstat-no" title="statement not covered" >await fetch(apiUrl, {</span>

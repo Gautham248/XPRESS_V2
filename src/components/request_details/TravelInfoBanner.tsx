@@ -41,7 +41,7 @@ interface TravelInfoBannerProps {
 const TravelInfoBanner: React.FC<TravelInfoBannerProps> = ({ 
   requestId, 
 }) => {
-  const apiUrl = 'http://localhost:5030/api/TravelRequest/infobanner';
+  const apiUrl = 'https://xpress-deployment.onrender.com/api/TravelRequest/infobanner';
   const [travelRequest, setTravelRequest] = useState<TravelRequestData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

@@ -59,7 +59,7 @@ const TravelAgencyBarChart: React.FC<TravelAgencyBarChartProps> = ({
       
       try {
         const response = await fetch(
-          `http://localhost:5030/api/TravelAgencyStats/stats?startDate=${startDate}&endDate=${endDate}`
+          `https://xpress-deployment.onrender.com/api/TravelAgencyStats/stats?startDate=${startDate}&endDate=${endDate}`
         );
         
         if (!response.ok) {

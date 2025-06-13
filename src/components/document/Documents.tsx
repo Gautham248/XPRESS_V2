@@ -160,7 +160,7 @@ function Documents() {
 
     try {
       if (isExpired) {
-        await axios.delete(`http://localhost:5030/api/Documents/${recordId}/type/${docType}`);
+        await axios.delete(`https://xpress-deployment.onrender.com/api/Documents/${recordId}/type/${docType}`);
         toast.error(`This document is expired and cannot be saved.`, { id: toastId });
       } else {
         const payloadForApi = { ...pendingRecord.initialRecord };
@@ -189,7 +189,7 @@ function Documents() {
             visaExpiryDate: formatToISOString(payloadForApi.visaExpiryDate),
         };
 
-        await axios.put(`http://localhost:5030/api/Documents/${recordId}`, finalPayload);
+        await axios.put(`https://xpress-deployment.onrender.com/api/Documents/${recordId}`, finalPayload);
         toast.success(`${docType} details saved successfully!`, { id: toastId });
       }
 

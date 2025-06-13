@@ -103,7 +103,7 @@ const Dashboard: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   // Base API URL
-  const API_BASE_URL = 'http://localhost:5030';
+  const API_BASE_URL = 'https://xpress-deployment.onrender.com';
 
   // API fetch utility function
   const fetchApiData = async <T,>(endpoint: string): Promise<T> => {

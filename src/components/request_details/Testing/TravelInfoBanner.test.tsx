@@ -203,14 +203,14 @@ describe('TravelInfoBanner Component', () => {
     // Function Name: (useEffect via fetchTravelRequest)
     // Test Steps: Render with requestId, ensure axios.get is called with the expected URL.
     // Test Data: requestId = 'SPECIFIC_ID'
-    // Expected Results: axios.get called with 'http://localhost:5030/api/TravelRequest/infobanner/SPECIFIC_ID'.
+    // Expected Results: axios.get called with 'https://xpress-deployment.onrender.com/api/TravelRequest/infobanner/SPECIFIC_ID'.
 
     mockedAxios.get.mockResolvedValueOnce(mockApiSuccessResponseNoData); // Response doesn't matter, just the call
 
     render(<TravelInfoBanner requestId="SPECIFIC_ID" />);
 
     await waitFor(() => { // Wait for the useEffect to run and call axios
-      expect(mockedAxios.get).toHaveBeenCalledWith('http://localhost:5030/api/TravelRequest/infobanner/SPECIFIC_ID');
+      expect(mockedAxios.get).toHaveBeenCalledWith('https://xpress-deployment.onrender.com/api/TravelRequest/infobanner/SPECIFIC_ID');
     });
   });
 

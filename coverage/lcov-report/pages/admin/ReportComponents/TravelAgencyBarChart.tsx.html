@@ -1034,7 +1034,7 @@ const TravelAgencyBarChart: React.FC&lt;TravelAgencyBarChartProps&gt; = ({
       
       try {
         const response = await fetch(
-          `http://localhost:5030/api/TravelAgencyStats/stats?startDate=${startDate}&amp;endDate=${endDate}`
+          `https://xpress-deployment.onrender.com/api/TravelAgencyStats/stats?startDate=${startDate}&amp;endDate=${endDate}`
         );
         
         <span class="missing-if-branch" title="if path not taken" >I</span>if (!response.ok) {

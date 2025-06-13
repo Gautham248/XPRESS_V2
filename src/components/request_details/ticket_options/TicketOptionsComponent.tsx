@@ -67,7 +67,7 @@ interface UITicketOption {
   filePath?: string;
 }
 
-const API_BASE_URL = 'http://localhost:5030/api';
+const API_BASE_URL = 'https://xpress-deployment.onrender.com/api';
 
 const TicketOptionComponent: React.FC<TicketProps> = ({ requestId, onPreviewTicket, ticketDocumentPath }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);

@@ -100,7 +100,7 @@ const TravelInfo: React.FC<TravelInfoProps> = ({ requestId }) => {
 
       try {
         const response = await axios.get<TravelInfoApiResponse>(
-          `http://localhost:5030/api/TravelRequest/travelinfo/${requestId}`
+          `https://xpress-deployment.onrender.com/api/TravelRequest/travelinfo/${requestId}`
         );
 
         if (response.data.isSuccess && response.data.result && response.data.result.length > 0) {
