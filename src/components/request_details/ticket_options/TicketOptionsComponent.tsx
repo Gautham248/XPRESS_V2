@@ -179,7 +179,7 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId, onPreviewTick
     fetchTravelRequest();
   }, [requestId, apiUrl]);
 
-  console.log(transportationType);
+  // console.log(transportationType);
   const fetchTravelRequestData = useCallback(async () => {
     if (!requestId) {
       setError("Request ID is missing.");
@@ -199,12 +199,6 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId, onPreviewTick
 
         const transportType = response.data.result.transportation?.toLowerCase() || '';
         setTransportationType(transportType);
-        // if (['flight', 'train', 'bus', 'cab'].includes(transportType)) {
-        //     setTransportationType(transportType as 'flight' | 'train' | 'bus' | 'cab');
-        // } else {
-        //     console.warn(`Unexpected transportation type: ${transportType}, defaulting to flight`);
-        //     setTransportationType('flight');
-        // }
 
         setTravelRequestStatus(statusName);
 
