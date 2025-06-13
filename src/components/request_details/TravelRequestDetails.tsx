@@ -101,33 +101,42 @@ const getStatusBadgeStyles = (status?: ComponentTravelRequest['status'] | string
 
 
 const TravelRequestDetails: React.FC = () => {
-    const { id } = useParams<{ id: string }>();
-    const navigate = useNavigate();
-    const { isOpen, openModal: showModalContainer, closeModal: hideModalContainer } = useModal();
-    const [travelRequestData, setTravelRequestData] = useState<ComponentTravelRequest | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-    const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
-    const [actionTaken, setActionTaken] = useState(false);
-    const [requestClosed, setRequestClosed] = useState(false);
-    const [activeModal, setActiveModal] = useState<string | null>(null);
-    const [isPreparingDocs, setIsPreparingDocs] = useState(false);
-    const [isZipping, setIsZipping] = useState(false);
-    const [availableDocs, setAvailableDocs] = useState<DocumentInfo[]>([]);
-    const [selectedDocs, setSelectedDocs] = useState<Set<string>>(new Set());
-    const [modalInputText, setModalInputText] = useState('');
-    const [isTicketPreviewModalOpen, setIsTicketPreviewModalOpen] = useState(false);
-    const [ticketPreviewUrl, setTicketPreviewUrl] = useState<string>('');
-    const userString = localStorage.getItem('user');
-    let role = '';
-    let userId: number | undefined = undefined;
-    if (userString) {
-        const user = JSON.parse(userString);
-        role = user.role;
-        userId = parseInt(user.userId, 10);
-    }
-    
-    const fetchTravelRequest = useCallback(async () => {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const { isOpen, openModal: showModalContainer, closeModal: hideModalContainer } = useModal();
+
+  const [travelRequestData, setTravelRequestData] = useState<ComponentTravelRequest | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
+  const [actionTaken, setActionTaken] = useState(false);
+  const [requestClosed, setRequestClosed] = useState(false);
+
+  const [activeModal, setActiveModal] = useState<string | null>(null);
+
+  const [isPreparingDocs, setIsPreparingDocs] = useState(false);
+  const [isZipping, setIsZipping] = useState(false);
+  const [availableDocs, setAvailableDocs] = useState<DocumentInfo[]>([]);
+  const [selectedDocs, setSelectedDocs] = useState<Set<string>>(new Set());
+
+  const [modalInputText, setModalInputText] = useState('');
+  const [isTicketPreviewModalOpen, setIsTicketPreviewModalOpen] = useState(false);
+  const [ticketPreviewUrl, setTicketPreviewUrl] = useState<string>('');
+
+  const userString = localStorage.getItem('user');
+  let role = '';
+  let userId: number | undefined = undefined;
+  
+  // console.log(travelRequestData?.ticketDocumentPath);
+
+  if (userString) {
+    const user = JSON.parse(userString);
+    role = user.role;
+    userId = parseInt(user.userId, 10);
+  }
+
+  const fetchTravelRequest = useCallback(async () => {
     if (!id) { setIsLoading(false); setError("Travel Request ID is missing."); return; }
     setIsLoading(true);
     setError(null);
@@ -136,6 +145,8 @@ const TravelRequestDetails: React.FC = () => {
       if (!response.ok) throw new Error(`Failed to fetch: ${response.statusText}`);
       
       const data = await response.json();
+
+      // console.log("API response for TravelRequestDetails:", data.result);
 
       if (data.isSuccess && data.result) {
         const apiData = data.result;
@@ -161,128 +172,141 @@ const TravelRequestDetails: React.FC = () => {
 
   useEffect(() => { fetchTravelRequest(); }, [fetchTravelRequest]);
 
-  const handlePreviewTicket = () => {
+  const formatDate = (dateString: string | undefined): string => {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    return isNaN(date.getTime()) ? dateString : date.toLocaleDateString('en-GB');
+  };
+
+  const getFriendlyFilename = (doc: any): string => {
+    const extension = doc.documentPath?.split('.').pop() || 'file';
+    let name = `${doc.idType}-${doc.id}`;
+    if (doc.idType === 'TravelTicket') name = `TravelTicket-${doc.id}`;
+    else if (doc.idType === 'Passport' && doc.passportNumber) name = `Passport-${doc.passportNumber}`;
+    else if (doc.idType === 'Visa' && doc.visaNumber) name = `Visa-${doc.issuingCountry}-${doc.visaNumber}`;
+    else if (doc.idType === 'Aadhar' && doc.aadharName) name = `Aadhar-${doc.aadharName.replace(/\s/g, '_')}`;
+    return `${name}.${extension}`;
+  };
+
+  const handleCloseModal = () => {
+    hideModalContainer();
+    setActiveModal(null);
+    setModalInputText('');
+  };
+
+  const handleOpenDownloadModal = async () => {
+    if (!id || !travelRequestData?.userId) return;
+    setIsPreparingDocs(true);
+    try {
+      let docs: DocumentInfo[] = [];
+      if (travelRequestData.ticketDocumentPath) {
+        docs.push({ id: `ticket_${id}`, url: `http://localhost:5030/api/TravelRequest/${id}/downloadticket`, friendlyName: getFriendlyFilename({ idType: 'TravelTicket', id, documentPath: travelRequestData.ticketDocumentPath }), docData: {} });
+      }
+      const response = await fetch(`http://localhost:5030/api/Documents/User/${travelRequestData.userId}`);
+      if (response.ok) {
+        (await response.json())?.forEach((doc: any) => docs.push({ id: `doc_${doc.id}`, url: doc.documentPath, friendlyName: getFriendlyFilename(doc), docData: doc }));
+      }
+      if (docs.length === 0) { toast.error('No documents available.'); return; }
+      setAvailableDocs(docs);
+      setSelectedDocs(new Set(docs.map(d => d.id)));
+      setActiveModal('download');
+      showModalContainer(<></>);
+    } finally {
+      setIsPreparingDocs(false);
+    }
+  };
+
+  const handleZipAndDownload = async () => {
+    if (selectedDocs.size === 0 || !travelRequestData) return;
+    setIsZipping(true);
+    try {
+      const docsToZip = availableDocs.filter(doc => selectedDocs.has(doc.id));
+      const files = await Promise.all(
+        docsToZip.map(info => fetch(info.url).then(res => res.blob()).then(blob => ({ name: info.friendlyName, blob })))
+      );
+
+      const zip = new JSZip();
+      files.forEach(file => zip.file(file.name, file.blob));
+
+      // SANITIZE EMPLOYEE NAME FOR FILENAME ---
+      const employeeName = travelRequestData.employeeName?.replace(/\s+/g, '_') || 'Employee';
+      const zipFilename = `${employeeName}-TravelDocs-${id}.zip`;
+
+      saveAs(await zip.generateAsync({ type: 'blob' }), zipFilename);
+      handleCloseModal();
+    } catch (error) {
+      console.error("Failed to create or download zip file:", error);
+      toast.error("An error occurred while creating the zip file. Please try again.");
+    } finally {
+      setIsZipping(false);
+    }
+  };
+
+    const handlePreviewTicket = () => {
     if (travelRequestData && travelRequestData.ticketDocumentPath) {
+      
       setTicketPreviewUrl(travelRequestData.ticketDocumentPath);
+      console.log("ticket url: ", ticketPreviewUrl);
+      
       setIsTicketPreviewModalOpen(true);
     } else {
       toast.error("No ticket document is available for preview.");
+      console.warn("Preview requested, but 'uploadedTicketPdfPath' is missing from travelRequestData.");
     }
   };
+
+  const handleSelectionChange = (docId: string) => {
+    setSelectedDocs(prev => { const newSet = new Set(prev); newSet.has(docId) ? newSet.delete(docId) : newSet.add(docId); return newSet; });
+  };
   
-    const formatDate = (dateString: string | undefined): string => {
-        if (!dateString) return 'N/A';
-        const date = new Date(dateString);
-        return isNaN(date.getTime()) ? dateString : date.toLocaleDateString('en-GB');
-    };
-    const getFriendlyFilename = (doc: any): string => {
-        const extension = doc.documentPath?.split('.').pop() || 'file';
-        let name = `${doc.idType}-${doc.id}`;
-        if (doc.idType === 'TravelTicket') name = `TravelTicket-${doc.id}`;
-        else if (doc.idType === 'Passport' && doc.passportNumber) name = `Passport-${doc.passportNumber}`;
-        else if (doc.idType === 'Visa' && doc.visaNumber) name = `Visa-${doc.issuingCountry}-${doc.visaNumber}`;
-        else if (doc.idType === 'Aadhar' && doc.aadharName) name = `Aadhar-${doc.aadharName.replace(/\s/g, '_')}`;
-        return `${name}.${extension}`;
-    };
-    const handleCloseModal = () => {
-        hideModalContainer();
-        setActiveModal(null);
-        setModalInputText('');
-    };
-    const handleOpenDownloadModal = async () => {
-        if (!id || !travelRequestData?.userId) return;
-        setIsPreparingDocs(true);
-        try {
-        let docs: DocumentInfo[] = [];
-        if (travelRequestData.ticketDocumentPath) {
-            docs.push({ id: `ticket_${id}`, url: `http://localhost:5030/api/TravelRequest/${id}/downloadticket`, friendlyName: getFriendlyFilename({ idType: 'TravelTicket', id, documentPath: travelRequestData.ticketDocumentPath }), docData: {} });
-        }
-        const response = await fetch(`http://localhost:5030/api/Documents/User/${travelRequestData.userId}`);
-        if (response.ok) {
-            (await response.json())?.forEach((doc: any) => docs.push({ id: `doc_${doc.id}`, url: doc.documentPath, friendlyName: getFriendlyFilename(doc), docData: doc }));
-        }
-        if (docs.length === 0) { toast.error('No documents available.'); return; }
-        setAvailableDocs(docs);
-        setSelectedDocs(new Set(docs.map(d => d.id)));
-        setActiveModal('download');
-        showModalContainer(<></>);
-        } finally {
-        setIsPreparingDocs(false);
-        }
-    };
-    const handleZipAndDownload = async () => {
-        if (selectedDocs.size === 0 || !travelRequestData) return;
-        setIsZipping(true);
-        try {
-        const docsToZip = availableDocs.filter(doc => selectedDocs.has(doc.id));
-        const files = await Promise.all(
-            docsToZip.map(info => fetch(info.url).then(res => res.blob()).then(blob => ({ name: info.friendlyName, blob })))
-        );
-        const zip = new JSZip();
-        files.forEach(file => zip.file(file.name, file.blob));
-        const employeeName = travelRequestData.employeeName?.replace(/\s+/g, '_') || 'Employee';
-        const zipFilename = `${employeeName}-TravelDocs-${id}.zip`;
-        saveAs(await zip.generateAsync({ type: 'blob' }), zipFilename);
-        handleCloseModal();
-        } catch (error) {
-        console.error("Failed to create or download zip file:", error);
-        toast.error("An error occurred while creating the zip file. Please try again.");
-        } finally {
-        setIsZipping(false);
-        }
-    };
-    const handleSelectionChange = (docId: string) => {
-        setSelectedDocs(prev => { const newSet = new Set(prev); newSet.has(docId) ? newSet.delete(docId) : newSet.add(docId); return newSet; });
-    };
-    const handleSubmitFeedback = async () => {
-        await fetch(`http://localhost:5030/api/TravelRequest/${id}/travelfeedback`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ feedbackText: modalInputText, submittingUserId: userId }) });
-        setFeedbackSubmitted(true);
-        handleCloseModal();
-    };
-    const handleSubmitCloseRequest = async () => {
-        await axios.put(`http://localhost:5030/api/TravelRequest/${id}/updatestatus`, { requestId: id, newStatusId: 10, userId, comments: modalInputText, actionType: "CloseRequest" });
-        setRequestClosed(true);
-        fetchTravelRequest();
-        handleCloseModal();
-    };
-    const handleSubmitApproval = async () => {
-        await fetch(`http://localhost:5030/api/Approvals/${id}/manager/approve`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ approvingUserId: userId, comments: modalInputText }) });
-        setActionTaken(true);
-        fetchTravelRequest();
-        handleCloseModal();
-    };
-    const handleSubmitRejection = async () => {
-        if (!modalInputText.trim()) { toast.error('Please provide a rejection reason.'); return; }
-        await fetch(`http://localhost:5030/api/Approvals/${id}/manager/reject`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ rejectingUserId: userId, comments: modalInputText }) });
-        setActionTaken(true);
-        fetchTravelRequest();
-        handleCloseModal();
-    };
-    const handleSubmitCancelRequest = async () => {
-        const CANCELLED_STATUS_ID = 11;
-        if (!modalInputText.trim()) {
-        toast.error("A reason for cancellation is required.");
-        return;
-        }
-        await axios.put(`http://localhost:5030/api/TravelRequest/${id}/updatestatus`, {
-        requestId: id,
-        newStatusId: CANCELLED_STATUS_ID,
-        userId: userId,
-        comments: modalInputText,
-        actionType: "CancelRequest"
-        });
-        fetchTravelRequest();
-        handleCloseModal();
-    };
+  const handleSubmitFeedback = async () => {
+    await fetch(`http://localhost:5030/api/TravelRequest/${id}/travelfeedback`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ feedbackText: modalInputText, submittingUserId: userId }) });
+    setFeedbackSubmitted(true);
+    handleCloseModal();
+  };
+  const handleSubmitCloseRequest = async () => {
+    await axios.put(`http://localhost:5030/api/TravelRequest/${id}/updatestatus`, { requestId: id, newStatusId: 10, userId, comments: modalInputText, actionType: "CloseRequest" });
+    setRequestClosed(true);
+    fetchTravelRequest();
+    handleCloseModal();
+  };
+  const handleSubmitApproval = async () => {
+    await fetch(`http://localhost:5030/api/Approvals/${id}/manager/approve`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ approvingUserId: userId, comments: modalInputText }) });
+    setActionTaken(true);
+    fetchTravelRequest();
+    handleCloseModal();
+  };
+  const handleSubmitRejection = async () => {
+    if (!modalInputText.trim()) { toast.error('Please provide a rejection reason.'); return; }
+    await fetch(`http://localhost:5030/api/Approvals/${id}/manager/reject`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ rejectingUserId: userId, comments: modalInputText }) });
+    setActionTaken(true);
+    fetchTravelRequest();
+    handleCloseModal();
+  };
+   const handleSubmitCancelRequest = async () => {
+    const CANCELLED_STATUS_ID = 11;
+    if (!modalInputText.trim()) {
+      toast.error("A reason for cancellation is required.");
+      return;
+    }
+    await axios.put(`http://localhost:5030/api/TravelRequest/${id}/updatestatus`, {
+      requestId: id,
+      newStatusId: CANCELLED_STATUS_ID,
+      userId: userId,
+      comments: modalInputText,
+      actionType: "CancelRequest"
+    });
+    fetchTravelRequest();
+    handleCloseModal();
+  };
 
+  if (isLoading) return <div data-testid="loader-container" className="p-8 flex justify-center items-center"><Loader2 className="h-8 w-8 animate-spin text-gray-500" /></div>;
+  if (error) return <div className="p-8 text-center text-red-600">Error: {error}</div>;
+  if (!travelRequestData) return <div className="p-8 text-center text-gray-600">Travel request not found.</div>;
 
-    if (isLoading) return <div className="p-8 flex justify-center items-center"><Loader2 className="h-8 w-8 animate-spin text-gray-500" /></div>;
-    if (error) return <div className="p-8 text-center text-red-600">Error: {error}</div>;
-    if (!travelRequestData) return <div className="p-8 text-center text-gray-600">Travel request not found.</div>;
-    
-    let modalTitle: string | undefined;
-    let modalContent: ReactNode = '';
-    let modalButtons: ButtonConfig[] = [];
+  let modalTitle: string | undefined;
+  let modalContent: ReactNode = '';
+  let modalButtons: ButtonConfig[] = [];
 
     switch (activeModal) {
         case 'cancel':
