@@ -3,15 +3,15 @@
 <html lang="en">
 
 <head>
-    <title>Code coverage report for pages/admin/ReportComponents/exportData.tsx</title>
+    <title>Code coverage report for DateRangePicker.tsx</title>
     <meta charset="utf-8" />
-    <link rel="stylesheet" href="../../../prettify.css" />
-    <link rel="stylesheet" href="../../../base.css" />
-    <link rel="shortcut icon" type="image/x-icon" href="../../../favicon.png" />
+    <link rel="stylesheet" href="prettify.css" />
+    <link rel="stylesheet" href="base.css" />
+    <link rel="shortcut icon" type="image/x-icon" href="favicon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <style type='text/css'>
         .coverage-summary .sorter {
-            background-image: url(../../../sort-arrow-sprite.png);
+            background-image: url(sort-arrow-sprite.png);
         }
     </style>
 </head>
@@ -19,34 +19,34 @@
 <body>
 <div class='wrapper'>
     <div class='pad1'>
-        <h1><a href="../../../index.html">All files</a> / <a href="index.html">pages/admin/ReportComponents</a> exportData.tsx</h1>
+        <h1><a href="index.html">All files</a> DateRangePicker.tsx</h1>
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">96.19% </span>
+                <span class="strong">64.44% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>101/105</span>
+                <span class='fraction'>29/45</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">87.27% </span>
+                <span class="strong">29.26% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>48/55</span>
+                <span class='fraction'>12/41</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">42.85% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>12/12</span>
+                <span class='fraction'>6/14</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">95.95% </span>
+                <span class="strong">65.9% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>95/99</span>
+                <span class='fraction'>29/44</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line high'></div>
+    <div class='status-line medium'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -243,73 +243,64 @@
 <a name='L178'></a><a href='#L178'>178</a>
 <a name='L179'></a><a href='#L179'>179</a>
 <a name='L180'></a><a href='#L180'>180</a>
-<a name='L181'></a><a href='#L181'>181</a>
-<a name='L182'></a><a href='#L182'>182</a>
-<a name='L183'></a><a href='#L183'>183</a>
-<a name='L184'></a><a href='#L184'>184</a>
-<a name='L185'></a><a href='#L185'>185</a>
-<a name='L186'></a><a href='#L186'>186</a>
-<a name='L187'></a><a href='#L187'>187</a>
-<a name='L188'></a><a href='#L188'>188</a>
-<a name='L189'></a><a href='#L189'>189</a>
-<a name='L190'></a><a href='#L190'>190</a>
-<a name='L191'></a><a href='#L191'>191</a>
-<a name='L192'></a><a href='#L192'>192</a>
-<a name='L193'></a><a href='#L193'>193</a>
-<a name='L194'></a><a href='#L194'>194</a>
-<a name='L195'></a><a href='#L195'>195</a>
-<a name='L196'></a><a href='#L196'>196</a>
-<a name='L197'></a><a href='#L197'>197</a>
-<a name='L198'></a><a href='#L198'>198</a>
-<a name='L199'></a><a href='#L199'>199</a>
-<a name='L200'></a><a href='#L200'>200</a>
-<a name='L201'></a><a href='#L201'>201</a>
-<a name='L202'></a><a href='#L202'>202</a>
-<a name='L203'></a><a href='#L203'>203</a>
-<a name='L204'></a><a href='#L204'>204</a>
-<a name='L205'></a><a href='#L205'>205</a>
-<a name='L206'></a><a href='#L206'>206</a>
-<a name='L207'></a><a href='#L207'>207</a>
-<a name='L208'></a><a href='#L208'>208</a>
-<a name='L209'></a><a href='#L209'>209</a>
-<a name='L210'></a><a href='#L210'>210</a>
-<a name='L211'></a><a href='#L211'>211</a>
-<a name='L212'></a><a href='#L212'>212</a>
-<a name='L213'></a><a href='#L213'>213</a>
-<a name='L214'></a><a href='#L214'>214</a>
-<a name='L215'></a><a href='#L215'>215</a>
-<a name='L216'></a><a href='#L216'>216</a>
-<a name='L217'></a><a href='#L217'>217</a>
-<a name='L218'></a><a href='#L218'>218</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">5x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">5x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">1x</span>
+<a name='L181'></a><a href='#L181'>181</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -320,417 +311,315 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">5x</span>
-<span class="cline-any cline-yes">5x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">5x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">7x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">30x</span>
-<span class="cline-any cline-yes">30x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">30x</span>
-<span class="cline-any cline-yes">7x</span>
-<span class="cline-any cline-yes">5x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">23x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">21x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">7x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">13x</span>
-<span class="cline-any cline-yes">13x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">30x</span>
-<span class="cline-any cline-yes">30x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">30x</span>
-<span class="cline-any cline-yes">7x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">23x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">13x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">12x</span>
-<span class="cline-any cline-yes">12x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">12x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">9x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">8x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">8x</span>
-<span class="cline-any cline-yes">5x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">9x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">interface ExportDataOptions {
-  filename?: string;
-  headers: string[];
-  data: Record&lt;string, any&gt;[];
-  title?: string;
-  dateRange?: string;
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span></td><td class="text"><pre class="prettyprint lang-js">import React, { useState, useEffect, useRef } from 'react';
+import { Calendar, ChevronDown, X, AlertCircle } from 'lucide-react';
+&nbsp;
+interface DateRangePickerProps {
+  startDate: string;
+  endDate: string;
+  onStartDateChange: (date: string) =&gt; void;
+  onEndDateChange: (date: string) =&gt; void;
+  onApply: () =&gt; void;
 }
 &nbsp;
+const DateRangePicker: React.FC&lt;DateRangePickerProps&gt; = ({
+  startDate,
+  endDate,
+  onStartDateChange,
+  onEndDateChange,
+  onApply, 
+}) =&gt; {
+  const [isOpen, setIsOpen] = useState(false);
+  const [validationError, setValidationError] = useState('');
+  const datePickerRef = useRef&lt;HTMLDivElement&gt;(null);
 &nbsp;
-const loadSheetJS = (): Promise&lt;any&gt; =&gt; {
-  return new Promise((resolve, reject) =&gt; {
-    
-    if (typeof window !== 'undefined' &amp;&amp; (window as any).XLSX) {
-      resolve((window as any).XLSX);
-      return;
+  // Validate date range
+  const validateDateRange = (start: string, end: string): string =&gt; {
+    <span class="missing-if-branch" title="if path not taken" >I</span>if (start &amp;&amp; end &amp;&amp; new Date(start) &gt; new Date(end)) {
+<span class="cstat-no" title="statement not covered" >      return 'End date must be on or after the start date';</span>
     }
+    return '';
+  };
 &nbsp;
-    
-    const script = document.createElement('script');
-    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
-    script.onload = () =&gt; {
-      if ((window as any).XLSX) {
-        resolve((window as any).XLSX);
-      } else <span class="missing-if-branch" title="else path not taken" >E</span>{
-<span class="cstat-no" title="statement not covered" >        reject(new Error('Failed to load SheetJS library'));</span>
+  // Update validation when dates change
+  useEffect(() =&gt; {
+    const error = validateDateRange(startDate, endDate);
+    setValidationError(error);
+  }, [startDate, endDate]);
+&nbsp;
+  // Close date picker when clicking outside
+  useEffect(() =&gt; {
+    const handleClickOutside = <span class="fstat-no" title="function not covered" >(e</span>vent: MouseEvent) =&gt; {
+<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (datePickerRef.current &amp;&amp; !datePickerRef.current.contains(event.target as Node)) {</span>
+<span class="cstat-no" title="statement not covered" >        setIsOpen(false);</span>
       }
     };
-    script.onerror = () =&gt; reject(new Error('Failed to load SheetJS library'));
-    document.head.appendChild(script);
-  });
+&nbsp;
+    <span class="missing-if-branch" title="if path not taken" >I</span>if (isOpen) {
+<span class="cstat-no" title="statement not covered" >      document.addEventListener('mousedown', handleClickOutside);</span>
+    }
+&nbsp;
+    return () =&gt; {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isOpen]);
+&nbsp;
+  const formatDisplayDate = (dateString: string): string =&gt; {
+    <span class="missing-if-branch" title="if path not taken" >I</span>if (!dateString) <span class="cstat-no" title="statement not covered" >return '';</span>
+    const date = new Date(dateString);
+&nbsp;
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
+  };
+&nbsp;
+  const displayText = startDate &amp;&amp; endDate
+    ? `${formatDisplayDate(startDate)} - ${formatDisplayDate(endDate)}`
+    : <span class="branch-1 cbranch-no" title="branch not covered" >"Select date range";</span>
+&nbsp;
+  const handleStartDateChange = <span class="fstat-no" title="function not covered" >(d</span>ate: string) =&gt; {
+<span class="cstat-no" title="statement not covered" >    onStartDateChange(date);</span>
+<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (date &amp;&amp; endDate &amp;&amp; new Date(date) &gt; new Date(endDate)) {</span>
+<span class="cstat-no" title="statement not covered" >      onEndDateChange('');</span>
+    }
+  };
+&nbsp;
+  const handleEndDateChange = <span class="fstat-no" title="function not covered" >(d</span>ate: string) =&gt; {
+<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (!startDate || !date || new Date(date) &gt;= new Date(startDate)) {</span>
+<span class="cstat-no" title="statement not covered" >      onEndDateChange(date);</span>
+    }
+  };
+  
+  const handleApplyClick = <span class="fstat-no" title="function not covered" >() =</span>&gt; {
+<span class="cstat-no" title="statement not covered" >    onApply(); </span>
+<span class="cstat-no" title="statement not covered" >    setIsOpen(false); </span>// Close the picker
+  };
+&nbsp;
+  const hasValidationError = validationError !== '';
+  const endDateHasError = hasValidationError &amp;&amp; <span class="branch-1 cbranch-no" title="branch not covered" >endDate !== '';</span>
+&nbsp;
+  return (
+    &lt;div className="relative z-30"&gt;
+      &lt;div
+        className={`flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-md cursor-pointer border transition-colors ${
+          hasValidationError
+            ? <span class="branch-0 cbranch-no" title="branch not covered" >'border-red-300 hover:border-red-400'</span>
+            : 'border-gray-200 hover:border-gray-300'
+        }`}
+        onClick={<span class="fstat-no" title="function not covered" >() =</span>&gt; <span class="cstat-no" title="statement not covered" >setIsOpen(!isOpen)}</span>
+      &gt;
+        &lt;Calendar className={`h-4 w-4 ${hasValidationError ? <span class="branch-0 cbranch-no" title="branch not covered" >'text-red-600' </span>: 'text-gray-600'}`} /&gt;
+        &lt;span className={`text-sm ${hasValidationError ? <span class="branch-0 cbranch-no" title="branch not covered" >'text-red-800' </span>: 'text-gray-800'}`}&gt;
+          {displayText}
+        &lt;/span&gt;
+        {hasValidationError &amp;&amp; <span class="branch-1 cbranch-no" title="branch not covered" >&lt;AlertCircle className="h-4 w-4 text-red-600" /&gt;}</span>
+        &lt;ChevronDown className="h-4 w-4 text-gray-600 ml-2" /&gt;
+      &lt;/div&gt;
+&nbsp;
+      {isOpen &amp;&amp; (
+<span class="branch-1 cbranch-no" title="branch not covered" >        &lt;div</span>
+          ref={datePickerRef}
+          className="absolute right-0 mt-2 z-20 bg-white rounded-md shadow-lg border border-gray-200 p-4 w-80 opacity-100"
+        &gt;
+          &lt;div className="flex justify-between items-center mb-3"&gt;
+            &lt;h3 className="text-sm font-medium text-gray-800"&gt;Select Date Range&lt;/h3&gt;
+            &lt;button
+              onClick={<span class="fstat-no" title="function not covered" >() =</span>&gt; <span class="cstat-no" title="statement not covered" >setIsOpen(false)}</span>
+              className="flex items-center justify-center w-6 h-6 rounded-full bg-gray-200 hover:bg-gray-300 text-gray-700"
+              aria-label="Close"
+            &gt;
+              &lt;X className="h-4 w-4" /&gt;
+            &lt;/button&gt;
+          &lt;/div&gt;
+&nbsp;
+          {validationError &amp;&amp; (
+            &lt;div className="mb-3 p-2 bg-red-50 border border-red-200 rounded-md"&gt;
+              &lt;div className="flex items-center gap-2"&gt;
+                &lt;AlertCircle className="h-4 w-4 text-red-600" /&gt;
+                &lt;span className="text-xs text-red-700"&gt;{validationError}&lt;/span&gt;
+              &lt;/div&gt;
+            &lt;/div&gt;
+          )}
+&nbsp;
+          &lt;div className="grid grid-cols-2 gap-4"&gt;
+            &lt;div&gt;
+              &lt;label className="block text-xs font-medium text-gray-600 mb-1"&gt;Start Date&lt;/label&gt;
+              &lt;input
+                type="date"
+                value={startDate}
+                onChange={<span class="fstat-no" title="function not covered" >(e</span>) =&gt; <span class="cstat-no" title="statement not covered" >handleStartDateChange(e.target.value)}</span>
+                className="w-full p-2 border border-gray-300 rounded-md text-sm bg-white text-gray-800 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              /&gt;
+            &lt;/div&gt;
+            &lt;div&gt;
+              &lt;label className="block text-xs font-medium text-gray-600 mb-1"&gt;
+                End Date
+              &lt;/label&gt;
+              &lt;input
+                type="date"
+                value={endDate}
+                min={startDate || undefined}
+                onChange={<span class="fstat-no" title="function not covered" >(e</span>) =&gt; <span class="cstat-no" title="statement not covered" >handleEndDateChange(e.target.value)}</span>
+                className={`w-full p-2 border rounded-md text-sm bg-white placeholder-gray-400 transition-colors ${
+                  endDateHasError
+                    ? 'border-red-300 text-red-800 focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-red-50'
+                    : 'border-gray-300 text-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
+                }`}
+                disabled={!startDate}
+              /&gt;
+            &lt;/div&gt;
+          &lt;/div&gt;
+          &lt;div className="mt-4 flex justify-end"&gt;
+            
+            &lt;button
+              onClick={handleApplyClick}
+              className={`px-3 py-1 text-white text-sm rounded-md transition-colors ${
+                hasValidationError
+                  ? 'bg-gray-400 cursor-not-allowed'
+                  : 'bg-blue-600 hover:bg-blue-700'
+              }`}
+              disabled={hasValidationError}
+            &gt;
+              Apply
+            &lt;/button&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+      )}
+    &lt;/div&gt;
+  );
 };
 &nbsp;
-/**
- * Converts table data to Excel format and triggers download
- * @param options - Export configuration options
- */
-export const exportData = async ({
-  filename = 'travel-data',
-  headers,
-  data,
-  title,
-  dateRange
-}: ExportDataOptions): Promise&lt;void&gt; =&gt; {
-  try {
-    console.log('Starting Excel export...');
-    
-  
-    const XLSX = await loadSheetJS();
-    console.log('SheetJS loaded successfully');
-    
-  
-    const workbook = XLSX.utils.book_new();
-    
-    
-    const worksheetData: any[][] = [];
-  
-    if (title) {
-      worksheetData.push([title]);
-      worksheetData.push([]);
-    }
-    
-    if (dateRange) {
-      worksheetData.push([dateRange]);
-      worksheetData.push([]); 
-    }
-    
-    // Add headers row
-    worksheetData.push(headers);
-    
-    // Add data rows
-    data.forEach(row =&gt; {
-      const rowValues = headers.map(header =&gt; {
-        // Convert header to key (same logic as ReusableTable)
-        const key = header.toLowerCase().replace(/\s+/g, '_');
-        let value = row[key] !== undefined ? row[key] : row[Object.keys(row)[headers.indexOf(header)]];
-        
-        // Special handling for travel_type to ensure proper capitalization
-        if (key === 'travel_type') {
-          if (value === 'domestic') return 'Domestic';
-          if (value === 'international') return 'International';
-          return value || 'Unknown';
-        }
-        
-        // Clean up value formatting for Excel
-        if (typeof value === 'string' &amp;&amp; value.startsWith(' ₹')) {
-          // Convert currency strings to numbers for better Excel formatting
-          const numericValue = value.replace(/[$,]/g, '');
-          const parsedValue = parseFloat(numericValue);
-          return isNaN(parsedValue) ? value : <span class="branch-1 cbranch-no" title="branch not covered" >parsedValue;</span>
-        }
-        
-        return value || '';
-      });
-      
-      worksheetData.push(rowValues);
-    });
-&nbsp;
-    console.log('Worksheet data prepared:', worksheetData);
-&nbsp;
-    // Create worksheet from data
-    const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
-    
-    // Set column widths for better formatting
-    const columnWidths = headers.map(header =&gt; {
-      // Calculate optimal width based on header length and data
-      const headerLength = header.length;
-      const maxDataLength = Math.max(
-        ...data.map(row =&gt; {
-          const key = header.toLowerCase().replace(/\s+/g, '_');
-          const value = row[key] !== undefined ? row[key] : row[Object.keys(row)[headers.indexOf(header)]];
-          // Handle travel_type specifically for width calculation
-          if (key === 'travel_type') {
-            return String(value === 'domestic' ? 'Domestic' : value === 'international' ? 'International' : value || 'Unknown').length;
-          }
-          return String(value || '').length;
-        })
-      );
-      
-      return { wch: Math.max(headerLength, maxDataLength, 10) + 2 };
-    });
-    
-    worksheet['!cols'] = columnWidths;
-    
-    // Add worksheet to workbook
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Travel Data');
-    
-    console.log('Workbook created, generating Excel file...');
-    
-    // Generate Excel file and trigger download
-    XLSX.writeFile(workbook, `${filename}.xlsx`);
-    
-    console.log('Excel export completed successfully');
-  } catch (error) {
-    console.error('Excel export failed:', error);
-    
-    // Fallback to CSV if Excel export fails
-    console.log('Falling back to CSV export...');
-    exportAsCSVFallback({ filename, headers, data, title, dateRange });
-  }
-};
-&nbsp;
-/**
- * Fallback CSV export function in case Excel export fails
- * @param options - Export configuration options
- */
-const exportAsCSVFallback = ({
-  filename = <span class="branch-0 cbranch-no" title="branch not covered" >'travel-data',</span>
-  headers,
-  data,
-  title,
-  dateRange
-}: ExportDataOptions): void =&gt; {
-  try {
-    console.log('Starting CSV fallback export...');
-    
-    let csvContent = '';
-    
-    // Add title and date range as header comments if provided
-    if (title) {
-      csvContent += `${title}\n`;
-    }
-    if (dateRange) {
-      csvContent += `${dateRange}\n`;
-    }
-    if (title || <span class="branch-1 cbranch-no" title="branch not covered" >dateRange)</span> {
-      csvContent += '\n'; // Add blank line after header comments
-    }
-&nbsp;
-    // Add headers
-    csvContent += headers.join(',') + '\n';
-&nbsp;
-    // Add data rows
-    data.forEach(row =&gt; {
-      const rowValues = headers.map(header =&gt; {
-        const key = header.toLowerCase().replace(/\s+/g, '_');
-        let value = row[key] !== undefined ? row[key] : <span class="branch-1 cbranch-no" title="branch not covered" >row[Object.keys(row)[headers.indexOf(header)]];</span>
-        
-        // Special handling for travel_type to ensure proper capitalization
-        if (key === 'travel_type') {
-          if (value === 'domestic') return 'Domestic';
-          if (value === 'international') return 'International';
-<span class="cstat-no" title="statement not covered" >          return value || 'Unknown';</span>
-        }
-        
-        // Handle different value types
-        if (value === null || value === undefined) {
-          value = '';
-        } else if (typeof value === 'string') {
-          // Escape quotes and wrap in quotes if contains comma, quote, or newline
-          if (value.includes(',') || value.includes('"') || value.includes('\n')) {
-            value = '"' + value.replace(/"/g, '""') + '"';
-          }
-        }
-        
-        return value;
-      });
-      
-      csvContent += rowValues.join(',') + '\n';
-    });
-&nbsp;
-    // Create and trigger download
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', `${filename}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-    
-    console.log('CSV fallback export completed successfully');
-  } catch (error) {
-<span class="cstat-no" title="statement not covered" >    console.error('CSV fallback export also failed:', error);</span>
-<span class="cstat-no" title="statement not covered" >    alert('Export failed. Please try again.');</span>
-  }
-};</pre></td></tr></table></pre>
+export default DateRangePicker;</pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
             </div><!-- /wrapper -->
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-06-13T06:31:04.770Z
+                at 2025-06-10T12:07:24.488Z
             </div>
-        <script src="../../../prettify.js"></script>
+        <script src="prettify.js"></script>
         <script>
             window.onload = function () {
                 prettyPrint();
             };
         </script>
-        <script src="../../../sorter.js"></script>
-        <script src="../../../block-navigation.js"></script>
+        <script src="sorter.js"></script>
+        <script src="block-navigation.js"></script>
     </body>
 </html>
     
