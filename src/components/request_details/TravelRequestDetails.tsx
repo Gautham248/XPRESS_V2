@@ -123,7 +123,9 @@ const TravelRequestDetails: React.FC = () => {
   let role = '';
   let userId: number | undefined = undefined;
   
-  console.log(travelRequestData?.ticketDocumentPath);
+  // console.log(travelRequestData?.ticketDocumentPath);
+  // console.log(travelRequestData?.status);
+  
 
   if (userString) {
     const user = JSON.parse(userString);
@@ -141,7 +143,7 @@ const TravelRequestDetails: React.FC = () => {
       
       const data = await response.json();
 
-      console.log("API response for TravelRequestDetails:", data.result);
+      // console.log("API response for TravelRequestDetails:", data.result);
 
       if (data.isSuccess && data.result) {
         const apiData = data.result;
@@ -238,7 +240,7 @@ const TravelRequestDetails: React.FC = () => {
     if (travelRequestData && travelRequestData.ticketDocumentPath) {
       
       setTicketPreviewUrl(travelRequestData.ticketDocumentPath);
-      console.log("ticket url: ", ticketPreviewUrl);
+      // console.log("ticket url: ", ticketPreviewUrl);
       
       setIsTicketPreviewModalOpen(true);
     } else {
@@ -371,7 +373,25 @@ const TravelRequestDetails: React.FC = () => {
   const showManagerActionButtons = isManager && travelRequestData.status === 'PendingReview' && !actionTaken;
   const areAnyDocumentsAvailable = !!travelRequestData.ticketDocumentPath || (travelRequestData.userId > 0);
   const isRequestActive = travelRequestData.currentStatusId < 10;
-  const showCancelButton = (isManager || isEmployee) && isRequestActive;
+  const managerCancelStatuses = [
+    'Approved',
+    'OptionsListed',
+    'OptionSelected',
+    'DUApproved',
+    'BUApproved',
+    'TicketsDispatched'
+  ];
+
+  const employeeCancelStatuses = [
+    ...managerCancelStatuses,
+    'PendingReview'
+  ];
+
+  const showCancelButton = isRequestActive && (
+    (isManager && managerCancelStatuses.includes(travelRequestData.status)) ||
+    (isEmployee && employeeCancelStatuses.includes(travelRequestData.status))
+  );
+
 
   return (
     <div className="space-y-6 animate-fadeIn">
