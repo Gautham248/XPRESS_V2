@@ -4,17 +4,8 @@ import {
   Clock, 
   X 
 } from 'lucide-react';
+import { TimelineStep } from './types';
 
-export interface TimelineStep {
-  id: string;
-  status: string;
-  date: string;
-  description: string;
-  completed: boolean;
-  active?: boolean;
-  rejected?: boolean;
-  isModified?: boolean;
-}
 
 interface TimelineModalProps {
   timeline: TimelineStep[];

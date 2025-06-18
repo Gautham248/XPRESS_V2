@@ -1,38 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios, { AxiosError } from "axios";
 import { Briefcase, Check, Users, Plane, TrainFront, Loader2, AlertCircle, Phone } from "lucide-react";
-
-export interface TravelRequestApiResponse {
-  isSuccess: boolean;
-  result: Array<{
-    requestId: string;
-    employeeName: string;
-    departmentName: string;
-    projectCode: string;
-    projectManager: string;
-    travelModeName: string;
-    sourcePlace: string;
-    sourceCountry: string;
-    destinationPlace: string;
-    destinationCountry: string;
-    phoneNumber: string;
-  }>;
-  statusCode: number;
-  errorMessages: string[];
-}
-
-// Transform API data to component data
-export interface TravelRequestData {
-  requestId: string;
-  travelerName: string;
-  departmentCode: string;
-  projectCode: string;
-  projectManager: string;
-  transportationType: string;
-  source: string;
-  destination: string;
-  phoneNumber: string;
-}
+import { TravelRequestApiResponse, TravelRequestData } from "./types";
 
 interface TravelInfoBannerProps {
   requestId?: string;

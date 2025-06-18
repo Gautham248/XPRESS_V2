@@ -1,24 +1,9 @@
 import React, { useState, useCallback, memo, useEffect } from 'react';
 import { X, Plus, Plane, Loader2 } from 'lucide-react';
-import axios from 'axios'; // Make sure axios is imported
+import axios from 'axios';
 import Autocomplete from './Autocomplete';
 import FileUploader from './FileUploader';
-
-export interface AirlineTicketData {
-    travelAgencyName: string;
-    agencyBookingCharge: number;
-    totalExpense: number;
-    pdfFilePath: string | null;
-    airlines: {
-        name: string;
-        cost: number;
-    }[];
-}
-
-export interface Airline {
-    name: string;
-    cost: string;
-}
+import { AirlineTicketData, Airline } from '../types';
 
 interface UploadTicketsModalProps {
     isOpen: boolean;
@@ -42,7 +27,6 @@ const UploadTicketsModal: React.FC<UploadTicketsModalProps> = memo(({
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [airlines, setAirlines] = useState<Airline[]>([{ name: '', cost: '' }]);
     const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-
     const [airlineOptions, setAirlineOptions] = useState<string[]>([]);
 
     useEffect(() => {

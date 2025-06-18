@@ -65,9 +65,6 @@ interface TravelRequestData {
   dropOffLocation: string | null;
   travelFeedback: string | null;
   comments: Comment[];
-  // travelerName: string;
-  // initialComments: string | null;
-  // foodComment: string | null;
 }
 
 interface TravelInfoProps {

@@ -3,52 +3,13 @@ import axios, { AxiosError } from 'axios';
 import SelectedView from './component_view/SelectedView';
 import SelectTicketView from './component_view/SelectTicketView';
 import UploadTicketView from './component_view/UploadTicketView';
-import UploadTicketsModal, { AirlineTicketData } from './UploadTicketsModal';
+import UploadTicketsModal from './UploadTicketsModal';
 import { useModal } from '../confirmation_modal/hooks/useModal';
 import ConfirmationModal from '../confirmation_modal/ConfirmationModal';
 import { Edit, Loader2, Check, Clock } from 'lucide-react';
 import StatusMessage from './StatusMessage';
-import { INDEX_TO_STATUS_MAP } from '../TravelRequestDetails';
-import { TravelRequestApiResponse, TravelRequestData } from '../TravelInfoBanner';
-
-// --- API Related Interfaces ---
-interface ApiTravelRequestDetail {
-  currentStatusId: number;
-  transportation: string;
-  uploadedTicketPdfPath?: string;
-}
-
-interface TravelRequestDetailApiResponse {
-  isSuccess: boolean;
-  result: ApiTravelRequestDetail;
-  statusCode: number;
-  errorMessages: string[];
-}
-interface ApiTicketOptionItem {
-  optionId: number;
-  requestId: string;
-  createdByUserId: number;
-  optionDescription: string;
-  createdAt: string;
-  isSelected: boolean;
-}
-interface TicketOptionApiResponse {
-  isSuccess: boolean;
-  result: ApiTicketOptionItem[];
-  statusCode: number;
-  errorMessages: string[];
-}
-interface AddTicketOptionPayload {
-  optionDescription: string;
-  createdByUserId: number;
-}
-interface EditTicketOptionPayload {
-  optionDescription: string;
-}
-interface SelectTicketOptionPayload {
-  selectingUserId: number;
-  comments: string;
-}
+import { AddTicketOptionPayload, ApiTicketOptionItem, ApiTravelRequestDetail, EditTicketOptionPayload, INDEX_TO_STATUS_MAP, SelectTicketOptionPayload, TicketOptionApiResponse, TravelRequestDetailApiResponse } from '../types';
+import { TravelRequestApiResponse, TravelRequestData, AirlineTicketData } from '../types';
 
 // --- Component Specific Types ---
 interface TicketProps {
@@ -89,8 +50,8 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId, onPreviewTick
   const [isLoadingOptions, setIsLoadingOptions] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [, setTravelRequestDetails] = useState<ApiTravelRequestDetail | null>(null);
-  const [travelRequest, setTravelRequest] = useState<TravelRequestData | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [, setTravelRequest] = useState<TravelRequestData | null>(null);
+  const [, setLoading] = useState(false);
 
   const {
     isOpen: isConfirmModalOpen,
@@ -442,7 +403,7 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId, onPreviewTick
       try {
         const response = await axios.delete(`${API_BASE_URL}/travelrequests/${requestId}/ticketoptions/all`);
         if (response.data.isSuccess) {
-          await fetchTicketOptions(requestId); // Refresh the list
+          await fetchTicketOptions(requestId);
         } else {
           setError(response.data.errorMessages?.join(', ') || "Failed to clear all options.");
         }

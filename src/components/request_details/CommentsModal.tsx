@@ -1,5 +1,3 @@
-// src/components/CommentsModal.tsx (or similar path)
-
 import React from 'react';
 import { X, MessageSquare } from 'lucide-react';
 
