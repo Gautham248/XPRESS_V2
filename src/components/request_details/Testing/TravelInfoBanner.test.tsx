@@ -1,4 +1,5 @@
-// TravelInfoBanner.test.tsx
+// src/components/request_details/TravelInfoBanner.test.tsx
+
 import { render, screen, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import axios from 'axios';

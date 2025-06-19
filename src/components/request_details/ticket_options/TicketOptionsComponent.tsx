@@ -62,7 +62,11 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId, onPreviewTick
     closeModal: closeConfirmModal,
   } = useModal();
 
-  // Effect to get current user
+ 
+  
+
+
+ // Effect to get current user
   useEffect(() => {
     const userData = localStorage.getItem('user');
     if (userData) {
@@ -89,6 +93,7 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId, onPreviewTick
         const url = `${apiUrl}/${requestId}`;
         const response = await axios.get<TravelRequestApiResponse>(url);
         setTransportationType(response.data.result[0]?.travelModeName);
+        
         
         if (response.data.isSuccess && response.data.result.length > 0) {
             const apiData = response.data.result[0];
@@ -185,7 +190,6 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId, onPreviewTick
       setIsLoadingStatus(false);
     }
   }, [requestId]);
-
   const fetchTicketOptions = useCallback(async (currentRequestId: string) => {
     if (!currentRequestId) return;
     setIsLoadingOptions(true);
@@ -509,16 +513,6 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId, onPreviewTick
       setIsLoadingOptions(false);
     }
   };
-
-  // const handleDownloadTicket = () => {
-  //   if (!requestId) {
-  //     setError("Cannot download ticket: Request ID is missing.");
-  //     return;
-  //   }
-  //   const downloadUrl = `${API_BASE_URL}/TravelRequest/${requestId}/downloadticket`;
-    
-  //   window.open(downloadUrl, '_blank');
-  // };
 
   const renderContent = () => {
     if (isLoadingStatus || !currentUser) {

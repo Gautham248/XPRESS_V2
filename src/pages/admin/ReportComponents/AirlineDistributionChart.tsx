@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { ExternalLink, Filter, ChevronDown, Globe, MapPin } from 'lucide-react';
 import ReusableTable from './ReusableTable';
 import Modal from './Modal';
@@ -27,7 +27,7 @@ interface AirlineReportItem {
   totalAirlineExpense: number;
 }
 
-interface AirlineReportsResponse {
+export interface AirlineReportsResponse {
   isSuccess: boolean;
   result: AirlineReportItem[];
   statusCode: number;
@@ -41,6 +41,60 @@ interface AirlineDistributionChartProps {
 
 type TravelTypeFilter = 'all' | 'International' | 'Domestic';
 
+interface TooltipProps {
+  active?: boolean;
+  payload?: Array<{
+    payload: PieChartItem;
+    color: string;
+  }>;
+  label?: string;
+}
+
+interface CustomLabelProps {
+  cx?: number;
+  cy?: number;
+  midAngle?: number;
+  innerRadius?: number;
+  outerRadius?: number;
+  value: number;
+}
+
+interface FilterOption {
+  value: string;
+  label: string;
+  icon: React.ReactNode;
+  count: number;
+}
+
+// Custom Tooltip Component - Updated to remove travel type
+const CustomTooltip: React.FC<TooltipProps> = ({ active, payload }) => {
+  if (active && payload && payload.length) {
+    const data = payload[0].payload;
+    return (
+      <div className="bg-white border border-gray-300 rounded-lg shadow-lg p-3 min-w-48">
+        <div className="flex items-center mb-2">
+          <div 
+            className="w-3 h-3 rounded-sm mr-2" 
+            style={{ backgroundColor: payload[0].color }}
+          />
+          <h3 className="font-semibold text-gray-800 text-sm">{data.name}</h3>
+        </div>
+        <div className="space-y-1 text-xs">
+          <div className="flex justify-between">
+            <span className="text-gray-600">Total Trips:</span>
+            <span className="font-medium text-gray-800">{data.value}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-600">Total Cost:</span>
+            <span className="font-medium text-gray-800">₹{(data.cost || 0).toLocaleString()}</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  return null;
+};
+
 const AirlineDistributionChart: React.FC<AirlineDistributionChartProps> = ({ 
   startDate, 
   endDate 
@@ -49,14 +103,14 @@ const AirlineDistributionChart: React.FC<AirlineDistributionChartProps> = ({
   const [travelTypeFilter, setTravelTypeFilter] = useState<TravelTypeFilter>('all');
   const [isFilterOpen, setIsFilterOpen] = useState<boolean>(false);
   
-  // State for API data
-  const [chartData, setChartData] = useState<PieChartItem[]>([]);
+  // State for API data - Keep original data separate
+  const [originalApiData, setOriginalApiData] = useState<AirlineReportItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
   // Fetch airline data from API
   useEffect(() => {
-    const fetchAirlineData = async () => {
+    const fetchAirlineData = async (): Promise<void> => {
       if (!startDate || !endDate) return;
       
       setLoading(true);
@@ -74,22 +128,15 @@ const AirlineDistributionChart: React.FC<AirlineDistributionChartProps> = ({
         const data: AirlineReportsResponse = await response.json();
         
         if (data.isSuccess && data.result) {
-          // Transform API data to chart format
-          const transformedData: PieChartItem[] = data.result.map(item => ({
-            name: item.airlineName,
-            value: item.travelRequestCount,
-            cost: item.totalAirlineExpense,
-            travelType: item.typeOfTravel
-          }));
-          
-          setChartData(transformedData);
+          setOriginalApiData(data.result);
         } else {
           const errorMessage = data.errorMessages?.join(' ') || 'Unknown API error occurred';
           throw new Error(errorMessage);
         }
-      } catch (err: any) {
-        setError(err.message);
-        setChartData([]);
+      } catch (err: unknown) {
+        const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
+        setError(errorMessage);
+        setOriginalApiData([]);
       } finally {
         setLoading(false);
       }
@@ -98,16 +145,50 @@ const AirlineDistributionChart: React.FC<AirlineDistributionChartProps> = ({
     fetchAirlineData();
   }, [startDate, endDate]);
   
-  // Filter data based on travel type
-  const filteredChartData = useMemo(() => {
-    if (travelTypeFilter === 'all') {
-      return chartData;
+  // Process data based on current filter
+  const chartData = useMemo(() => {
+    if (originalApiData.length === 0) return [];
+    
+    // Filter the original data first based on travel type filter
+    let filteredApiData = originalApiData;
+    if (travelTypeFilter !== 'all') {
+      filteredApiData = originalApiData.filter(item => item.typeOfTravel === travelTypeFilter);
     }
-    return chartData.filter(item => item.travelType === travelTypeFilter);
-  }, [chartData, travelTypeFilter]);
+    
+    // Then group by airline name
+    const airlineMap = new Map<string, { trips: number; cost: number; travelType: 'International' | 'Domestic' | 'Both' }>();
+    
+    filteredApiData.forEach(item => {
+      const existing = airlineMap.get(item.airlineName);
+      if (existing) {
+        existing.trips += item.travelRequestCount;
+        existing.cost += item.totalAirlineExpense;
+        // If we already have a different travel type, mark as 'Both'
+        if (existing.travelType !== item.typeOfTravel) {
+          existing.travelType = 'Both';
+        }
+      } else {
+        airlineMap.set(item.airlineName, {
+          trips: item.travelRequestCount,
+          cost: item.totalAirlineExpense,
+          travelType: item.typeOfTravel
+        });
+      }
+    });
+    
+    // Transform to chart format
+    const transformedData: PieChartItem[] = Array.from(airlineMap.entries()).map(([name, data]) => ({
+      name,
+      value: data.trips,
+      cost: data.cost,
+      travelType: data.travelType === 'Both' ? undefined : data.travelType
+    }));
+    
+    return transformedData;
+  }, [originalApiData, travelTypeFilter]);
   
   // Check if filtered data is empty or only contains zero values
-  const isEmptyData = filteredChartData.length === 0 || filteredChartData.every(item => item.value === 0);
+  const isEmptyData: boolean = chartData.length === 0 || chartData.every(item => item.value === 0);
   
   // Generate dynamic colors based on number of airlines
   const generateColors = (count: number): string[] => {
@@ -140,18 +221,11 @@ const AirlineDistributionChart: React.FC<AirlineDistributionChartProps> = ({
     }
   };
   
-  const COLORS: string[] = generateColors(filteredChartData.length);
-  const totalTrips: number = filteredChartData.reduce((sum, item) => sum + item.value, 0);
-  const totalCost: number = filteredChartData.reduce((sum, item) => sum + (item.cost || 0), 0);
+  const COLORS: string[] = generateColors(chartData.length);
+  const totalTrips: number = chartData.reduce((sum, item) => sum + item.value, 0);
+  const totalCost: number = chartData.reduce((sum, item) => sum + (item.cost || 0), 0);
 
-  const renderCustomizedLabel = (props: {
-    cx?: number;
-    cy?: number;
-    midAngle?: number;
-    innerRadius?: number;
-    outerRadius?: number;
-    value: number;
-  }) => {
+  const renderCustomizedLabel = (props: CustomLabelProps): JSX.Element | null => {
     const { cx, cy, midAngle, innerRadius, outerRadius, value } = props;
     
     if (cx === undefined || cy === undefined || midAngle === undefined || 
@@ -173,11 +247,13 @@ const AirlineDistributionChart: React.FC<AirlineDistributionChartProps> = ({
 
   // Table headers
   const tableHeaders: string[] = ["Airline", "Trips", "Cost", "Travel Type"];
-  const tableData: TableDataItem[] = filteredChartData.map(item => ({
+  const tableData: TableDataItem[] = chartData.map(item => ({
     airline: item.name,
     trips: item.value,
     cost: `₹${(item.cost || 0).toLocaleString()}`,
-    travel_type: item.travelType ? item.travelType.charAt(0).toUpperCase() + item.travelType.slice(1) : 'Unknown'
+    travel_type: travelTypeFilter === 'all' 
+      ? (item.travelType ? item.travelType.charAt(0).toUpperCase() + item.travelType.slice(1) : 'Both')
+      : travelTypeFilter.charAt(0).toUpperCase() + travelTypeFilter.slice(1)
   }));
 
   // Prepare export configuration for the modal
@@ -200,7 +276,7 @@ const AirlineDistributionChart: React.FC<AirlineDistributionChartProps> = ({
   };
 
   // Get filter icon
-  const getFilterIcon = () => {
+  const getFilterIcon = (): JSX.Element => {
     switch (travelTypeFilter) {
       case 'International':
         return <Globe className="w-4 h-4" />;
@@ -212,19 +288,37 @@ const AirlineDistributionChart: React.FC<AirlineDistributionChartProps> = ({
   };
 
   // Flight icon for empty state
-  const flightIcon = (
+  const flightIcon: JSX.Element = (
     <svg className="w-16 h-16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path d="M21.5 12H6.5M21.5 12L16.5 7M21.5 12L16.5 17M6.5 12L2.5 18M6.5 12L2.5 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 
-  const filterOptions = [
-    { value: 'all', label: 'All Flights', icon: <Filter className="w-4 h-4" />, count: chartData.length },
-    { value: 'International', label: 'International Only', icon: <Globe className="w-4 h-4" />, count: chartData.filter(item => item.travelType === 'International').length },
-    { value: 'Domestic', label: 'Domestic Only', icon: <MapPin className="w-4 h-4" />, count: chartData.filter(item => item.travelType === 'Domestic').length }
+  // Calculate filter counts based on original data
+  const getFilterCounts = () => {
+    const allCount = new Set(originalApiData.map(item => item.airlineName)).size;
+    const internationalCount = new Set(
+      originalApiData
+        .filter(item => item.typeOfTravel === 'International')
+        .map(item => item.airlineName)
+    ).size;
+    const domesticCount = new Set(
+      originalApiData
+        .filter(item => item.typeOfTravel === 'Domestic')
+        .map(item => item.airlineName)
+    ).size;
+
+    return { allCount, internationalCount, domesticCount };
+  };
+
+  const { allCount, internationalCount, domesticCount } = getFilterCounts();
+
+  const filterOptions: FilterOption[] = [
+    { value: 'all', label: 'All Flights', icon: <Filter className="w-4 h-4" />, count: allCount },
+    { value: 'International', label: 'International Only', icon: <Globe className="w-4 h-4" />, count: internationalCount },
+    { value: 'Domestic', label: 'Domestic Only', icon: <MapPin className="w-4 h-4" />, count: domesticCount }
   ];
 
-  
   if (loading) {
     return (
       <div className="bg-white rounded-lg p-6 shadow-sm">
@@ -250,6 +344,35 @@ const AirlineDistributionChart: React.FC<AirlineDistributionChartProps> = ({
       </div>
     );
   }
+
+  const handleScrollFade = (e: React.UIEvent<HTMLDivElement>): void => {
+    const container = e.currentTarget;
+    const fadeTop = document.getElementById('legend-fade-top');
+    const fadeBottom = document.getElementById('legend-fade-bottom');
+    
+    if (fadeTop && fadeBottom) {
+      // Show/hide top fade
+      if (container.scrollTop > 10) {
+        fadeTop.style.opacity = '1';
+      } else {
+        fadeTop.style.opacity = '0';
+      }
+      
+      // Show/hide bottom fade
+      const isScrolledToBottom = container.scrollTop + container.clientHeight >= container.scrollHeight - 10;
+      if (isScrolledToBottom) {
+        fadeBottom.style.opacity = '0';
+      } else {
+        fadeBottom.style.opacity = '1';
+      }
+    }
+  };
+
+  // Custom styles object for the scrollable container
+  const scrollContainerStyles: React.CSSProperties = {
+    scrollbarWidth: 'thin',
+    scrollbarColor: '#cbd5e1 #f8fafc',
+  };
 
   return (
     <div className="bg-white rounded-lg p-6 shadow-sm">
@@ -302,6 +425,9 @@ const AirlineDistributionChart: React.FC<AirlineDistributionChartProps> = ({
                       </span>
                       <span className="font-medium">{option.label}</span>
                     </div>
+                    <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                      {option.count}
+                    </span>
                   </button>
                 ))}
               </div>
@@ -310,7 +436,6 @@ const AirlineDistributionChart: React.FC<AirlineDistributionChartProps> = ({
         </div>
       </div>
 
-      
       {isFilterOpen && (
         <div 
           className="fixed inset-0 z-5" 
@@ -330,7 +455,7 @@ const AirlineDistributionChart: React.FC<AirlineDistributionChartProps> = ({
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
-                  data={filteredChartData}
+                  data={chartData}
                   cx="50%"
                   cy="50%"
                   labelLine={false}
@@ -341,10 +466,11 @@ const AirlineDistributionChart: React.FC<AirlineDistributionChartProps> = ({
                   dataKey="value"
                   paddingAngle={2}
                 >
-                  {filteredChartData.map((entry, index) => (
+                  {chartData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
+                <Tooltip content={<CustomTooltip />} />
                 <text x="50%" y="50%" textAnchor="middle" dominantBaseline="middle" fontSize={24} fontWeight="bold">
                   {totalTrips}
                 </text>
@@ -352,17 +478,37 @@ const AirlineDistributionChart: React.FC<AirlineDistributionChartProps> = ({
             </ResponsiveContainer>
           </div>
           
+          {/* Enhanced Legend with Smooth Scroll */}
           <div className="w-1/4 flex items-center">
-            <div className="w-full">
-              {filteredChartData.map((entry, index) => (
-                <div key={`legend-${index}`} className="flex items-center mb-4">
-                  <div className="w-3 h-3 mr-2 rounded-sm" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
-                  <div className="flex flex-col">
-                    <span className="text-sm font-medium">{entry.name}</span>
-                    <span className="text-xs text-gray-500">₹{(entry.cost || 0).toLocaleString()}</span>
+            <div className="w-full relative">
+              {/* Gradient fade indicators */}
+              <div className="absolute top-0 left-0 right-0 h-4 bg-gradient-to-b from-white to-transparent z-10 pointer-events-none opacity-0 transition-opacity duration-300" id="legend-fade-top" />
+              <div className="absolute bottom-0 left-0 right-0 h-4 bg-gradient-to-t from-white to-transparent z-10 pointer-events-none opacity-0 transition-opacity duration-300" id="legend-fade-bottom" />
+              
+              {/* Scrollable legend container */}
+              <div 
+                className="max-h-72 overflow-y-auto pr-2"
+                onScroll={handleScrollFade}
+                style={scrollContainerStyles}
+              >
+                {chartData.map((entry, index) => (
+                  <div key={`legend-${index}`} className="flex items-center mb-4 group">
+                    <div 
+                      className="w-3 h-3 mr-3 rounded-sm transition-all duration-200 group-hover:scale-110 group-hover:shadow-sm flex-shrink-0" 
+                      style={{ backgroundColor: COLORS[index % COLORS.length] }} 
+                    />
+                    <div className="flex flex-col min-w-0 flex-1">
+                      <span className="text-sm font-medium text-gray-800 truncate group-hover:text-gray-900 transition-colors duration-200" 
+                            title={entry.name}>
+                        {entry.name}
+                      </span>
+                      <span className="text-xs text-gray-500 group-hover:text-gray-600 transition-colors duration-200">
+                        ₹{(entry.cost || 0).toLocaleString()}
+                      </span>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
         </div>
