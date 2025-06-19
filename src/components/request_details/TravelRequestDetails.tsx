@@ -7,14 +7,14 @@ import {
 } from 'lucide-react';
 import ApprovalTimeline from './ApprovalTimeline';
 import TravelInfo from './TravelInfo';
-import DocumentTabs from './IterinaryTabs'; 
 import TravelInfoBanner from './TravelInfoBanner';
 import { useModal } from './confirmation_modal/hooks/useModal';
 import ConfirmationModal, { ButtonConfig } from './confirmation_modal/ConfirmationModal';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
-import TicketPreviewModal from './ticket_options/TicketPreviewModal';
+import DocumentTabs from './IterinaryTabs';
 import toast, { Toaster } from 'react-hot-toast';
+import TicketPreviewModal from './ticket_options/TicketPreviewModal';
 
 // --- TYPE DEFINITIONS ---
 export interface ComponentTravelRequest {
@@ -156,7 +156,6 @@ const TravelRequestDetails: React.FC = () => {
           purpose: apiData.purposeOfTravel,
           status: INDEX_TO_STATUS_MAP[apiData.currentStatusId] || 'PendingReview',
           employeeName: apiData.employeeName,
-          // NOTE: Your API should return these fields
           // accommodationDocumentPath: apiData.accommodationDocumentPath, 
           // insuranceDocumentPath: apiData.insuranceDocumentPath,
         });
@@ -300,7 +299,8 @@ const TravelRequestDetails: React.FC = () => {
     handleCloseModal();
   };
 
-  if (isLoading) return <div data-testid="loader-container" className="p-8 flex justify-center items-center"><Loader2 className="h-8 w-8 animate-spin text-gray-500" /></div>;
+
+  if (isLoading) return <div className="p-8 flex justify-center items-center"><Loader2 className="h-8 w-8 animate-spin text-gray-500" /></div>;
   if (error) return <div className="p-8 text-center text-red-600">Error: {error}</div>;
   if (!travelRequestData) return <div className="p-8 text-center text-gray-600">Travel request not found.</div>;
 

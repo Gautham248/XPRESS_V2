@@ -196,12 +196,12 @@ export default function DocumentTabs(props: DocumentTabsProps) {
   };
   
   const handleUpload = (docType: string) => {
-    alert(`Initiating upload for ${docType}...`);
+    // alert(`Initiating upload for ${docType}...`);
   };
 
   const handleDownload = (docType: string, path?: string) => {
     if (!path) {
-        alert(`No path available to download ${docType} document.`);
+        // alert(`No path available to download ${docType} document.`);
         return;
     }
     window.open(path, '_blank');
