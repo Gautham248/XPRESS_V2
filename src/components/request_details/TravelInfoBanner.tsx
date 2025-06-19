@@ -7,10 +7,12 @@ interface TravelInfoBannerProps {
   requestId?: string;
 }
 
+const API_BASE_URL = 'http://localhost:5030/api';
+
 const TravelInfoBanner: React.FC<TravelInfoBannerProps> = ({ 
   requestId, 
 }) => {
-  const apiUrl = 'http://localhost:5030/api/TravelRequest/infobanner';
+  const apiUrl = `${API_BASE_URL}/TravelRequest/infobanner`;
   const [travelRequest, setTravelRequest] = useState<TravelRequestData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

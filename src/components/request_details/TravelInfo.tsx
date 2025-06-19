@@ -77,6 +77,8 @@ interface Comment {
   timestamp: string;
 }
 
+const API_BASE_URL = 'http://localhost:5030/api';
+
 const TravelInfo: React.FC<TravelInfoProps> = ({ requestId }) => {
   const [travelRequest, setTravelRequest] = useState<TravelRequestData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -97,7 +99,7 @@ const TravelInfo: React.FC<TravelInfoProps> = ({ requestId }) => {
 
       try {
         const response = await axios.get<TravelInfoApiResponse>(
-          `http://localhost:5030/api/TravelRequest/travelinfo/${requestId}`
+          `${API_BASE_URL}/TravelRequest/travelinfo/${requestId}`
         );
 
         if (response.data.isSuccess && response.data.result && response.data.result.length > 0) {
