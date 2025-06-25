@@ -146,6 +146,38 @@ const TravelAgencyBarChart: React.FC<TravelAgencyBarChartProps> = ({
       }
     }).filter(item => item.value > 0);
   }, [chartData, travelTypeFilter]);
+
+  // Enhanced responsive calculations
+  const responsiveCalculations = useMemo(() => {
+    const dataCount = filteredChartData.length;
+    if (dataCount === 0) return { barWidth: 60, spacing: 16, shouldScroll: false };
+
+    // Available chart width (accounting for Y-axis space and padding)
+    const availableWidth = 400; // Adjust based on your container
+    const minBarWidth = 40;
+    const maxBarWidth = 100;
+    const minSpacing = 8;
+    const maxSpacing = 24;
+
+    // Calculate optimal bar width and spacing
+    let barWidth = Math.floor(availableWidth / dataCount * 0.7);
+    let spacing = Math.floor(availableWidth / dataCount * 0.3);
+
+    // Apply constraints
+    barWidth = Math.max(minBarWidth, Math.min(maxBarWidth, barWidth));
+    spacing = Math.max(minSpacing, Math.min(maxSpacing, spacing));
+
+    // Check if we need horizontal scrolling
+    const totalWidth = dataCount * (barWidth + spacing) - spacing;
+    const shouldScroll = totalWidth > availableWidth;
+
+    return {
+      barWidth,
+      spacing,
+      shouldScroll,
+      totalWidth: shouldScroll ? totalWidth : availableWidth
+    };
+  }, [filteredChartData.length]);
  
   // Check if filtered data is empty or only contains zero values
   const isEmptyData = !filteredChartData || filteredChartData.length === 0 || filteredChartData.every(item => item.value === 0);
@@ -306,7 +338,7 @@ const TravelAgencyBarChart: React.FC<TravelAgencyBarChartProps> = ({
  
   // Dynamic Y-axis calculation based on filtered data
   const maxDataValue = Math.max(...filteredChartData.map(item => item.value), 0);
-  const yAxisMax = Math.ceil(maxDataValue) + 1;
+  const yAxisMax = Math.ceil(maxDataValue*1.1) ;
  
   // Calculate bar height scaling factor
   const chartHeight = 220;
@@ -376,9 +408,10 @@ const TravelAgencyBarChart: React.FC<TravelAgencyBarChartProps> = ({
           onClick={() => setIsFilterOpen(false)}
         />
       )}
- 
+
+      {/* Enhanced Scalable Chart Container */}
       <div className="relative h-64 flex justify-center">
-        <div className="w-full max-w-lg relative">
+        <div className="w-full max-w-4xl relative">
           {/* Y-axis line */}
           <div className="absolute left-14 top-0 bottom-8 w-px bg-gray-300"></div>
          
@@ -408,56 +441,98 @@ const TravelAgencyBarChart: React.FC<TravelAgencyBarChartProps> = ({
           </div>
          
           {/* X-axis line */}
-          <div className="absolute left-14 right-0 bottom-8 h-px bg-gray-300"></div>
+          <div className="absolute left-14 right-0 bottom-7 h-px bg-gray-300"></div>
          
           {/* X-axis label */}
-          <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 text-sm font-medium text-gray-700">
+          <div className="absolute -bottom-10 left-1/2 transform -translate-x-1/2 text-sm font-medium text-gray-700">
             Travel Agency
           </div>
  
-          {/* Chart area with bars */}
-          <div className="absolute left-16 right-4 top-0 bottom-1 flex items-end justify-around">
-            {filteredChartData.map((entry, index) => {
-              const colors = [
-                'bg-purple-400', 'bg-pink-400', 'bg-cyan-400', 'bg-orange-400',
-                'bg-blue-400', 'bg-green-400', 'bg-yellow-400', 'bg-red-400',
-                'bg-indigo-400', 'bg-teal-400', 'bg-lime-400', 'bg-rose-400'
-              ];
-              const barColor = colors[index % colors.length];
-             
-              return (
-                <div key={index} className="flex flex-col items-center group relative" style={{ minWidth: `${Math.max(80, 400 / filteredChartData.length)}px` }}>
-             
-                  <div className="text-sm font-semibold text-gray-700 mb-1">
-                    {entry.value}
-                  </div>
-                 
-                  {/* Bar with cost displayed vertically inside the bar */}
-                  <div className="relative flex justify-center">
-                    <div
-                      className={`${barColor} relative flex items-center justify-center`}
-                      style={{
-                        width: `${Math.max(64, 300 / filteredChartData.length)}px`,
-                        height: `${entry.value * (chartHeight / yAxisMax)}px`,
-                        minHeight: '40px'
-                      }}
-                    >
-                 
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="-rotate-90 text-xs font-medium text-white whitespace-nowrap">
-                          ₹{(entry.cost || 0).toLocaleString()}
-                        </div>
+          {/* Scrollable Chart Container */}
+          <div 
+            className={`absolute left-16 right-4 top-0 bottom-1 ${responsiveCalculations.shouldScroll ? 'overflow-x-auto' : ''}`}
+            style={{ 
+              width: responsiveCalculations.shouldScroll ? 'calc(100% - 5rem)' : 'calc(100% - 5rem)'
+            }}
+          >
+            <div 
+              className="flex items-end justify-start h-full"
+              style={{ 
+                width: responsiveCalculations.shouldScroll ? `${responsiveCalculations.totalWidth}px` : '100%',
+                minWidth: '100%'
+              }}
+            >
+              {filteredChartData.map((entry, index) => {
+                const colors = [
+                  'bg-purple-400', 'bg-pink-400', 'bg-cyan-400', 'bg-orange-400',
+                  'bg-blue-400', 'bg-green-400', 'bg-yellow-400', 'bg-red-400',
+                  'bg-indigo-400', 'bg-teal-400', 'bg-lime-400', 'bg-rose-400'
+                ];
+                const barColor = colors[index % colors.length];
+                const isLastBar = index === filteredChartData.length - 1;
+               
+                return (
+                  <div 
+                    key={index} 
+                    className="flex flex-col items-center group relative" 
+                    style={{ 
+                      width: `${responsiveCalculations.barWidth}px`,
+                      marginRight: isLastBar ? '0' : `${responsiveCalculations.spacing}px`
+                    }}
+                  >
+               
+                    <div className="text-sm font-semibold text-gray-700 mb-1">
+                      {entry.value}
+                    </div>
+                   
+                    {/* Responsive Bar */}
+                    <div className="relative flex justify-center w-full">
+                      <div
+                        className={`${barColor} relative flex items-center justify-center transition-all duration-300 hover:opacity-80`}
+                        style={{
+                          width: `${Math.max(responsiveCalculations.barWidth * 0.8, 32)}px`,
+                          height: `${Math.max(entry.value * (chartHeight / yAxisMax), 20)}px`,
+                          minHeight: '20px'
+                        }}
+                      >
+                        {/* Cost label - conditionally render based on bar width */}
+                        {responsiveCalculations.barWidth >= 50 && (
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <div className="-rotate-90 text-xs font-medium text-white whitespace-nowrap">
+                              ₹{(entry.cost || 0).toLocaleString()}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
+                   
+                    {/* Responsive Agency Name */}
+                    <div 
+                      className="mt-2 text-xs font-medium text-gray-700 text-center w-full px-1 leading-tight"
+                      style={{
+                        fontSize: responsiveCalculations.barWidth < 60 ? '10px' : '12px',
+                        lineHeight: responsiveCalculations.barWidth < 60 ? '12px' : '14px'
+                      }}
+                    >
+                      {/* Truncate long names for narrow bars */}
+                      {responsiveCalculations.barWidth < 60 && entry.name.length > 10 
+                        ? `${entry.name.substring(0, 8)}...` 
+                        : entry.name
+                      }
+                    </div>
+
+                    {/* Tooltip for narrow bars */}
+                    {responsiveCalculations.barWidth < 50 && (
+                      <div className="absolute -top-16 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-gray-800 text-white text-xs rounded px-2 py-1 whitespace-nowrap z-10">
+                        <div>{entry.name}</div>
+                        <div>₹{(entry.cost || 0).toLocaleString()}</div>
+                        <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-800"></div>
+                      </div>
+                    )}
                   </div>
-                 
-                  {/* X-axis label (agency name) */}
-                  <div className="mt-2 text-sm font-medium text-gray-700 text-center w-full px-1 break-words">
-                    {entry.name}
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>

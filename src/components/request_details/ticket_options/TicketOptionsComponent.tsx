@@ -101,7 +101,11 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId, onPreviewTick
     closeModal: closeConfirmModal,
   } = useModal();
 
-  // Effect to get current user
+ 
+  
+
+
+ // Effect to get current user
   useEffect(() => {
     const userData = localStorage.getItem('user');
     if (userData) {
@@ -128,6 +132,7 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId, onPreviewTick
         const url = `${apiUrl}/${requestId}`;
         const response = await axios.get<TravelRequestApiResponse>(url);
         setTransportationType(response.data.result[0]?.travelModeName);
+        
         
         if (response.data.isSuccess && response.data.result.length > 0) {
             const apiData = response.data.result[0];
@@ -179,7 +184,7 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId, onPreviewTick
     fetchTravelRequest();
   }, [requestId, apiUrl]);
 
-  console.log(transportationType);
+  // console.log(transportationType);
   const fetchTravelRequestData = useCallback(async () => {
     if (!requestId) {
       setError("Request ID is missing.");
@@ -199,12 +204,6 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId, onPreviewTick
 
         const transportType = response.data.result.transportation?.toLowerCase() || '';
         setTransportationType(transportType);
-        // if (['flight', 'train', 'bus', 'cab'].includes(transportType)) {
-        //     setTransportationType(transportType as 'flight' | 'train' | 'bus' | 'cab');
-        // } else {
-        //     console.warn(`Unexpected transportation type: ${transportType}, defaulting to flight`);
-        //     setTransportationType('flight');
-        // }
 
         setTravelRequestStatus(statusName);
 
@@ -230,7 +229,6 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId, onPreviewTick
       setIsLoadingStatus(false);
     }
   }, [requestId]);
-
   const fetchTicketOptions = useCallback(async (currentRequestId: string) => {
     if (!currentRequestId) return;
     setIsLoadingOptions(true);
@@ -554,16 +552,6 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId, onPreviewTick
       setIsLoadingOptions(false);
     }
   };
-
-  // const handleDownloadTicket = () => {
-  //   if (!requestId) {
-  //     setError("Cannot download ticket: Request ID is missing.");
-  //     return;
-  //   }
-  //   const downloadUrl = `${API_BASE_URL}/TravelRequest/${requestId}/downloadticket`;
-    
-  //   window.open(downloadUrl, '_blank');
-  // };
 
   const renderContent = () => {
     if (isLoadingStatus || !currentUser) {
