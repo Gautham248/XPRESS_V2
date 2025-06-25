@@ -1,3 +1,4 @@
+// src/components/Documents.tsx
 
 import React, { useState, useReducer, useRef, useCallback } from 'react';
 import axios from 'axios';
@@ -7,7 +8,7 @@ import { DocumentType, DocumentState, FormState, Action, initialState as formIni
 import DocumentTabs from './DocumentTabs';
 import DocumentForm from './DocumentForm';
 import DocumentList from './DocumentList';
-import FileUploader, { BackendDocumentRecord } from './FileUploader';
+import FileUploader from './FileUploader';
 import OcrProcessor from './OCRProcessor';
 import PassportParser, { ParsedPassportInfo } from './Parsers/PassportParser';
 import AadharParser, { ParsedAadhaarInfo } from './Parsers/AadharParser';
@@ -53,71 +54,52 @@ const formatToISOString = (dateInput: string | Date | null | undefined): string 
     return dateObj.toISOString();
 };
 
-interface PendingRecordInfo {
-  id: number;
-  initialRecord: BackendDocumentRecord;
-}
-
 interface OcrRequest {
   file: File;
   docType: DocumentType;
-  record: BackendDocumentRecord;
 }
 
 function Documents() {
   const [activeTab, setActiveTab] = useState<DocumentType>('Passport');
   const [selectedFiles, setSelectedFiles] = useState<Partial<Record<DocumentType, File | null>>>({});
   const [state, dispatch] = useReducer(formReducer, formInitialState);
-  const [pendingFormRecords, setPendingFormRecords] = useState<Partial<Record<DocumentType, PendingRecordInfo>>>({});
   const [ocrRequest, setOcrRequest] = useState<OcrRequest | null>(null);
   const [rawOcrText, setRawOcrText] = useState<string | null>(null);
-  const [showFileValidation, setShowFileValidation] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const ocrCompletionHandled = useRef(false);
 
-
   const userString = localStorage.getItem('user');
-  let role = '';
   let userId: number | undefined = undefined;
-  let currentUser: any = null;
- 
   if (userString) {
     const user = JSON.parse(userString);
-    role = user.role;
     userId = parseInt(user.userId, 10);
-    currentUser = user;
   }
 
   const handleFileSelect = (file: File | null) => {
-    setSelectedFiles(prev => ({ ...prev, [activeTab]: file }));
-    if (file) {
-      setShowFileValidation(false);
-    }
-  };
-
-  const handleRecordCreated = (record: BackendDocumentRecord, uploadedFile: File) => {
-    setPendingFormRecords(prev => ({ ...prev, [activeTab]: undefined }));
     setRawOcrText(null);
-    
-    ocrCompletionHandled.current = false;
-    setOcrRequest({ file: uploadedFile, docType: activeTab, record });
-    
-    setSelectedFiles(prev => ({...prev, [activeTab]: null})); 
-    setShowFileValidation(false);
+    setOcrRequest(null);
+    setSaveError(null);
+    dispatch({ type: 'RESET_FORM', docType: activeTab });
+
+    setSelectedFiles(prev => ({ ...prev, [activeTab]: file }));
+
+    if (file) {
+      ocrCompletionHandled.current = false;
+      setOcrRequest({ file, docType: activeTab });
+    }
   };
 
   const handleOcrComplete = (rawText: string) => {
-    if (ocrCompletionHandled.current) {
-        console.log("OCR completion callback fired a second time (ignored).");
-        return;
-    }
+    if (ocrCompletionHandled.current) return;
     ocrCompletionHandled.current = true;
-    toast.success('Scan complete. Displaying parsed data...');
+    toast.success('Scan complete. Please verify the auto-filled data.');
     setRawOcrText(rawText);
   };
 
   const handleDataParsed = (parsedData: ParsedInfo) => {
     if (!ocrRequest) return;
-    const { docType, record } = ocrRequest;
+    const { docType } = ocrRequest;
 
     dispatch({ type: 'RESET_FORM', docType });
     Object.entries(parsedData).forEach(([key, value]) => {
@@ -126,104 +108,99 @@ function Documents() {
       }
     });
 
-    setPendingFormRecords(prev => ({
-      ...prev,
-      [docType]: { id: record.id, initialRecord: record }
-    }));
-    setOcrRequest(null);
+    setOcrRequest(null); 
   };
 
-  const handleSaveDetails = async (currentFormState: FormState, recordId: number, docType: DocumentType) => {
-    const pendingRecord = pendingFormRecords[docType];
-    if (!pendingRecord) {
-        toast.error("Error: Could not find pending record information.");
-        return;
+  const handleFinalSubmit = async (currentFormState: FormState, docType: DocumentType) => {
+    const fileToUpload = selectedFiles[docType];
+
+    if (!fileToUpload) {
+      toast.error("No file selected. Please choose a file first.");
+      return;
     }
 
-    let isExpired = false;
-    let expiryDate: Date | string | null | undefined = null;
-
-    if (docType === 'Passport' || docType === 'Visa') {
-      expiryDate = currentFormState.expiryDate;
-    }
-
-    if (expiryDate) {
-      const dateObj = new Date(expiryDate);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      if (dateObj < today) {
-        isExpired = true;
-      }
-    }
-
-    const toastId = toast.loading(isExpired ? `Checking the expiry...` : `Saving ${docType} details...`);
+    setIsSaving(true);
+    setSaveError(null);
+    const toastId = toast.loading(`Saving ${docType}...`);
 
     try {
-      if (isExpired) {
-        await axios.delete(`http://localhost:5030/api/Documents/${recordId}/type/${docType}`);
-        toast.error(`This document is expired and cannot be saved.`, { id: toastId });
-      } else {
-        const payloadForApi = { ...pendingRecord.initialRecord };
-        if (docType === 'Passport') {
-            payloadForApi.passportNumber = currentFormState.passportNumber;
-            payloadForApi.issuingCountry = currentFormState.issuingCountry;
-            payloadForApi.passportIssueDate = currentFormState.issueDate;
-            payloadForApi.passportExpiryDate = currentFormState.expiryDate;
-        } else if (docType === 'Visa') {
-            payloadForApi.visaNumber = currentFormState.visaNumber;
-            payloadForApi.visaClass = currentFormState.visaClass;
-            payloadForApi.issuingCountry = currentFormState.issuingCountry;
-            payloadForApi.visaIssueDate = currentFormState.issueDate;
-            payloadForApi.visaExpiryDate = currentFormState.expiryDate;
-        } else if (docType === 'Aadhar') {
-            payloadForApi.aadharNumber = currentFormState.idNumber;
-            payloadForApi.aadharName = currentFormState.fullName;
-        }
+      // Step 1: Upload file to Cloudinary
+      const formData = new FormData();
+      formData.append("file", fileToUpload);
+      formData.append("upload_preset", "firstUpload"); // Your Cloudinary upload preset
 
-        const finalPayload = {
-            ...payloadForApi,
-            uploadDate: formatToISOString(payloadForApi.uploadDate),
-            passportIssueDate: formatToISOString(payloadForApi.passportIssueDate),
-            passportExpiryDate: formatToISOString(payloadForApi.passportExpiryDate),
-            visaIssueDate: formatToISOString(payloadForApi.visaIssueDate),
-            visaExpiryDate: formatToISOString(payloadForApi.visaExpiryDate),
-        };
-
-        await axios.put(`http://localhost:5030/api/Documents/${recordId}`, finalPayload);
-        toast.success(`${docType} details saved successfully!`, { id: toastId });
-      }
-
-      dispatch({ type: 'RESET_FORM', docType });
-      setPendingFormRecords(prev => {
-          const newState = { ...prev };
-          delete newState[docType];
-          return newState;
+      toast.loading(`Uploading file...`, { id: toastId });
+      const cloudinaryResponse = await fetch("https://api.cloudinary.com/v1_1/dugfqlrog/auto/upload", {
+        method: "POST",
+        body: formData,
       });
-      setRawOcrText(null);
 
-    } catch (error) {
-        const action = isExpired ? 'delete' : 'update';
-        console.error(`Failed to ${action} ${docType} details:`, error);
-        toast.error(`Failed to ${action} document.`, { id: toastId });
-        throw error;
+      const cloudinaryData = await cloudinaryResponse.json();
+      if (!cloudinaryData.secure_url) {
+        throw new Error(cloudinaryData.error?.message || "File upload to cloud failed.");
+      }
+      const documentUrl = cloudinaryData.secure_url;
+      toast.loading(`File uploaded, saving details...`, { id: toastId });
+
+      // Step 2: Prepare the complete payload for your backend
+      const payloadForApi: any = {
+        idType: docType.charAt(0).toUpperCase() + docType.slice(1),
+        userId: userId,
+        documentPath: documentUrl,
+        uploadDate: new Date().toISOString(),
+        createdBy: userId,
+      };
+
+      if (docType === 'Passport') {
+        payloadForApi.passportNumber = currentFormState.passportNumber;
+        payloadForApi.issuingCountry = currentFormState.issuingCountry;
+        payloadForApi.passportIssueDate = formatToISOString(currentFormState.issueDate);
+        payloadForApi.passportExpiryDate = formatToISOString(currentFormState.expiryDate);
+      } else if (docType === 'Visa') {
+        payloadForApi.visaNumber = currentFormState.visaNumber;
+        payloadForApi.visaClass = currentFormState.visaClass;
+        payloadForApi.issuingCountry = currentFormState.issuingCountry;
+        payloadForApi.visaIssueDate = formatToISOString(currentFormState.issueDate);
+        payloadForApi.visaExpiryDate = formatToISOString(currentFormState.expiryDate);
+      } else if (docType === 'Aadhar') {
+        payloadForApi.aadharNumber = currentFormState.idNumber;
+        payloadForApi.aadharName = currentFormState.fullName;
+      }
+      
+      // Step 3: Send the single POST request to your backend
+      await axios.post('http://localhost:5030/api/Documents', payloadForApi);
+      toast.success(`${docType} saved successfully!`, { id: toastId });
+
+      // Step 4: Reset the UI state for the current tab
+      dispatch({ type: 'RESET_FORM', docType });
+      setSelectedFiles(prev => ({ ...prev, [docType]: null }));
+      setRawOcrText(null);
+      
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || error.message || `Failed to save ${docType}. Please try again.`;
+      console.error(`Failed to save ${docType} details:`, error);
+      setSaveError(errorMessage);
+      toast.error(errorMessage, { id: toastId });
+      // We don't re-throw, as we're handling the error state here
+    } finally {
+      setIsSaving(false);
     }
   };
 
   const handleOcrCancel = useCallback(() => {
-      setOcrRequest(null);
-      ocrCompletionHandled.current = false;
+    setOcrRequest(null);
+    ocrCompletionHandled.current = false;
   }, []);
-
-  const currentPendingRecord = pendingFormRecords[activeTab];
+  
+  // The form is ready to be submitted only after a file is selected and OCR has run.
+  const isReadyToSubmit = !!selectedFiles[activeTab] && !!rawOcrText;
 
   return (
     <div className="animate-fadeIn">
-      <Toaster 
-        position="top-right" 
+      <Toaster
+        position="top-right"
         reverseOrder={false}
-        containerStyle={{
-          top: 80,
-        }}
+        containerStyle={{ top: 80 }}
       />
 
       {ocrRequest && !rawOcrText && (
@@ -237,7 +214,7 @@ function Documents() {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <h2 className="text-2xl font-semibold text-gray-800">Travel Documents</h2>
       </div>
-      
+
       <div className="bg-white rounded-lg p-6 shadow-sm mt-6">
         <DocumentTabs activeTab={activeTab} setActiveTab={setActiveTab} />
 
@@ -245,13 +222,9 @@ function Documents() {
           <div>
             <h3 className="text-lg font-semibold text-gray-800 mb-4">Step 1: Upload Document</h3>
             <FileUploader
-              userId={userId}
               docType={activeTab}
               onFileSelect={handleFileSelect}
-              showValidation={showFileValidation}
               selectedFile={selectedFiles[activeTab] || null}
-              onRecordCreated={handleRecordCreated}
-              onUploadError={(error) => toast.error(`Upload Error: ${error}`)}
             />
           </div>
 
@@ -266,33 +239,33 @@ function Documents() {
               </>
             )}
 
-            {!currentPendingRecord && !rawOcrText ? (
-                <p className="text-sm text-gray-500 my-4">
-                  Upload a document for the '{activeTab}' tab. The form will be auto-filled after a successful upload and scan.
-                </p>
-            ) : null }
-            {currentPendingRecord ? (
-                 <p className="text-sm text-blue-600 mb-2">
-                    Please verify the auto-filled details for record ID #{currentPendingRecord.id} and click save.
-                 </p>
-            ) : null }
+            {!selectedFiles[activeTab] ? (
+              <p className="text-sm text-gray-500 my-4">Please select or drop a document file above to begin.</p>
+            ) : !rawOcrText && ocrRequest ? (
+              <p className="text-sm text-blue-600 my-4">Scanning your document... the form will be enabled once the scan is complete.</p>
+            ) : rawOcrText ? (
+              <p className="text-sm text-blue-600 mb-2">Please verify the auto-filled details and click 'Save' below.</p>
+            ) : null}
+
+            {saveError && ( <div className="text-red-600 text-sm my-2">{saveError}</div> )}
 
             <DocumentForm
               docType={activeTab}
               formState={state[activeTab]}
               dispatch={dispatch}
-              recordId={currentPendingRecord ? currentPendingRecord.id : null}
-              onSave={handleSaveDetails}
+              onSave={handleFinalSubmit}
+              isSaving={isSaving}
+              isReadyToSubmit={isReadyToSubmit}
             />
           </div>
         </div>
 
         <div className="mt-8">
           <h3 className="text-lg font-semibold text-gray-800 mb-4">Existing Documents</h3>
-          <DocumentList 
-            docType={activeTab} 
+          <DocumentList
+            docType={activeTab}
             userId={userId}
-            key={`${activeTab}-${Object.keys(pendingFormRecords).length}`} 
+            key={`${activeTab}-${isSaving}`} // Re-render list after a successful save
           />
         </div>
       </div>

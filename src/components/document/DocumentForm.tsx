@@ -7,19 +7,17 @@ interface DocumentFormProps {
   docType: DocumentType;
   formState: FormState;
   dispatch: React.Dispatch<Action>;
-  recordId: number | null;
-  onSave: (formData: FormState, recordId: number, docType: DocumentType) => Promise<void>;
+  onSave: (formData: FormState, docType: DocumentType) => Promise<void>;
+  isSaving: boolean;
+  isReadyToSubmit: boolean;
 }
 
-function DocumentForm({ docType, formState, dispatch, recordId, onSave }: DocumentFormProps) {
+function DocumentForm({ docType, formState, dispatch, onSave, isSaving, isReadyToSubmit }: DocumentFormProps) {
   const fields = formConfigMap[docType];
-  const [isSaving, setIsSaving] = useState(false);
-  const [saveError, setSaveError] = useState<string | null>(null);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
   const handleChange = (field: keyof FormState, value: string | Date | null) => {
     dispatch({ type: 'UPDATE_FIELD', docType, field, value });
-    setSaveError(null);
 
     if (validationErrors[field]) {
       setValidationErrors(prevErrors => {
@@ -32,11 +30,10 @@ function DocumentForm({ docType, formState, dispatch, recordId, onSave }: Docume
 
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!recordId) {
-      setSaveError("Cannot save: No document record linked. Please upload first.");
+    if (!isReadyToSubmit || isSaving) {
+      console.error("Form submitted when not ready or while saving.");
       return;
     }
-
 
     const errors: Record<string, string> = {};
     fields.forEach(field => {
@@ -46,6 +43,9 @@ function DocumentForm({ docType, formState, dispatch, recordId, onSave }: Docume
           errors[field.key] = field.validationMessage || `Invalid format for ${field.label}.`;
         }
       }
+      if (field.required && !formState[field.key]) {
+        errors[field.key] = `${field.label} is required.`;
+      }
     });
 
     if (Object.keys(errors).length > 0) {
@@ -53,17 +53,8 @@ function DocumentForm({ docType, formState, dispatch, recordId, onSave }: Docume
       return;
     }
 
-    setIsSaving(true);
-    setSaveError(null);
     setValidationErrors({});
-
-    try {
-      await onSave(formState, recordId, docType);
-    } catch (error: any) {
-      setSaveError(error.message || "Failed to save details.");
-    } finally {
-      setIsSaving(false);
-    }
+    await onSave(formState, docType);
   };
 
   return (
@@ -81,7 +72,6 @@ function DocumentForm({ docType, formState, dispatch, recordId, onSave }: Docume
                   id={`${docType}-${field.key}`}
                   selected={fieldValue instanceof Date ? fieldValue : null}
                   onChange={(date: Date | null) => handleChange(field.key, date)}
-
                   className={`block w-full rounded-md bg-gray-100 px-3 py-2 text-gray-700 focus:outline-none focus:ring-1 ${
                     fieldError ? 'ring-2 ring-red-500' : 'focus:ring-blue-600'
                   }`}
@@ -97,7 +87,6 @@ function DocumentForm({ docType, formState, dispatch, recordId, onSave }: Docume
                 <input
                   id={`${docType}-${field.key}`}
                   type={field.type}
-                  
                   className={`block w-full rounded-md bg-gray-100 px-3 py-2 text-gray-700 focus:outline-none focus:ring-1 ${
                     fieldError ? 'ring-2 ring-red-500' : 'focus:ring-blue-600'
                   }`}
@@ -115,14 +104,12 @@ function DocumentForm({ docType, formState, dispatch, recordId, onSave }: Docume
         })}
       </div>
 
-      {saveError && ( <div className="text-red-600 text-sm mt-2">{saveError}</div> )}
-
       <div className="flex justify-end pt-4">
-        <button type="submit" disabled={!recordId || isSaving} className={`
-          flex justify-center items-center py-2 px-4 
-          border border-transparent rounded-md shadow-sm 
-          text-sm font-medium text-white 
-          bg-indigo-600 hover:bg-indigo-700 
+        <button type="submit" disabled={!isReadyToSubmit || isSaving} className={`
+          flex justify-center items-center py-2 px-4
+          border border-transparent rounded-md shadow-sm
+          text-sm font-medium text-white
+          bg-indigo-600 hover:bg-indigo-700
           focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500
           transition-colors duration-200
           disabled:opacity-50 disabled:cursor-not-allowed

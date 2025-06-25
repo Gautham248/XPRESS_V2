@@ -76,9 +76,7 @@ const AadharParser: React.FC<AadharParserProps> = ({ rawText, onDataParsed }) =>
   }, [rawText, onDataParsed]);
 
   return (
-    <div className="mt-2 mb-4 p-3 border-l-4 border-green-400 bg-green-50">
-      <p className="text-sm text-green-700">Attempting to auto-fill form from the scanned Aadhaar card...</p>
-    </div>
+    <></>
   );
 };
 
