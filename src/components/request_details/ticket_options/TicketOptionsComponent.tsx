@@ -53,8 +53,8 @@ interface SelectTicketOptionPayload {
 // --- Component Specific Types ---
 interface TicketProps {
   requestId: string;
-  onPreviewTicket: () => void;
-  ticketDocumentPath?: string;
+  onPreviewTicket: (url: string) => void;
+  ticketDocumentPath?: string | string[];
 }
 interface User {
   userId: string;
@@ -89,8 +89,8 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId, onPreviewTick
   const [isLoadingOptions, setIsLoadingOptions] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [, setTravelRequestDetails] = useState<ApiTravelRequestDetail | null>(null);
-  const [travelRequest, setTravelRequest] = useState<TravelRequestData | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [, setTravelRequest] = useState<TravelRequestData | null>(null);
+  const [, setLoading] = useState(false);
 
   const {
     isOpen: isConfirmModalOpen,
@@ -102,10 +102,6 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId, onPreviewTick
   } = useModal();
 
  
-  
-
-
- // Effect to get current user
   useEffect(() => {
     const userData = localStorage.getItem('user');
     if (userData) {
@@ -184,7 +180,6 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId, onPreviewTick
     fetchTravelRequest();
   }, [requestId, apiUrl]);
 
-  // console.log(transportationType);
   const fetchTravelRequestData = useCallback(async () => {
     if (!requestId) {
       setError("Request ID is missing.");
@@ -229,6 +224,7 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId, onPreviewTick
       setIsLoadingStatus(false);
     }
   }, [requestId]);
+
   const fetchTicketOptions = useCallback(async (currentRequestId: string) => {
     if (!currentRequestId) return;
     setIsLoadingOptions(true);
@@ -257,24 +253,17 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId, onPreviewTick
 
 
   const mapApiToUIOptions = (
-  apiOptions: ApiTicketOptionItem[],
-): UITicketOption[] => {
-  return apiOptions.map(option => {
-    const uiOption: UITicketOption = {
+    apiOptions: ApiTicketOptionItem[],
+  ): UITicketOption[] => {
+    return apiOptions.map(option => ({
       id: option.optionId.toString(),
       description: option.optionDescription,
       selected: option.isSelected,
-    };
-
-    if (option.isSelected && ticketDocumentPath) {
-      uiOption.filePath = ticketDocumentPath;
-    }
-
-    return uiOption;
-  });
-};
+    }));
+  };
 
   const uiTicketOptions: UITicketOption[] = mapApiToUIOptions(ticketOptionsFromApi);
+
   const handleAddOption = async () => {
     if (!newOptionText.trim() || !currentUser || !requestId) return;
     const id = parseInt(currentUser.userId, 10);
@@ -410,8 +399,6 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId, onPreviewTick
       console.log('Backend response from ticket upload:', response.data);
 
       if (response.data && response.data.isSuccess) {
-        // alert('Ticket details uploaded successfully!');
-
         setIsUploadTicketsFileModalOpen(false);
 
         await fetchTravelRequestData();
@@ -587,6 +574,8 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId, onPreviewTick
         <SelectedView
           ticketOptions={uiTicketOptions}
           onUploadTickets={() => setIsUploadTicketsFileModalOpen(true)}
+          onPreviewTickets={onPreviewTicket}
+          documentPaths={ticketDocumentPath}
           buttons={['uploadTickets']}
           customButtons={[]}
         />
@@ -598,7 +587,8 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId, onPreviewTick
         <SelectedView
           ticketOptions={uiTicketOptions}
           onPreviewTickets={onPreviewTicket}
-          buttons={['downloadTickets']}
+          documentPaths={ticketDocumentPath}
+          buttons={[]}
         />
       );
     }
@@ -607,6 +597,8 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId, onPreviewTick
       return (
         <SelectedView
           ticketOptions={uiTicketOptions}
+          onPreviewTickets={onPreviewTicket}
+          documentPaths={ticketDocumentPath}
           customButtons={[]}
         />
       );
@@ -648,7 +640,7 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId, onPreviewTick
     }
 
     if (status === 'OptionSelected' && !isEditModeDUHead) {
-      const selectedViewButtons: ('downloadTickets' | 'uploadTickets' | 'confirmTicketOption')[] = [];
+      const selectedViewButtons: ('uploadTickets' | 'confirmTicketOption')[] = [];
       const canConfirm = uiTicketOptions.some(o => o.selected);
       if (canConfirm) {
         selectedViewButtons.push('confirmTicketOption');
@@ -658,6 +650,8 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId, onPreviewTick
         <SelectedView
           ticketOptions={uiTicketOptions}
           buttons={selectedViewButtons}
+          onPreviewTickets={onPreviewTicket}
+          documentPaths={ticketDocumentPath}
           onConfirmTicketOption={canConfirm ? handleApproveTicketByDUHead : undefined}
           customButtons={[
             {
@@ -681,6 +675,8 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId, onPreviewTick
       return (
         <SelectedView
           ticketOptions={uiTicketOptions}
+          onPreviewTickets={onPreviewTicket}
+          documentPaths={ticketDocumentPath}
           customButtons={[]}
         />
       )
@@ -712,6 +708,7 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId, onPreviewTick
         <SelectedView
           ticketOptions={uiTicketOptions}
           onPreviewTickets={onPreviewTicket}
+          documentPaths={ticketDocumentPath}
           customButtons={[]}
         />
       );
@@ -721,7 +718,8 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId, onPreviewTick
         <SelectedView
           ticketOptions={uiTicketOptions}
           onPreviewTickets={onPreviewTicket}
-          buttons={['downloadTickets']}
+          documentPaths={ticketDocumentPath}
+          buttons={[]}
           customButtons={[]}
         />
       );
@@ -742,7 +740,8 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId, onPreviewTick
       <SelectedView
         ticketOptions={uiTicketOptions}
         onPreviewTickets={onPreviewTicket}
-        buttons={selectedOption ? ['downloadTickets'] : []}
+        documentPaths={ticketDocumentPath}
+        buttons={selectedOption ? [] : []}
         customButtons={[]}
       />
     );

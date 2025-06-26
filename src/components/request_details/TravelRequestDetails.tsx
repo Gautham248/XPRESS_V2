@@ -41,11 +41,11 @@ export interface ComponentTravelRequest {
   attendedCct?: boolean;
   travelAgencyName?: string;
   totalExpense?: number;
-  ticketDocumentPath?: string;
-// ------------
-accommodationDocumentPath?: string; 
-insuranceDocumentPath?: string;
-// ------------
+  ticketDocumentPath?: string | string[];
+  // ------------
+  accommodationDocumentPath?: string;
+  insuranceDocumentPath?: string;
+  // ------------
   updatedAt?: string;
   employeeName?: string;
   isInternational?: boolean;
@@ -55,8 +55,8 @@ insuranceDocumentPath?: string;
   createdAt?: string;
   currentStatusId: number;
   status: 'PendingReview' | 'Approved' | 'OptionsListed' | 'OptionSelected' |
-           'DUApproved' | 'BUApproved' | 'TicketsDispatched' | 'InTransit' |
-           'Returned' | 'Closed' | 'Cancelled' | 'Rejected' | 'Modified';
+  'DUApproved' | 'BUApproved' | 'TicketsDispatched' | 'InTransit' |
+  'Returned' | 'Closed' | 'Cancelled' | 'Rejected' | 'Modified';
 }
 
 interface DocumentInfo {
@@ -67,12 +67,12 @@ interface DocumentInfo {
 }
 
 export const STATUS_ORDER_ARRAY: ReadonlyArray<ComponentTravelRequest['status']> = [
-  'PendingReview','Approved','OptionsListed','OptionSelected','DUApproved','BUApproved','TicketsDispatched','InTransit','Returned','Closed','Cancelled','Rejected','Modified'
+  'PendingReview', 'Approved', 'OptionsListed', 'OptionSelected', 'DUApproved', 'BUApproved', 'TicketsDispatched', 'InTransit', 'Returned', 'Closed', 'Cancelled', 'Rejected', 'Modified'
 ] as const;
 export const INDEX_TO_STATUS_MAP: Readonly<Record<number, ComponentTravelRequest['status']>> =
-  STATUS_ORDER_ARRAY.reduce((acc, status, index) => ({...acc, [index + 1]: status}), {} as Record<number, ComponentTravelRequest['status']>);
+  STATUS_ORDER_ARRAY.reduce((acc, status, index) => ({ ...acc, [index + 1]: status }), {} as Record<number, ComponentTravelRequest['status']>);
 export const STATUS_TO_INDEX_MAP: Readonly<Record<ComponentTravelRequest['status'], number>> =
-  STATUS_ORDER_ARRAY.reduce((acc, status, index) => ({...acc, [status]: index + 1}), {} as Record<ComponentTravelRequest['status'], number>);
+  STATUS_ORDER_ARRAY.reduce((acc, status, index) => ({ ...acc, [status]: index + 1 }), {} as Record<ComponentTravelRequest['status'], number>);
 const STATUS_DISPLAY_NAMES_HEADER: Record<ComponentTravelRequest['status'] | string, string> = {
   PendingReview: 'Pending Review', Approved: 'Approved', OptionsListed: 'Options Listed', OptionSelected: 'Option Selected', DUApproved: 'DU Approved', BUApproved: 'BU Approved', TicketsDispatched: 'Ticket Dispatched', InTransit: 'In Transit', Returned: 'Returned', Closed: 'Closed', Cancelled: 'Cancelled', Rejected: 'Rejected', Modified: 'Modified',
 };
@@ -81,22 +81,22 @@ const getDisplayStatusName = (rawStatus?: ComponentTravelRequest['status'] | str
   return 'Status Unknown';
 };
 const getStatusBadgeStyles = (status?: ComponentTravelRequest['status'] | string): string => {
-    if (!status) return 'bg-gray-200 text-gray-800 border border-gray-400';
-    switch (status) {
-      case 'PendingReview': return 'bg-yellow-100 text-yellow-700 border border-yellow-300';
-      case 'Approved': return 'bg-blue-100 text-blue-700 border border-blue-300';
-      case 'OptionsListed': return 'bg-indigo-100 text-indigo-700 border border-indigo-300';
-      case 'OptionSelected': return 'bg-purple-100 text-purple-700 border border-purple-300';
-      case 'DUApproved': case 'BUApproved': return 'bg-teal-100 text-teal-700 border border-teal-300';
-      case 'TicketsDispatched': return 'bg-cyan-100 text-cyan-700 border border-cyan-300';
-      case 'InTransit': return 'bg-sky-100 text-sky-700 border border-sky-300';
-      case 'Returned': return 'bg-orange-100 text-orange-700 border border-orange-300';
-      case 'Closed': return 'bg-green-100 text-green-700 border border-green-300';
-      case 'Cancelled': return 'bg-gray-300 text-gray-700 border border-gray-300';
-      case 'Rejected': return 'bg-red-100 text-red-700 border border-red-300';
-      case 'Modified': return 'bg-pink-100 text-pink-700 border border-pink-300';
-      default: return 'bg-gray-200 text-gray-800 border border-gray-400';
-    }
+  if (!status) return 'bg-gray-200 text-gray-800 border border-gray-400';
+  switch (status) {
+    case 'PendingReview': return 'bg-yellow-100 text-yellow-700 border border-yellow-300';
+    case 'Approved': return 'bg-blue-100 text-blue-700 border border-blue-300';
+    case 'OptionsListed': return 'bg-indigo-100 text-indigo-700 border border-indigo-300';
+    case 'OptionSelected': return 'bg-purple-100 text-purple-700 border border-purple-300';
+    case 'DUApproved': case 'BUApproved': return 'bg-teal-100 text-teal-700 border border-teal-300';
+    case 'TicketsDispatched': return 'bg-cyan-100 text-cyan-700 border border-cyan-300';
+    case 'InTransit': return 'bg-sky-100 text-sky-700 border border-sky-300';
+    case 'Returned': return 'bg-orange-100 text-orange-700 border border-orange-300';
+    case 'Closed': return 'bg-green-100 text-green-700 border border-green-300';
+    case 'Cancelled': return 'bg-gray-300 text-gray-700 border border-gray-300';
+    case 'Rejected': return 'bg-red-100 text-red-700 border border-red-300';
+    case 'Modified': return 'bg-pink-100 text-pink-700 border border-pink-300';
+    default: return 'bg-gray-200 text-gray-800 border border-gray-400';
+  }
 };
 
 
@@ -127,7 +127,7 @@ const TravelRequestDetails: React.FC = () => {
   const userString = localStorage.getItem('user');
   let role = '';
   let userId: number | undefined = undefined;
-  
+
   // console.log(travelRequestData?.ticketDocumentPath);
 
   if (userString) {
@@ -143,7 +143,7 @@ const TravelRequestDetails: React.FC = () => {
     try {
       const response = await fetch(`http://localhost:5030/api/TravelRequest/${id}`);
       if (!response.ok) throw new Error(`Failed to fetch: ${response.statusText}`);
-      
+
       const data = await response.json();
 
       // console.log("API response for TravelRequestDetails:", data.result);
@@ -156,6 +156,7 @@ const TravelRequestDetails: React.FC = () => {
           purpose: apiData.purposeOfTravel,
           status: INDEX_TO_STATUS_MAP[apiData.currentStatusId] || 'PendingReview',
           employeeName: apiData.employeeName,
+          ticketDocumentPath: apiData.ticketDocumentPath,
           // accommodationDocumentPath: apiData.accommodationDocumentPath, 
           // insuranceDocumentPath: apiData.insuranceDocumentPath,
         });
@@ -178,12 +179,23 @@ const TravelRequestDetails: React.FC = () => {
   };
 
   const getFriendlyFilename = (doc: any): string => {
-    const extension = doc.documentPath?.split('.').pop() || 'file';
-    let name = `${doc.idType}-${doc.id}`;
-    if (doc.idType === 'TravelTicket') name = `TravelTicket-${doc.id}`;
-    else if (doc.idType === 'Passport' && doc.passportNumber) name = `Passport-${doc.passportNumber}`;
-    else if (doc.idType === 'Visa' && doc.visaNumber) name = `Visa-${doc.issuingCountry}-${doc.visaNumber}`;
-    else if (doc.idType === 'Aadhar' && doc.aadharName) name = `Aadhar-${doc.aadharName.replace(/\s/g, '_')}`;
+    if (doc.friendlyName) return doc.friendlyName;
+
+    const extension = doc.documentPath?.split('.').pop()?.toLowerCase() || 'file';
+    let name = '';
+
+    if (doc.idType === 'TravelTicket') {
+      name = `Ticket-${doc.id}`;
+    } else if (doc.idType === 'Passport' && doc.passportNumber) {
+      name = `Passport-${doc.passportNumber}`;
+    } else if (doc.idType === 'Visa' && doc.visaNumber) {
+      name = `Visa-${doc.issuingCountry}-${doc.visaNumber}`;
+    } else if (doc.idType === 'Aadhar' && doc.aadharName) {
+      name = `Aadhar-${doc.aadharName.replace(/\s/g, '_')}`;
+    } else {
+      name = `Document-${doc.id}`;
+    }
+
     return `${name}.${extension}`;
   };
 
@@ -198,18 +210,72 @@ const TravelRequestDetails: React.FC = () => {
     setIsPreparingDocs(true);
     try {
       let docs: DocumentInfo[] = [];
+
+      // Handle ticket documents - parse JSON if needed
+      let ticketPaths: string[] = [];
       if (travelRequestData.ticketDocumentPath) {
-        docs.push({ id: `ticket_${id}`, url: `http://localhost:5030/api/TravelRequest/${id}/downloadticket`, friendlyName: getFriendlyFilename({ idType: 'TravelTicket', id, documentPath: travelRequestData.ticketDocumentPath }), docData: {} });
+        try {
+          // Try parsing as JSON first (for JSONB format)
+          const parsedPaths = typeof travelRequestData.ticketDocumentPath === 'string'
+            ? JSON.parse(travelRequestData.ticketDocumentPath)
+            : travelRequestData.ticketDocumentPath;
+
+          ticketPaths = Array.isArray(parsedPaths)
+            ? parsedPaths
+            : [parsedPaths].filter(Boolean);
+        } catch (e) {
+          // Fallback to treating as single string
+          ticketPaths = [travelRequestData.ticketDocumentPath].flat().filter((v): v is string => typeof v === 'string' && Boolean(v));
+        }
       }
+
+      console.log("Processed ticket paths:", ticketPaths);
+
+      // Add each ticket with proper naming
+      ticketPaths.forEach((url, index) => {
+        if (!url) return;
+
+        // Extract clean filename from URL
+        const urlObj = new URL(url);
+        const pathParts = urlObj.pathname.split('/');
+        const originalFilename = pathParts[pathParts.length - 1];
+        const extension = originalFilename.split('.').pop() || 'file';
+
+        docs.push({
+          id: `ticket_${id}_${index}`,
+          url: `http://localhost:5030/api/TravelRequest/${id}/downloadticket?index=${index}`,
+          friendlyName: `Ticket-${travelRequestData.id}-${index + 1}.${extension}`,
+          docData: {}
+        });
+      });
+
+      // Add other documents
       const response = await fetch(`http://localhost:5030/api/Documents/User/${travelRequestData.userId}`);
       if (response.ok) {
-        (await response.json())?.forEach((doc: any) => docs.push({ id: `doc_${doc.id}`, url: doc.documentPath, friendlyName: getFriendlyFilename(doc), docData: doc }));
+        (await response.json())?.forEach((doc: any) => {
+          if (doc.documentPath) {
+            docs.push({
+              id: `doc_${doc.id}`,
+              url: doc.documentPath,
+              friendlyName: getFriendlyFilename(doc),
+              docData: doc
+            });
+          }
+        });
       }
-      if (docs.length === 0) { toast.error('No documents available.'); return; }
+
+      if (docs.length === 0) {
+        toast.error('No documents available.');
+        return;
+      }
+
       setAvailableDocs(docs);
       setSelectedDocs(new Set(docs.map(d => d.id)));
       setActiveModal('download');
       showModalContainer(<></>);
+    } catch (error) {
+      console.error("Error preparing documents:", error);
+      toast.error("Failed to prepare documents for download");
     } finally {
       setIsPreparingDocs(false);
     }
@@ -241,23 +307,22 @@ const TravelRequestDetails: React.FC = () => {
     }
   };
 
-    const handlePreviewTicket = () => {
-    if (travelRequestData && travelRequestData.ticketDocumentPath) {
-      
-      setTicketPreviewUrl(travelRequestData.ticketDocumentPath);
-      console.log("ticket url: ", ticketPreviewUrl);
-      
+  const handlePreviewTicket = (urlToPreview: string) => {
+    if (urlToPreview && typeof urlToPreview === 'string') {
+      setTicketPreviewUrl(urlToPreview);
       setIsTicketPreviewModalOpen(true);
+      // console.log("Opening preview for URL:", urlToPreview);
+      // window.open(urlToPreview, '_blank', 'noopener,noreferrer');
     } else {
-      toast.error("No ticket document is available for preview.");
-      console.warn("Preview requested, but 'uploadedTicketPdfPath' is missing from travelRequestData.");
+      toast.error("An invalid document URL was provided.");
+      console.error("Preview failed: Invalid URL.", urlToPreview);
     }
   };
 
   const handleSelectionChange = (docId: string) => {
     setSelectedDocs(prev => { const newSet = new Set(prev); newSet.has(docId) ? newSet.delete(docId) : newSet.add(docId); return newSet; });
   };
-  
+
   const handleSubmitFeedback = async () => {
     await fetch(`http://localhost:5030/api/TravelRequest/${id}/travelfeedback`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ feedbackText: modalInputText, submittingUserId: userId }) });
     setFeedbackSubmitted(true);
@@ -282,7 +347,7 @@ const TravelRequestDetails: React.FC = () => {
     fetchTravelRequest();
     handleCloseModal();
   };
-   const handleSubmitCancelRequest = async () => {
+  const handleSubmitCancelRequest = async () => {
     const CANCELLED_STATUS_ID = 11;
     if (!modalInputText.trim()) {
       toast.error("A reason for cancellation is required.");
@@ -308,138 +373,147 @@ const TravelRequestDetails: React.FC = () => {
   let modalContent: ReactNode = '';
   let modalButtons: ButtonConfig[] = [];
 
-    switch (activeModal) {
-        case 'cancel':
-        modalTitle = 'Cancel Travel Request';
-        modalContent = (<>
-            <p className="text-sm text-gray-600 mb-3">Please provide a reason for cancelling this request. This action cannot be undone.</p>
-            <textarea
-            className="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-300"
-            placeholder="Reason for cancellation (required)..."
-            rows={4}
-            value={modalInputText}
-            onChange={(e) => setModalInputText(e.target.value)}
-            />
-        </>);
-        modalButtons = [
-            { text: 'Back', bgColor: 'bg-gray-300', textColor: 'text-black', onClick: handleCloseModal },
-            { text: 'Confirm Cancellation', bgColor: 'bg-red-600', onClick: handleSubmitCancelRequest }
-        ];
-        break;
-        case 'download':
-        modalTitle = 'Download Documents';
-        modalContent = (
-            <div className="space-y-3">
-            <p className="text-sm text-gray-600">Select documents to include in the zip file.</p>
-            <div className="max-h-64 overflow-y-auto rounded-md border p-3 space-y-2 bg-gray-50">{availableDocs.map(doc => (
+  switch (activeModal) {
+    case 'cancel':
+      modalTitle = 'Cancel Travel Request';
+      modalContent = (<>
+        <p className="text-sm text-gray-600 mb-3">Please provide a reason for cancelling this request. This action cannot be undone.</p>
+        <textarea
+          className="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-300"
+          placeholder="Reason for cancellation (required)..."
+          rows={4}
+          value={modalInputText}
+          onChange={(e) => setModalInputText(e.target.value)}
+        />
+      </>);
+      modalButtons = [
+        { text: 'Back', bgColor: 'bg-gray-300', textColor: 'text-black', onClick: handleCloseModal },
+        { text: 'Confirm Cancellation', bgColor: 'bg-red-600', onClick: handleSubmitCancelRequest }
+      ];
+      break;
+    case 'download':
+      modalTitle = 'Download Documents';
+      modalContent = (
+        <div className="space-y-3">
+          <p className="text-sm text-gray-600">Select documents to include in the zip file.</p>
+          <div className="max-h-64 overflow-y-auto rounded-md border p-3 space-y-2 bg-gray-50">
+            {[...availableDocs]
+              .sort((a, b) => a.id.startsWith('ticket_') ? -1 : 1)
+              .map(doc => (
                 <label key={doc.id} className="flex items-center space-x-3 p-2 rounded-md hover:bg-gray-100 cursor-pointer">
-                <input type="checkbox" className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" checked={selectedDocs.has(doc.id)} onChange={() => handleSelectionChange(doc.id)} />
-                <span className="text-gray-800">{doc.friendlyName}</span>
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    checked={selectedDocs.has(doc.id)}
+                    onChange={() => handleSelectionChange(doc.id)}
+                  />
+                  <span className="text-gray-800">{doc.friendlyName}</span>
                 </label>
-            ))}</div>
-            </div>
-        );
-        modalButtons = [
-            { text: 'Cancel', bgColor: 'bg-gray-300', textColor: 'text-black', onClick: handleCloseModal },
-            { text: isZipping ? 'Zipping...' : `Download (${selectedDocs.size})`, bgColor: 'bg-blue-600', onClick: handleZipAndDownload }
-        ];
-        break;
-        case 'feedback':
-        modalTitle = 'Submit Feedback';
-        modalContent = <textarea className="w-full p-2 border rounded" placeholder="Enter your feedback..." rows={4} value={modalInputText} onChange={(e) => setModalInputText(e.target.value)} />;
-        modalButtons = [{ text: 'Cancel', bgColor: 'bg-gray-300', textColor: 'text-black', onClick: handleCloseModal }, { text: 'Send', bgColor: 'bg-blue-600', onClick: handleSubmitFeedback }];
-        break;
-        case 'closeRequest':
-        modalTitle = 'Finalize Request';
-        modalContent = (<>
-            <p className="text-red-600 mb-3 italic">This action cannot be undone.</p>
-            <textarea className="w-full p-2 border rounded" placeholder="Closing remarks (optional)..." rows={4} value={modalInputText} onChange={(e) => setModalInputText(e.target.value)} />
-        </>);
-        modalButtons = [{ text: 'Cancel', bgColor: 'bg-gray-300', textColor: 'text-black', onClick: handleCloseModal }, { text: 'Confirm', bgColor: 'bg-blue-600', onClick: handleSubmitCloseRequest }];
-        break;
-        case 'approve':
-        modalTitle = 'Approve Travel Request';
-        modalContent = <textarea className="w-full p-2 border rounded" placeholder="Approval comments (optional)..." rows={4} value={modalInputText} onChange={(e) => setModalInputText(e.target.value)} />;
-        modalButtons = [{ text: 'Cancel', bgColor: 'bg-gray-300', textColor: 'text-black', onClick: handleCloseModal }, { text: 'Confirm Approval', bgColor: 'bg-blue-600', onClick: handleSubmitApproval }];
-        break;
-        case 'reject':
-        modalTitle = 'Reject Travel Request';
-        modalContent = <textarea className="w-full p-2 border rounded" placeholder="Rejection reason (required)..." rows={4} value={modalInputText} onChange={(e) => setModalInputText(e.target.value)} />;
-        modalButtons = [{ text: 'Cancel', bgColor: 'bg-gray-300', textColor: 'text-black', onClick: handleCloseModal }, { text: 'Confirm Rejection', bgColor: 'bg-red-600', onClick: handleSubmitRejection }];
-        break;
-    }
-
-
-    const statusBadgeClasses = getStatusBadgeStyles(travelRequestData.status);
-    const displayStatusName = getDisplayStatusName(travelRequestData.status);
-    const isEmployee = role === 'employee';
-    const isAdmin = role === 'admin';
-    const isManager = role === 'manager';
-    const showFeedbackButton = isEmployee && travelRequestData.status === 'Returned' && !feedbackSubmitted;
-    const showCloseRequestButton = isAdmin && travelRequestData.status === 'Returned' && !requestClosed;
-    const showManagerActionButtons = isManager && travelRequestData.status === 'PendingReview' && !actionTaken;
-    const areAnyDocumentsAvailable = !!travelRequestData.ticketDocumentPath || (travelRequestData.userId > 0);
-    const isRequestActive = travelRequestData.currentStatusId < 10;
-    const managerCancelStatuses = [ 'Approved', 'OptionsListed', 'OptionSelected', 'DUApproved', 'BUApproved', 'TicketsDispatched' ];
-    const employeeCancelStatuses = [ ...managerCancelStatuses, 'PendingReview' ];
-    const showCancelButton = isRequestActive && ( (isManager && managerCancelStatuses.includes(travelRequestData.status)) || (isEmployee && employeeCancelStatuses.includes(travelRequestData.status)) );
-    
-    return (
-        <div className="space-y-6 animate-fadeIn">
-            <Toaster position="top-right" reverseOrder={false} containerStyle={{ top: 70 }}/>
-            <ConfirmationModal isOpen={isOpen} onClose={handleCloseModal} title={modalTitle} content={modalContent} buttons={modalButtons} />
-            {id && (
-                <TicketPreviewModal
-                    isOpen={isTicketPreviewModalOpen}
-                    onClose={() => setIsTicketPreviewModalOpen(false)}
-                    ticketUrl={ticketPreviewUrl}
-                    downloadUrl={`http://localhost:5030/api/TravelRequest/${id}/downloadticket`}
-                />
-            )}
-            
-            {/* Header section */}
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                <div className="flex items-center gap-4">
-                <button onClick={() => navigate(-1)} className="p-2 rounded-full bg-gray-200 hover:bg-gray-300" aria-label="Go back"><ChevronLeft className="h-5 w-5" /></button>
-                <div>
-                    <h2 className="text-2xl font-bold flex items-center gap-3">{travelRequestData.id}<span className={`px-3 py-1.5 rounded-full text-xs font-semibold ${statusBadgeClasses}`}>{displayStatusName}</span></h2>
-                    <p className="text-sm text-gray-500 mt-1">{travelRequestData.destination || travelRequestData.purpose} • {formatDate(travelRequestData.outboundDepartureDate)} to {formatDate(travelRequestData.returnArrivalDate || travelRequestData.returnDepartureDate)}</p>
-                </div>
-                </div>
-
-                <div className="flex flex-wrap gap-3 md:ml-auto">
-                    {/* All action buttons */}
-                    {showCloseRequestButton && (<button className="btn-secondary flex items-center" onClick={() => { setModalInputText(''); setActiveModal('closeRequest'); showModalContainer(<></>); }}><Lock className="h-4 w-4 mr-2" />Finalize Request</button>)}
-                    {showFeedbackButton && (<button className="btn-secondary flex items-center" onClick={() => { setModalInputText(''); setActiveModal('feedback'); showModalContainer(<></>); }}><MessageSquare className="h-4 w-4 mr-2" />Submit Feedback</button>)}
-                    {showManagerActionButtons && (<>
-                        <button className="bg-green-600 hover:bg-green-700 text-white rounded-md px-3 py-2 text-sm font-medium flex items-center" onClick={() => { setModalInputText(''); setActiveModal('approve'); showModalContainer(<></>); }}><Check className="h-4 w-4 mr-2" />Approve</button>
-                        <button className="bg-red-600 hover:bg-red-700 text-white rounded-md px-3 py-2 text-sm font-medium flex items-center" onClick={() => { setModalInputText(''); setActiveModal('reject'); showModalContainer(<></>); }}><X className="h-4 w-4 mr-2" />Reject</button>
-                    </>)}
-                    {showCancelButton && (<button className="bg-gray-500 hover:bg-gray-600 text-white rounded-md px-3 py-2 text-sm font-medium flex items-center" onClick={() => { setModalInputText(''); setActiveModal('cancel'); showModalContainer(<></>); }}><Slash className="h-4 w-4 mr-2" />Cancel Request</button>)}
-                    <button className="btn-primary flex items-center" onClick={handleOpenDownloadModal} disabled={!areAnyDocumentsAvailable || isPreparingDocs}>{isPreparingDocs ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Preparing...</> : <><Download className="h-4 w-4 mr-2" />Travel Docs</>}</button>
-                    <button className="btn-accent flex items-center"><FileText className="h-4 w-4 mr-2" />Export</button>
-                </div>
-            </div>
-            
-            {id && <TravelInfoBanner requestId={id} />}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2 space-y-6">
-                    {id && <TravelInfo requestId={id} />}
-                    {/* DocumentTabs */}
-                    {id && (
-                        <DocumentTabs
-                            requestId={id}
-                            onPreviewTicket={handlePreviewTicket}
-                            ticketDocumentPath={travelRequestData.ticketDocumentPath}
-                            accommodationDocumentPath={travelRequestData.accommodationDocumentPath}
-                            insuranceDocumentPath={travelRequestData.insuranceDocumentPath}
-                        />
-                    )}
-                </div>
-                <div className="lg:col-span-1">{id && <ApprovalTimeline requestId={id} />}</div>
-            </div>
+              ))}
+          </div>
         </div>
-    );
+      );
+      modalButtons = [
+        { text: 'Cancel', bgColor: 'bg-gray-300', textColor: 'text-black', onClick: handleCloseModal },
+        { text: isZipping ? 'Zipping...' : `Download (${selectedDocs.size})`, bgColor: 'bg-blue-600', onClick: handleZipAndDownload }
+      ];
+      break;
+    case 'feedback':
+      modalTitle = 'Submit Feedback';
+      modalContent = <textarea className="w-full p-2 border rounded" placeholder="Enter your feedback..." rows={4} value={modalInputText} onChange={(e) => setModalInputText(e.target.value)} />;
+      modalButtons = [{ text: 'Cancel', bgColor: 'bg-gray-300', textColor: 'text-black', onClick: handleCloseModal }, { text: 'Send', bgColor: 'bg-blue-600', onClick: handleSubmitFeedback }];
+      break;
+    case 'closeRequest':
+      modalTitle = 'Finalize Request';
+      modalContent = (<>
+        <p className="text-red-600 mb-3 italic">This action cannot be undone.</p>
+        <textarea className="w-full p-2 border rounded" placeholder="Closing remarks (optional)..." rows={4} value={modalInputText} onChange={(e) => setModalInputText(e.target.value)} />
+      </>);
+      modalButtons = [{ text: 'Cancel', bgColor: 'bg-gray-300', textColor: 'text-black', onClick: handleCloseModal }, { text: 'Confirm', bgColor: 'bg-blue-600', onClick: handleSubmitCloseRequest }];
+      break;
+    case 'approve':
+      modalTitle = 'Approve Travel Request';
+      modalContent = <textarea className="w-full p-2 border rounded" placeholder="Approval comments (optional)..." rows={4} value={modalInputText} onChange={(e) => setModalInputText(e.target.value)} />;
+      modalButtons = [{ text: 'Cancel', bgColor: 'bg-gray-300', textColor: 'text-black', onClick: handleCloseModal }, { text: 'Confirm Approval', bgColor: 'bg-blue-600', onClick: handleSubmitApproval }];
+      break;
+    case 'reject':
+      modalTitle = 'Reject Travel Request';
+      modalContent = <textarea className="w-full p-2 border rounded" placeholder="Rejection reason (required)..." rows={4} value={modalInputText} onChange={(e) => setModalInputText(e.target.value)} />;
+      modalButtons = [{ text: 'Cancel', bgColor: 'bg-gray-300', textColor: 'text-black', onClick: handleCloseModal }, { text: 'Confirm Rejection', bgColor: 'bg-red-600', onClick: handleSubmitRejection }];
+      break;
+  }
+
+
+  const statusBadgeClasses = getStatusBadgeStyles(travelRequestData.status);
+  const displayStatusName = getDisplayStatusName(travelRequestData.status);
+  const isEmployee = role === 'employee';
+  const isAdmin = role === 'admin';
+  const isManager = role === 'manager';
+  const showFeedbackButton = isEmployee && travelRequestData.status === 'Returned' && !feedbackSubmitted;
+  const showCloseRequestButton = isAdmin && travelRequestData.status === 'Returned' && !requestClosed;
+  const showManagerActionButtons = isManager && travelRequestData.status === 'PendingReview' && !actionTaken;
+  const areAnyDocumentsAvailable = !!travelRequestData.ticketDocumentPath || (travelRequestData.userId > 0);
+  const isRequestActive = travelRequestData.currentStatusId < 10;
+  const managerCancelStatuses = ['Approved', 'OptionsListed', 'OptionSelected', 'DUApproved', 'BUApproved', 'TicketsDispatched'];
+  const employeeCancelStatuses = [...managerCancelStatuses, 'PendingReview'];
+  const showCancelButton = isRequestActive && ((isManager && managerCancelStatuses.includes(travelRequestData.status)) || (isEmployee && employeeCancelStatuses.includes(travelRequestData.status)));
+
+  return (
+    <div className="space-y-6 animate-fadeIn">
+      <Toaster position="top-right" reverseOrder={false} containerStyle={{ top: 70 }} />
+      <ConfirmationModal isOpen={isOpen} onClose={handleCloseModal} title={modalTitle} content={modalContent} buttons={modalButtons} />
+      {id && (
+        <TicketPreviewModal
+          isOpen={isTicketPreviewModalOpen}
+          onClose={() => setIsTicketPreviewModalOpen(false)}
+          ticketUrl={ticketPreviewUrl}
+          downloadUrl={`http://localhost:5030/api/TravelRequest/${id}/downloadticket`}
+        />
+      )}
+
+      {/* Header section */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <button onClick={() => navigate(-1)} className="p-2 rounded-full bg-gray-200 hover:bg-gray-300" aria-label="Go back"><ChevronLeft className="h-5 w-5" /></button>
+          <div>
+            <h2 className="text-2xl font-bold flex items-center gap-3">{travelRequestData.id}<span className={`px-3 py-1.5 rounded-full text-xs font-semibold ${statusBadgeClasses}`}>{displayStatusName}</span></h2>
+            <p className="text-sm text-gray-500 mt-1">{travelRequestData.destination || travelRequestData.purpose} • {formatDate(travelRequestData.outboundDepartureDate)} to {formatDate(travelRequestData.returnArrivalDate || travelRequestData.returnDepartureDate)}</p>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap gap-3 md:ml-auto">
+          {/* All action buttons */}
+          {showCloseRequestButton && (<button className="btn-secondary flex items-center" onClick={() => { setModalInputText(''); setActiveModal('closeRequest'); showModalContainer(<></>); }}><Lock className="h-4 w-4 mr-2" />Finalize Request</button>)}
+          {showFeedbackButton && (<button className="btn-secondary flex items-center" onClick={() => { setModalInputText(''); setActiveModal('feedback'); showModalContainer(<></>); }}><MessageSquare className="h-4 w-4 mr-2" />Submit Feedback</button>)}
+          {showManagerActionButtons && (<>
+            <button className="bg-green-600 hover:bg-green-700 text-white rounded-md px-3 py-2 text-sm font-medium flex items-center" onClick={() => { setModalInputText(''); setActiveModal('approve'); showModalContainer(<></>); }}><Check className="h-4 w-4 mr-2" />Approve</button>
+            <button className="bg-red-600 hover:bg-red-700 text-white rounded-md px-3 py-2 text-sm font-medium flex items-center" onClick={() => { setModalInputText(''); setActiveModal('reject'); showModalContainer(<></>); }}><X className="h-4 w-4 mr-2" />Reject</button>
+          </>)}
+          {showCancelButton && (<button className="bg-gray-500 hover:bg-gray-600 text-white rounded-md px-3 py-2 text-sm font-medium flex items-center" onClick={() => { setModalInputText(''); setActiveModal('cancel'); showModalContainer(<></>); }}><Slash className="h-4 w-4 mr-2" />Cancel Request</button>)}
+          <button className="btn-primary flex items-center" onClick={handleOpenDownloadModal} disabled={!areAnyDocumentsAvailable || isPreparingDocs}>{isPreparingDocs ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Preparing...</> : <><Download className="h-4 w-4 mr-2" />Travel Docs</>}</button>
+          <button className="btn-accent flex items-center"><FileText className="h-4 w-4 mr-2" />Export</button>
+        </div>
+      </div>
+
+      {id && <TravelInfoBanner requestId={id} />}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 space-y-6">
+          {id && <TravelInfo requestId={id} />}
+          {/* DocumentTabs */}
+          {id && (
+            <DocumentTabs
+              requestId={id}
+              onPreviewTicket={handlePreviewTicket}
+              ticketDocumentPath={travelRequestData.ticketDocumentPath}
+              accommodationDocumentPath={travelRequestData.accommodationDocumentPath}
+              insuranceDocumentPath={travelRequestData.insuranceDocumentPath}
+            />
+          )}
+        </div>
+        <div className="lg:col-span-1">{id && <ApprovalTimeline requestId={id} />}</div>
+      </div>
+    </div>
+  );
 };
 
 export default TravelRequestDetails;

@@ -4,8 +4,8 @@ import { Download, X } from 'lucide-react';
 interface TicketPreviewModalProps {
   isOpen: boolean;
   onClose: () => void;
-  ticketUrl: string; // URL for the iframe src (the preview endpoint)
-  downloadUrl: string; // URL for the actual download button
+  ticketUrl: string;
+  downloadUrl: string;
 }
 
 const TicketPreviewModal: React.FC<TicketPreviewModalProps> = ({
