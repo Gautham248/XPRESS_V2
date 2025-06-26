@@ -1,6 +1,9 @@
-import React, { useState } from 'react';
+// src/components/DocumentForm.tsx
+
+import React, { useState, useEffect } from 'react'; // Import useEffect
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
+import toast from 'react-hot-toast';
 import { DocumentType, FormState, Action, FormField, formConfigMap } from './types';
 
 interface DocumentFormProps {
@@ -10,11 +13,20 @@ interface DocumentFormProps {
   onSave: (formData: FormState, docType: DocumentType) => Promise<void>;
   isSaving: boolean;
   isReadyToSubmit: boolean;
+  toast: typeof toast;
 }
 
-function DocumentForm({ docType, formState, dispatch, onSave, isSaving, isReadyToSubmit }: DocumentFormProps) {
+function DocumentForm({ docType, formState, dispatch, onSave, isSaving, isReadyToSubmit, toast }: DocumentFormProps) {
   const fields = formConfigMap[docType];
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+
+  // --- FIX: Add this useEffect hook ---
+  // This effect will run whenever the docType prop changes (i.e., when the tab switches).
+  // It clears any existing validation errors from the previous tab.
+  useEffect(() => {
+    setValidationErrors({});
+  }, [docType]);
+  // --- END FIX ---
 
   const handleChange = (field: keyof FormState, value: string | Date | null) => {
     dispatch({ type: 'UPDATE_FIELD', docType, field, value });
@@ -48,8 +60,22 @@ function DocumentForm({ docType, formState, dispatch, onSave, isSaving, isReadyT
       }
     });
 
+    // Validation logic for expiry date
+    const expiryDateValue = formState.expiryDate;
+    if (expiryDateValue && expiryDateValue instanceof Date) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0); 
+
+        if (expiryDateValue < today) {
+            errors.expiryDate = 'Expiry date cannot be in the past.';
+        }
+    }
+
     if (Object.keys(errors).length > 0) {
       setValidationErrors(errors);
+      if (errors.expiryDate === 'Expiry date cannot be in the past.') {
+          toast.error('This document is expired and cannot be uploaded.');
+      }
       return;
     }
 

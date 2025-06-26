@@ -256,6 +256,7 @@ function Documents() {
               onSave={handleFinalSubmit}
               isSaving={isSaving}
               isReadyToSubmit={isReadyToSubmit}
+              toast={toast}
             />
           </div>
         </div>
