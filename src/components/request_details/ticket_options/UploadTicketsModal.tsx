@@ -1,14 +1,15 @@
 import React, { useState, useCallback, memo, useEffect } from 'react';
 import { X, Plus, Plane, Loader2 } from 'lucide-react';
-import axios from 'axios'; // Make sure axios is imported
+import axios from 'axios';
 import Autocomplete from './Autocomplete';
-import FileUploader from './FileUploader';
+import FileUploader from './FileUploader'; // Assumes multi-file version is here
 
+// CHANGE 1: Interface updated for multiple file paths
 export interface AirlineTicketData {
     travelAgencyName: string;
     agencyBookingCharge: number;
     totalExpense: number;
-    pdfFilePath: string | null;
+    pdfFilePath: string[]; // Was pdfFilePath: string | null
     airlines: {
         name: string;
         cost: number;
@@ -39,7 +40,8 @@ const UploadTicketsModal: React.FC<UploadTicketsModalProps> = memo(({
     const [agencyName, setAgencyName] = useState<string>('');
     const [agencyExpense, setAgencyExpense] = useState<string>('');
     const [totalExpense, setTotalExpense] = useState<string>('');
-    const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    // CHANGE 2: State updated from a single file to an array of files
+    const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
     const [airlines, setAirlines] = useState<Airline[]>([{ name: '', cost: '' }]);
     const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
@@ -70,9 +72,10 @@ const UploadTicketsModal: React.FC<UploadTicketsModalProps> = memo(({
         airlines?: { name?: string; cost?: string }[];
     }>({});
 
-    const handleFileSelect = useCallback((file: File | null) => {
-        setSelectedFile(file);
-        if (file) {
+    // CHANGE 3: Callback updated to accept an array of files
+    const handleFileSelect = useCallback((files: File[]) => {
+        setSelectedFiles(files);
+        if (files.length > 0) {
             setErrors(prev => ({ ...prev, file: undefined }));
         }
     }, []);
@@ -106,6 +109,7 @@ const UploadTicketsModal: React.FC<UploadTicketsModalProps> = memo(({
         }
     }, [airlines.length]);
 
+    // CHANGE 4: Validation logic updated for an array of files
     const validateForm = useCallback(() => {
         const newErrors: typeof errors = {};
         if (!agencyName.trim()) newErrors.agencyName = 'Travel agency name is required';
@@ -113,8 +117,15 @@ const UploadTicketsModal: React.FC<UploadTicketsModalProps> = memo(({
         else if (isNaN(Number(agencyExpense)) || Number(agencyExpense) <= 0) newErrors.agencyExpense = 'Expense must be a positive number';
         if (!totalExpense.trim()) newErrors.totalExpense = 'Total expense is required';
         else if (isNaN(Number(totalExpense)) || Number(totalExpense) <= 0) newErrors.totalExpense = 'Total expense must be a positive number';
-        if (!selectedFile) newErrors.file = 'Please select a file to upload';
-        else if (selectedFile.size > 10 * 1024 * 1024) newErrors.file = 'File size must be less than 10MB';
+        
+        if (selectedFiles.length === 0) {
+            newErrors.file = 'Please select at least one file to upload';
+        } else {
+            const oversizedFile = selectedFiles.find(file => file.size > 10 * 1024 * 1024);
+            if (oversizedFile) {
+                newErrors.file = `File "${oversizedFile.name}" must be less than 10MB`;
+            }
+        }
 
         if (transportationType === 'flight') {
             const airlineErrors = airlines.map((airline) => {
@@ -128,7 +139,7 @@ const UploadTicketsModal: React.FC<UploadTicketsModalProps> = memo(({
         }
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
-    }, [agencyName, agencyExpense, totalExpense, selectedFile, airlines]);
+    }, [agencyName, agencyExpense, totalExpense, selectedFiles, airlines, transportationType]);
 
     const uploadFileToCloudinary = async (file: File): Promise<string | null> => {
         const formData = new FormData();
@@ -149,6 +160,7 @@ const UploadTicketsModal: React.FC<UploadTicketsModalProps> = memo(({
                 throw new Error(errorData.error?.message || `Cloudinary upload failed with status: ${response.status}`);
             }
             const data = await response.json();
+            
             return data.secure_url || null;
         } catch (error) {
             console.error("Error uploading to Cloudinary:", error);
@@ -161,34 +173,35 @@ const UploadTicketsModal: React.FC<UploadTicketsModalProps> = memo(({
         setAgencyName('');
         setAgencyExpense('');
         setTotalExpense('');
-        setSelectedFile(null);
+        setSelectedFiles([]); // Reset to empty array
         setAirlines([{ name: '', cost: '' }]);
         setErrors({});
         setIsSubmitting(false);
         onClose();
     }, [onClose]);
 
+    // CHANGE 5: Submission logic now uploads all files in the array
     const handleSubmit = useCallback(async () => {
         if (!validateForm()) {
             return;
         }
 
         setIsSubmitting(true);
-        let fileUrl: string | null = null;
+        
+        const uploadPromises = selectedFiles.map(file => uploadFileToCloudinary(file));
+        const fileUrls = (await Promise.all(uploadPromises)).filter((url): url is string => url !== null);
 
-        if (selectedFile) {
-            fileUrl = await uploadFileToCloudinary(selectedFile);
-            if (!fileUrl) {
-                setIsSubmitting(false);
-                return;
-            }
+        if (fileUrls.length !== selectedFiles.length) {
+            // An error occurred during one of the uploads and was set in `uploadFileToCloudinary`
+            setIsSubmitting(false);
+            return;
         }
 
         const formData: AirlineTicketData = {
             travelAgencyName: agencyName,
             agencyBookingCharge: Number(agencyExpense),
             totalExpense: Number(totalExpense),
-            pdfFilePath: fileUrl,
+            pdfFilePath: fileUrls, // Pass the array of URLs
             airlines: airlines.map(airline => ({
                 name: airline.name,
                 cost: Number(airline.cost)
@@ -196,10 +209,10 @@ const UploadTicketsModal: React.FC<UploadTicketsModalProps> = memo(({
         };
 
         onConfirm(formData);
-        setIsSubmitting(false);
+        // handleClose will set isSubmitting to false
         handleClose();
 
-    }, [agencyName, agencyExpense, totalExpense, selectedFile, airlines, validateForm, onConfirm, handleClose]);
+    }, [agencyName, agencyExpense, totalExpense, selectedFiles, airlines, validateForm, onConfirm, handleClose]);
 
     if (!isOpen) return null;
 
@@ -223,7 +236,6 @@ const UploadTicketsModal: React.FC<UploadTicketsModalProps> = memo(({
                     {/* Travel Agency Details */}
                     <div className="border border-gray-200 rounded-lg p-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {/* This is the new, corrected code */}
                             <div>
                                 <label htmlFor="agencyName" className="block text-sm font-medium text-gray-700 mb-1">
                                     Travel Agency Name <span className='text-red-500'>*</span>
@@ -318,13 +330,13 @@ const UploadTicketsModal: React.FC<UploadTicketsModalProps> = memo(({
                         {errors.totalExpense && <p className="mt-1 text-xs text-red-600">{errors.totalExpense}</p>}
                     </div>
 
-                    {/* File Upload */}
+                    {/* CHANGE 6: FileUploader props are updated */}
                     <div className="border border-gray-200 rounded-lg p-4">
-                        <h3 className="text-sm font-medium text-gray-900 mb-2">Attach Ticket <span className='text-red-500'>*</span></h3>
+                        <h3 className="text-sm font-medium text-gray-900 mb-2">Attach Tickets <span className='text-red-500'>*</span></h3>
                         <FileUploader
                             onFileSelect={handleFileSelect}
-                            selectedFile={selectedFile}
-                            showValidation={!!errors.file && !selectedFile}
+                            selectedFiles={selectedFiles}
+                            showValidation={!!errors.file && selectedFiles.length === 0}
                         />
                         {errors.file && <p className="mt-1 text-xs text-red-600">{errors.file}</p>}
                     </div>
@@ -335,7 +347,8 @@ const UploadTicketsModal: React.FC<UploadTicketsModalProps> = memo(({
                         Cancel
                     </button>
                     <button onClick={handleSubmit}
-                        disabled={isSubmitting || !agencyName.trim() || !agencyExpense.trim() || !totalExpense.trim() || !selectedFile }
+                        // CHANGE 7: disabled check is updated
+                        disabled={isSubmitting || !agencyName.trim() || !agencyExpense.trim() || !totalExpense.trim() || selectedFiles.length === 0 }
                         className="px-6 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded hover:bg-blue-700 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center min-w-[100px]"
                     >
                         {isSubmitting ? (
