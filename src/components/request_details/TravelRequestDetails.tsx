@@ -213,11 +213,9 @@ const TravelRequestDetails: React.FC = () => {
     try {
       let docs: DocumentInfo[] = [];
 
-      // Handle ticket documents - parse JSON if needed
       let ticketPaths: string[] = [];
       if (travelRequestData.ticketDocumentPath) {
         try {
-          // Try parsing as JSON first (for JSONB format)
           const parsedPaths = typeof travelRequestData.ticketDocumentPath === 'string'
             ? JSON.parse(travelRequestData.ticketDocumentPath)
             : travelRequestData.ticketDocumentPath;
@@ -226,18 +224,15 @@ const TravelRequestDetails: React.FC = () => {
             ? parsedPaths
             : [parsedPaths].filter(Boolean);
         } catch (e) {
-          // Fallback to treating as single string
           ticketPaths = [travelRequestData.ticketDocumentPath].flat().filter((v): v is string => typeof v === 'string' && Boolean(v));
         }
       }
 
-      console.log("Processed ticket paths:", ticketPaths);
+      // console.log("Processed ticket paths:", ticketPaths);
 
-      // Add each ticket with proper naming
       ticketPaths.forEach((url, index) => {
         if (!url) return;
 
-        // Extract clean filename from URL
         const urlObj = new URL(url);
         const pathParts = urlObj.pathname.split('/');
         const originalFilename = pathParts[pathParts.length - 1];
@@ -251,7 +246,6 @@ const TravelRequestDetails: React.FC = () => {
         });
       });
 
-      // Add other documents
       const response = await fetch(`http://localhost:5030/api/Documents/User/${travelRequestData.userId}`);
       if (response.ok) {
         (await response.json())?.forEach((doc: any) => {
@@ -398,7 +392,7 @@ const TravelRequestDetails: React.FC = () => {
           <p className="text-sm text-gray-600">Select documents to include in the zip file.</p>
           <div className="max-h-64 overflow-y-auto rounded-md border p-3 space-y-2 bg-gray-50">
             {[...availableDocs]
-              .sort((a, b) => a.id.startsWith('ticket_') ? -1 : 1)
+              .sort((a,) => a.id.startsWith('ticket_') ? -1 : 1)
               .map(doc => (
                 <label key={doc.id} className="flex items-center space-x-3 p-2 rounded-md hover:bg-gray-100 cursor-pointer">
                   <input

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Upload, Check, FileText, Download, Ticket, Eye } from 'lucide-react';
+import { Upload, Check, FileText, Download, Ticket } from 'lucide-react';
 
 interface UITicketOption {
   id: string;
