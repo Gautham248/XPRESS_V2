@@ -5,16 +5,22 @@ interface TicketPreviewModalProps {
   isOpen: boolean;
   onClose: () => void;
   ticketUrl: string;
-  downloadUrl: string;
+  // downloadUrl: string;
+  requestId: string;
+  ticketIndex: number;
 }
 
 const TicketPreviewModal: React.FC<TicketPreviewModalProps> = ({
   isOpen,
   onClose,
   ticketUrl,
-  downloadUrl,
+  // downloadUrl,
+  requestId,
+  ticketIndex,
 }) => {
   if (!isOpen) return null;
+
+  const downloadUrl = `http://localhost:5030/api/TravelRequest/${requestId}/downloadticket?index=${ticketIndex}`;
 
   return (
     <div
@@ -27,12 +33,11 @@ const TicketPreviewModal: React.FC<TicketPreviewModalProps> = ({
       >
         {/* Modal Header */}
         <div className="flex items-center justify-between p-4 border-b">
-          <h3 className="text-xl font-semibold text-gray-800">Ticket Preview</h3>
+          <h3 className="text-xl font-semibold text-gray-800">Ticket Preview (Document {ticketIndex + 1})</h3>
           <div className="flex items-center space-x-4">
             <a
               href={downloadUrl}
-              target="_blank"
-              rel="noopener noreferrer"
+              download
               className="flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             >
               <Download className="w-4 h-4 mr-2" />

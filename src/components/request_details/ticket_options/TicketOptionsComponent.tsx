@@ -53,7 +53,7 @@ interface SelectTicketOptionPayload {
 // --- Component Specific Types ---
 interface TicketProps {
   requestId: string;
-  onPreviewTicket: (url: string) => void;
+  onPreviewTicket: (url: string, index: number) => void;
   ticketDocumentPath?: string | string[];
 }
 interface User {
@@ -572,6 +572,7 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId, onPreviewTick
     if (status === 'DUApproved') {
       return (
         <SelectedView
+          requestId={requestId}
           ticketOptions={uiTicketOptions}
           onUploadTickets={() => setIsUploadTicketsFileModalOpen(true)}
           onPreviewTickets={onPreviewTicket}
@@ -585,6 +586,7 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId, onPreviewTick
     if (['TicketsDispatched', 'InTransit', 'Returned', 'Closed'].includes(status)) {
       return (
         <SelectedView
+          requestId={requestId}
           ticketOptions={uiTicketOptions}
           onPreviewTickets={onPreviewTicket}
           documentPaths={ticketDocumentPath}
@@ -596,6 +598,7 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId, onPreviewTick
     if (status === 'OptionSelected') {
       return (
         <SelectedView
+          requestId={requestId}
           ticketOptions={uiTicketOptions}
           onPreviewTickets={onPreviewTicket}
           documentPaths={ticketDocumentPath}
@@ -648,6 +651,7 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId, onPreviewTick
 
       return (
         <SelectedView
+          requestId={requestId}
           ticketOptions={uiTicketOptions}
           buttons={selectedViewButtons}
           onPreviewTickets={onPreviewTicket}
@@ -674,6 +678,7 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId, onPreviewTick
     if (status === 'DUApproved') {
       return (
         <SelectedView
+          requestId={requestId}
           ticketOptions={uiTicketOptions}
           onPreviewTickets={onPreviewTicket}
           documentPaths={ticketDocumentPath}
@@ -706,6 +711,7 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId, onPreviewTick
     if (status === 'OptionSelected') {
       return (
         <SelectedView
+          requestId={requestId}
           ticketOptions={uiTicketOptions}
           onPreviewTickets={onPreviewTicket}
           documentPaths={ticketDocumentPath}
@@ -716,6 +722,7 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId, onPreviewTick
     if (['DUApproved', 'TicketsDispatched', 'InTransit', 'Returned', 'Closed'].includes(status)) {
       return (
         <SelectedView
+          requestId={requestId}
           ticketOptions={uiTicketOptions}
           onPreviewTickets={onPreviewTicket}
           documentPaths={ticketDocumentPath}
@@ -738,6 +745,7 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId, onPreviewTick
     }
     return (
       <SelectedView
+        requestId={requestId}
         ticketOptions={uiTicketOptions}
         onPreviewTickets={onPreviewTicket}
         documentPaths={ticketDocumentPath}

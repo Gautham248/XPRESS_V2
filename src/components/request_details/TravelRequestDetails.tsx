@@ -122,7 +122,8 @@ const TravelRequestDetails: React.FC = () => {
 
   const [modalInputText, setModalInputText] = useState('');
   const [isTicketPreviewModalOpen, setIsTicketPreviewModalOpen] = useState(false);
-  const [ticketPreviewUrl, setTicketPreviewUrl] = useState<string>('');
+  // const [ticketPreviewUrl, setTicketPreviewUrl] = useState<string>('');
+  const [ticketPreviewData, setTicketPreviewData] = useState<{ url: string; index: number } | null>(null);
 
   const userString = localStorage.getItem('user');
   let role = '';
@@ -205,6 +206,7 @@ const TravelRequestDetails: React.FC = () => {
     setModalInputText('');
   };
 
+  // ---------- TODO: fixing -------------
   const handleOpenDownloadModal = async () => {
     if (!id || !travelRequestData?.userId) return;
     setIsPreparingDocs(true);
@@ -307,17 +309,15 @@ const TravelRequestDetails: React.FC = () => {
     }
   };
 
-  const handlePreviewTicket = (urlToPreview: string) => {
+  const handlePreviewTicket = (urlToPreview: string, index: number) => {
     if (urlToPreview && typeof urlToPreview === 'string') {
-      setTicketPreviewUrl(urlToPreview);
-      setIsTicketPreviewModalOpen(true);
-      // console.log("Opening preview for URL:", urlToPreview);
-      // window.open(urlToPreview, '_blank', 'noopener,noreferrer');
+        // Store both pieces of data
+        setTicketPreviewData({ url: urlToPreview, index: index });
+        setIsTicketPreviewModalOpen(true);
     } else {
-      toast.error("An invalid document URL was provided.");
-      console.error("Preview failed: Invalid URL.", urlToPreview);
+        toast.error("An invalid document URL was provided.");
     }
-  };
+};
 
   const handleSelectionChange = (docId: string) => {
     setSelectedDocs(prev => { const newSet = new Set(prev); newSet.has(docId) ? newSet.delete(docId) : newSet.add(docId); return newSet; });
@@ -462,12 +462,14 @@ const TravelRequestDetails: React.FC = () => {
     <div className="space-y-6 animate-fadeIn">
       <Toaster position="top-right" reverseOrder={false} containerStyle={{ top: 70 }} />
       <ConfirmationModal isOpen={isOpen} onClose={handleCloseModal} title={modalTitle} content={modalContent} buttons={modalButtons} />
-      {id && (
+      {id && ticketPreviewData && (
         <TicketPreviewModal
           isOpen={isTicketPreviewModalOpen}
           onClose={() => setIsTicketPreviewModalOpen(false)}
-          ticketUrl={ticketPreviewUrl}
-          downloadUrl={`http://localhost:5030/api/TravelRequest/${id}/downloadticket`}
+          ticketUrl={ticketPreviewData.url}
+          // downloadUrl={`http://localhost:5030/api/TravelRequest/${id}/downloadticket`}
+          requestId={id}
+          ticketIndex={ticketPreviewData.index}
         />
       )}
 

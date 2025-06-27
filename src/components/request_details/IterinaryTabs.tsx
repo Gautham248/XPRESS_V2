@@ -164,7 +164,7 @@ interface User {
 
 interface DocumentTabsProps {
   requestId: string;
-  onPreviewTicket: (url: string) => void;
+  onPreviewTicket: (url: string, index:  number) => void;
   ticketDocumentPath?: string | string[];
   accommodationDocumentPath?: string;
   insuranceDocumentPath?: string;
