@@ -1,6 +1,11 @@
 import React from 'react';
-import { TicketOption } from '../../../../data/mockData';
-import { Upload, Check, Ticket, Eye } from 'lucide-react';
+import { Upload, Check, FileText, Download, Ticket } from 'lucide-react';
+
+interface UITicketOption {
+  id: string;
+  description: string;
+  selected: boolean;
+}
 
 interface CustomButton {
   label: string;
@@ -11,17 +16,20 @@ interface CustomButton {
 }
 
 interface Props {
-  ticketOptions: TicketOption[];
-  onPreviewTickets?: () => void;
-  onDownloadTickets?: () => void;
+  requestId: string;
+  ticketOptions: UITicketOption[];
+  documentPaths?: string | string[];
+  onPreviewTickets: (url: string, index: number) => void;
   onUploadTickets?: () => void;
   onConfirmTicketOption?: () => void;
-  buttons?: ('downloadTickets' | 'uploadTickets' | 'confirmTicketOption')[];
+  buttons?: ('uploadTickets' | 'confirmTicketOption')[];
   customButtons?: CustomButton[];
 }
 
 const SelectedView: React.FC<Props> = ({
+  requestId,
   ticketOptions,
+  documentPaths = [],
   onPreviewTickets,
   onUploadTickets,
   onConfirmTicketOption,
@@ -29,7 +37,30 @@ const SelectedView: React.FC<Props> = ({
   customButtons = [],
 }) => {
   const selectedOption = ticketOptions.find(opt => opt.selected);
-  const canPreview = !!selectedOption?.filePath;
+
+  const getPathsArray = (pathsArg: string[] | string): string[] => {
+    if (Array.isArray(pathsArg)) return pathsArg;
+    if (typeof pathsArg === 'string') {
+      try {
+        const parsed = JSON.parse(pathsArg);
+        return Array.isArray(parsed) ? parsed.filter(Boolean) : [pathsArg].filter(Boolean);
+      } catch (e) {
+        return pathsArg ? [pathsArg] : [];
+      }
+    }
+    return [];
+  };
+
+  const paths = getPathsArray(documentPaths);
+
+  const getDocName = (url: string, index: number) => {
+    try {
+        const filename = new URL(url).pathname.split('/').pop();
+        return filename || `Ticket Document ${index + 1}`;
+    } catch {
+        return `Ticket Document ${index + 1}`;
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -69,45 +100,84 @@ const SelectedView: React.FC<Props> = ({
           ))}
         </div>
       )}
+
       {selectedOption && (
-        <div className="flex justify-end gap-3">
-          {buttons.includes('downloadTickets') && onPreviewTickets && canPreview && (
-            <button
-              className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-xl font-medium hover:bg-indigo-700 shadow-lg"
-              onClick={onPreviewTickets}
-            >
-              <Eye size={18} /> View Ticket
-            </button>
+        <div className="space-y-4">
+          <div className="border-t pt-4">
+            <h4 className="text-sm font-semibold text-gray-700 mb-3">Attached Tickets:</h4>
+            {paths.length > 0 ? (
+              <div className="space-y-2">
+                {paths.map((docUrl, index) => {
+                  const downloadUrl = `http://localhost:5030/api/TravelRequest/${requestId}/downloadticket?index=${index}`;
+                  
+                  return (
+                    <div
+                      key={index}
+                      className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all"
+                    >
+                      <div
+                        onClick={() => onPreviewTickets(docUrl, index)}
+                        className="flex items-center gap-3 flex-grow cursor-pointer"
+                      >
+                        <FileText className="h-5 w-5 text-gray-400 flex-shrink-0" />
+                        <div className="flex-grow">
+                          <p className="font-medium text-gray-800">{`Ticket Document ${index + 1}`}</p>
+                          <p className="text-xs text-gray-500 truncate">{getDocName(docUrl, index)}</p>
+                        </div>
+                      </div>
+
+                      <a
+                        href={downloadUrl}
+                        download
+                        title={`Download Ticket ${index + 1}`}
+                        className="p-2 ml-2 text-gray-500 rounded-full hover:bg-gray-200 hover:text-blue-600 flex-shrink-0"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <Download className="h-5 w-5" />
+                      </a>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="text-sm text-gray-500">No ticket documents have been uploaded for this option.</p>
+            )}
+          </div>
+
+          {/* Section for other action buttons */}
+          {(buttons.length > 0 || customButtons.length > 0) && (
+            <div className="flex justify-end gap-3 border-t pt-4 mt-4">
+              {buttons.includes('uploadTickets') && onUploadTickets && (
+                <button
+                  className="flex items-center gap-2 px-6 py-3 bg-emerald-600 text-white rounded-xl font-medium hover:bg-emerald-700 shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200"
+                  onClick={onUploadTickets}
+                >
+                  <Upload size={18} /> Upload More
+                </button>
+              )}
+              {buttons.includes('confirmTicketOption') && onConfirmTicketOption && (
+                <button
+                  className="flex items-center gap-2 px-6 py-3 bg-cyan-600 text-white rounded-xl font-medium hover:bg-cyan-700 shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200"
+                  onClick={onConfirmTicketOption}
+                >
+                  <Check size={18} /> Confirm Option
+                </button>
+              )}
+              {customButtons.map((button, index) => (
+                <button
+                  key={index}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-all duration-200 ${
+                    button.className || 'bg-gray-500 text-white hover:bg-gray-600'
+                  } ${button.disabled ? 'opacity-50 cursor-not-allowed' : 'hover:shadow-lg hover:-translate-y-0.5'}`}
+                  onClick={button.onClick}
+                  disabled={button.disabled}
+                >
+                  {button.icon}
+                  {button.label}
+                </button>
+              ))}
+            </div>
           )}
-          {buttons.includes('uploadTickets') && onUploadTickets && (
-            <button
-              className="flex items-center gap-2 px-6 py-3 bg-emerald-600 text-white rounded-xl font-medium hover:bg-emerald-700 shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200"
-              onClick={onUploadTickets}
-            >
-              <Upload size={18} /> Upload Tickets
-            </button>
-          )}
-          {buttons.includes('confirmTicketOption') && onConfirmTicketOption && (
-            <button
-              className="flex items-center gap-2 px-6 py-3 bg-cyan-600 text-white rounded-xl font-medium hover:bg-cyan-700 shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200"
-              onClick={onConfirmTicketOption}
-            >
-              <Check size={18} /> Confirm Ticket Option
-            </button>
-          )}
-          {customButtons.map((button, index) => (
-            <button
-              key={index}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-all duration-200 ${
-                button.className || 'bg-gray-500 text-white hover:bg-gray-600'
-              } ${button.disabled ? 'opacity-50 cursor-not-allowed' : 'hover:shadow-lg hover:-translate-y-0.5'}`}
-              onClick={button.onClick}
-              disabled={button.disabled}
-            >
-              {button.icon}
-              {button.label}
-            </button>
-          ))}
         </div>
       )}
     </div>

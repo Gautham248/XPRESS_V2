@@ -118,7 +118,6 @@ const VisaParser: React.FC<VisaParserProps> = ({ rawText, onDataParsed }) => {
 
   return (
     <div className="mt-2 mb-4 p-3 border-l-4 border-yellow-400 bg-yellow-50">
-      <p className="text-sm text-yellow-700">Attempting to auto-fill form from the scanned Visa...</p>
     </div>
   );
 };
