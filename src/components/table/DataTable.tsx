@@ -69,6 +69,9 @@ const DataTable = <T extends Record<string, any>>({
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
   const [columnFilters, setColumnFilters] = useState<{ [key: string]: string }>({});
+  
+  // ADDED: New state to track if the SLA breach filter is active
+  const [isSlaBreachedFilter, setIsSlaBreachedFilter] = useState(false);
 
   const [visibleColumns, setVisibleColumns] = useState<string[]>(() => {
     const savedColumns = localStorage.getItem(`${title}TableColumns`);
@@ -86,10 +89,12 @@ const DataTable = <T extends Record<string, any>>({
   const columnsDropdownRef = useRef<HTMLDivElement>(null);
   const activeColumnFilterPopoverRef = useRef<HTMLDivElement>(null);
 
+  // CHANGED: useEffect now reads the 'slaBreached' parameter from the URL
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search);
     const statusParam = urlParams.get('status');
     const dateParam = urlParams.get('date');
+    const slaParam = urlParams.get('slaBreached'); // Read our new param
 
     if (statusParam && statusOptions.length > 0) {
       const statusArray = statusParam.split(',').map(s => s.trim()).filter(status => statusOptions.includes(status));
@@ -97,8 +102,12 @@ const DataTable = <T extends Record<string, any>>({
     } else {
       setStatusFilter(new Set());
     }
+    
+    // Set the SLA breach filter state based on the URL parameter
+    setIsSlaBreachedFilter(slaParam === 'true');
 
-    if (dateParam && dateFilterKey) {
+    // Only apply the single-day date filter if the SLA filter is not active
+    if (dateParam && dateFilterKey && !slaParam) {
       try {
         const filterDate = new Date(dateParam);
         if (!isNaN(filterDate.getTime())) {
@@ -150,15 +159,18 @@ const DataTable = <T extends Record<string, any>>({
     );
   };
 
+  // CHANGED: Now checks the SLA filter state
   const hasActiveFilters = () => {
     return searchTerm !== '' || 
            statusFilter.size > 0 || 
            typeFilter !== 'All' || 
            startDate !== null || 
            endDate !== null ||
+           isSlaBreachedFilter || // Check for SLA filter
            Object.values(columnFilters).some(val => val && val.trim() !== '');
   };
 
+  // CHANGED: Now clears the SLA filter state
   const clearAllFilters = () => {
     setSearchTerm('');
     setStatusFilter(new Set());
@@ -166,6 +178,7 @@ const DataTable = <T extends Record<string, any>>({
     setStartDate(null);
     setEndDate(null);
     setColumnFilters({});
+    setIsSlaBreachedFilter(false); // Reset SLA filter
     setActiveColumnFilterKey(null);
     setCurrentPage(1);
     setSortBy(null);
@@ -185,14 +198,26 @@ const DataTable = <T extends Record<string, any>>({
     setCurrentPage(1);
   };
 
+  // CHANGED: This is the main filtering logic update
   const filteredData = data.filter(item => {
     const matchesSearch = searchableFields.length === 0 || searchableFields.some(field => 
       String(item[field] ?? '').toLowerCase().includes(searchTerm.toLowerCase())
     );
     const matchesStatus = statusOptions.length === 0 || statusFilter.size === 0 || statusFilter.has(item.currentStatusName);
     const matchesType = typeOptions.length === 0 || typeFilter === 'All' || item.travelType === typeFilter;
+    
+    // ADDED: SLA breach condition logic.
+    // This is true by default, unless the filter is active.
+    // It uses 'item.updatedAt' as per your API response.
+    const slaBreachedCondition = !isSlaBreachedFilter || (
+        item.updatedAt && 
+        (new Date().getTime() - new Date(item.updatedAt).getTime()) > (24 * 60 * 60 * 1000) // 24 hours in milliseconds
+    );
 
-    if (!(matchesSearch && matchesStatus && matchesType)) return false;
+    // Combine all filters
+    if (!(matchesSearch && matchesStatus && matchesType && slaBreachedCondition)) {
+        return false;
+    }
 
     for (const key in columnFilters) {
       const filterValue = columnFilters[key];
@@ -229,12 +254,10 @@ const DataTable = <T extends Record<string, any>>({
   });
 
   const sortedData = sortBy ? [...dateFilteredData].sort((a, b) => {
-    // ** Note: For sorting, we must also use the raw date field **
     const keyToSort = sortBy === 'createdAt' ? 'requestCreationDate' : sortBy;
     const aSortValue = a[keyToSort];
     const bSortValue = b[keyToSort];
 
-    // Date sorting logic
     if (sortBy === 'createdAt') {
       const aDate = new Date(aSortValue);
       const bDate = new Date(bSortValue);
@@ -244,7 +267,6 @@ const DataTable = <T extends Record<string, any>>({
       return sortOrder === 'asc' ? aDate.getTime() - bDate.getTime() : bDate.getTime() - aDate.getTime();
     }
     
-    // Generic sorting for other columns
     if (sortOrder === 'asc') {
       return String(aSortValue ?? '').localeCompare(String(bSortValue ?? ''), undefined, { numeric: true });
     } else { 
@@ -318,6 +340,9 @@ const DataTable = <T extends Record<string, any>>({
       </div>
       
       <div className="card max-w-full">
+        {/* ... The component's JSX remains the same from here on ... */}
+        {/* No changes were needed in the render/JSX part of this component */}
+        {/* I'm including it all as requested */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
           <div className="relative flex-1">
             <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
@@ -442,7 +467,6 @@ const DataTable = <T extends Record<string, any>>({
 
         <div className="overflow-x-auto w-full border border-gray-200 rounded-md">
           <table className="w-full min-w-full table-auto">
-            {/* ... The rest of the table JSX remains the same ... */}
              <thead>
               <tr className="border-b">
                 {headers.map(header => visibleColumns.includes(header.key) && (
