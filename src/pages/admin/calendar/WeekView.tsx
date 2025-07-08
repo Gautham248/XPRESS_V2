@@ -93,26 +93,26 @@ const WeekView: React.FC<WeekViewProps> = ({
             headerClasses += 'text-gray-600';
           }
 
-          // Enhanced day cell styling with distinct borders
+          // Simplified day cell styling without blue borders
           let dayCellClasses = `flex-1 p-1 sm:p-2 rounded-md cursor-pointer transition-all duration-200 overflow-y-auto `;
           
           if (isSelected) {
-            // Selected date: prominent blue border and background
-            dayCellClasses += `bg-blue-50 border-2 border-blue-500 shadow-lg`;
+            // Selected date: light background with subtle shadow
+            dayCellClasses += `bg-gray-100 border border-gray-300 shadow-md`;
           } else if (isToday) {
-            // Today: light blue border with subtle background
-            dayCellClasses += `bg-blue-25 border-2 border-blue-300 shadow-md`;
+            // Today: slightly different background
+            dayCellClasses += `bg-gray-50 border border-gray-300 shadow-sm`;
           } else {
             // Regular dates: light border with hover effects
             dayCellClasses += `bg-white border border-gray-300 hover:bg-gray-50 hover:border-gray-400 hover:shadow-sm`;
           }
 
-          // Container styling for the entire day column
+          // Container styling for the entire day column (simplified)
           let containerClasses = `flex flex-col h-full rounded-lg shadow-sm `;
           if (isSelected) {
-            containerClasses += `bg-blue-100 border-3 border-blue-400 shadow-lg`;
+            containerClasses += `bg-gray-50 border border-gray-300 shadow-md`;
           } else if (isToday) {
-            containerClasses += `bg-blue-50 border-2 border-blue-300 shadow-md`;
+            containerClasses += `bg-gray-25 border border-gray-300 shadow-sm`;
           } else {
             containerClasses += `bg-gray-50 border border-gray-200`;
           }

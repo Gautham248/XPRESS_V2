@@ -185,8 +185,11 @@ const Dashboard: React.FC = () => {
   // Handler for Ticket Actions card click
   const handleTicketActionsClick = () => {
     const params = new URLSearchParams();
-    params.set('date', todayStringUTC);
-    params.set('status', 'Manager Approved,DU Head Approved');
+    // Remove the date parameter since you don't want today's date filter
+    // params.set('date', todayStringUTC); // Commented out
+    
+    // Set status to DUApproved and Verified (matching your dropdown options)
+    params.set('status', 'DUApproved,Verified');
     navigate(`/admin/travel-requests?${params.toString()}`);
   };
 

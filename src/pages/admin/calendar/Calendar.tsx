@@ -386,14 +386,9 @@ const Calendar: React.FC = () => {
       ) : (
         <div className="flex flex-col lg:flex-row gap-4">
           <div className="lg:flex-[0.65] bg-white rounded-lg shadow-sm p-4">
-            <div className="flex flex-col sm:flex-row items-center mb-4 gap-2 sm:gap-0">
-              <DatePicker 
-                currentDate={currentDate} 
-                view={view} 
-                onDateSelect={handleDateSelect} 
-                formatWeekRange={formatWeekRange} 
-              />
-              <div className="flex items-center">
+            <div className="flex flex-col sm:flex-row items-center mb-4 gap-2 sm:gap-4">
+              {/* Navigation buttons moved to the left */}
+              <div className="flex items-center gap-1 order-1 sm:order-1">
                 <button 
                   aria-label="Previous period" 
                   className="px-3 py-1 text-gray-600 hover:text-gray-800 hover:bg-gray-200 rounded-md" 
@@ -409,7 +404,19 @@ const Calendar: React.FC = () => {
                   {'>'} 
                 </button>
               </div>
-              <div className="sm:ml-auto mt-2 sm:mt-0"> 
+              
+              {/* DatePicker comes after navigation buttons */}
+              <div className="order-2 sm:order-2">
+                <DatePicker 
+                  currentDate={currentDate} 
+                  view={view} 
+                  onDateSelect={handleDateSelect} 
+                  formatWeekRange={formatWeekRange} 
+                />
+              </div>
+              
+              {/* ViewToggle on the right */}
+              <div className="order-3 sm:order-3 sm:ml-auto"> 
                 <ViewToggle view={view} onViewChange={handleViewChange} /> 
               </div>
             </div>
