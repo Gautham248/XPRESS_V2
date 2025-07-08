@@ -2,14 +2,13 @@ import React, { useState, useCallback, memo, useEffect } from 'react';
 import { X, Plus, Plane, Loader2 } from 'lucide-react';
 import axios from 'axios';
 import Autocomplete from './Autocomplete';
-import FileUploader from './FileUploader'; // Assumes multi-file version is here
+import FileUploader from './FileUploader';
 
-// CHANGE 1: Interface updated for multiple file paths
 export interface AirlineTicketData {
     travelAgencyName: string;
     agencyBookingCharge: number;
     totalExpense: number;
-    pdfFilePath: string[]; // Was pdfFilePath: string | null
+    pdfFilePath: string;
     airlines: {
         name: string;
         cost: number;
@@ -40,7 +39,6 @@ const UploadTicketsModal: React.FC<UploadTicketsModalProps> = memo(({
     const [agencyName, setAgencyName] = useState<string>('');
     const [agencyExpense, setAgencyExpense] = useState<string>('');
     const [totalExpense, setTotalExpense] = useState<string>('');
-    // CHANGE 2: State updated from a single file to an array of files
     const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
     const [airlines, setAirlines] = useState<Airline[]>([{ name: '', cost: '' }]);
     const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
@@ -72,7 +70,6 @@ const UploadTicketsModal: React.FC<UploadTicketsModalProps> = memo(({
         airlines?: { name?: string; cost?: string }[];
     }>({});
 
-    // CHANGE 3: Callback updated to accept an array of files
     const handleFileSelect = useCallback((files: File[]) => {
         setSelectedFiles(files);
         if (files.length > 0) {
@@ -109,7 +106,6 @@ const UploadTicketsModal: React.FC<UploadTicketsModalProps> = memo(({
         }
     }, [airlines.length]);
 
-    // CHANGE 4: Validation logic updated for an array of files
     const validateForm = useCallback(() => {
         const newErrors: typeof errors = {};
         if (!agencyName.trim()) newErrors.agencyName = 'Travel agency name is required';
@@ -173,14 +169,13 @@ const UploadTicketsModal: React.FC<UploadTicketsModalProps> = memo(({
         setAgencyName('');
         setAgencyExpense('');
         setTotalExpense('');
-        setSelectedFiles([]); // Reset to empty array
+        setSelectedFiles([]);
         setAirlines([{ name: '', cost: '' }]);
         setErrors({});
         setIsSubmitting(false);
         onClose();
     }, [onClose]);
 
-    // CHANGE 5: Submission logic now uploads all files in the array
     const handleSubmit = useCallback(async () => {
         if (!validateForm()) {
             return;
@@ -192,7 +187,6 @@ const UploadTicketsModal: React.FC<UploadTicketsModalProps> = memo(({
         const fileUrls = (await Promise.all(uploadPromises)).filter((url): url is string => url !== null);
 
         if (fileUrls.length !== selectedFiles.length) {
-            // An error occurred during one of the uploads and was set in `uploadFileToCloudinary`
             setIsSubmitting(false);
             return;
         }
@@ -201,7 +195,7 @@ const UploadTicketsModal: React.FC<UploadTicketsModalProps> = memo(({
             travelAgencyName: agencyName,
             agencyBookingCharge: Number(agencyExpense),
             totalExpense: Number(totalExpense),
-            pdfFilePath: fileUrls, // Pass the array of URLs
+            pdfFilePath: JSON.stringify(fileUrls),
             airlines: airlines.map(airline => ({
                 name: airline.name,
                 cost: Number(airline.cost)
@@ -209,7 +203,6 @@ const UploadTicketsModal: React.FC<UploadTicketsModalProps> = memo(({
         };
 
         onConfirm(formData);
-        // handleClose will set isSubmitting to false
         handleClose();
 
     }, [agencyName, agencyExpense, totalExpense, selectedFiles, airlines, validateForm, onConfirm, handleClose]);
