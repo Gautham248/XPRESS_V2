@@ -55,11 +55,14 @@ interface TicketProps {
   requestId: string;
   onPreviewTicket: (url: string, index: number) => void;
   ticketDocumentPath?: string | string[];
+  isModifiable: boolean;
+  onDeleteTicket?: (index: number) => void;
 }
 interface User {
   userId: string;
-  email: string;
+  userEmail: string;
   role: string;
+  userDU: string;
 }
 interface UITicketOption {
   id: string;
@@ -70,7 +73,7 @@ interface UITicketOption {
 
 const API_BASE_URL = 'http://localhost:5030/api';
 
-const TicketOptionComponent: React.FC<TicketProps> = ({ requestId, onPreviewTicket, ticketDocumentPath }) => {
+const TicketOptionComponent: React.FC<TicketProps> = ({ requestId, onPreviewTicket, ticketDocumentPath, isModifiable, onDeleteTicket }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [travelRequestStatus, setTravelRequestStatus] = useState<string | null>(null);
   const [transportationType, setTransportationType] = useState('');
@@ -92,6 +95,8 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId, onPreviewTick
   const [, setTravelRequest] = useState<TravelRequestData | null>(null);
   const [, setLoading] = useState(false);
 
+  const [departmentName, setDepartmentName] = useState<string>('');
+
   const {
     isOpen: isConfirmModalOpen,
     title: confirmModalTitle,
@@ -106,6 +111,7 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId, onPreviewTick
     const userData = localStorage.getItem('user');
     if (userData) {
       setCurrentUser(JSON.parse(userData));
+      
     } else {
       setError("User not found. Please log in.");
     }
@@ -131,9 +137,9 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId, onPreviewTick
         
         
         if (response.data.isSuccess && response.data.result.length > 0) {
-            const apiData = response.data.result[0];
+          const apiData = response.data.result[0];
             // console.log(apiData);
-          
+          setDepartmentName(apiData.departmentName || '');
           // Transform API data to component format
           const transformedData: TravelRequestData = {
             requestId: apiData.requestId,
@@ -307,9 +313,16 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId, onPreviewTick
   };
   
   const handleSelectOption = async (optionIdString: string) => {
-    if ((currentUser?.role !== 'manager' && currentUser?.role !== 'duhead') || !requestId) return;
+    const isAuthorizedRole = currentUser?.role === 'manager' || 
+                             currentUser?.role === 'duhead' || 
+                             (currentUser?.userDU === 'EMT');
+
+    if (!isAuthorizedRole || !requestId) {
+        console.warn("Select option called by an unauthorized user or without a request ID.");
+        return;
+    }
     const optionId = parseInt(optionIdString, 10);
-    const id = parseInt(currentUser!.userId, 10);
+    const id = parseInt(currentUser.userId, 10);
     if (isNaN(optionId) || isNaN(id)) { setError("Invalid option or user ID."); return; }
 
     const payload: SelectTicketOptionPayload = { selectingUserId: id, comments: "" };
@@ -558,6 +571,9 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId, onPreviewTick
     if (travelRequestStatus === 'Cancelled') {
       return <StatusMessage title="Request Cancelled" message="This travel request has been cancelled." bgColor="bg-gray-50" borderColor="border-gray-200" iconColor="text-gray-500" titleColor="text-gray-800" textColor="text-gray-700" icon={<Clock className="h-6 w-6" />} />;
     }
+    if (departmentName.toLowerCase() === 'emt') {
+      return renderEMTContent(travelRequestStatus);
+    }
 
     switch (currentUser.role) {
       case 'admin': return renderAdminContent(travelRequestStatus);
@@ -579,6 +595,8 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId, onPreviewTick
           documentPaths={ticketDocumentPath}
           buttons={['uploadTickets']}
           customButtons={[]}
+          isModifiable={isModifiable}
+          onDeleteTicket={onDeleteTicket}
         />
       );
     }
@@ -591,6 +609,8 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId, onPreviewTick
           onPreviewTickets={onPreviewTicket}
           documentPaths={ticketDocumentPath}
           buttons={[]}
+          isModifiable={isModifiable}
+          onDeleteTicket={onDeleteTicket}
         />
       );
     }
@@ -603,6 +623,8 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId, onPreviewTick
           onPreviewTickets={onPreviewTicket}
           documentPaths={ticketDocumentPath}
           customButtons={[]}
+          isModifiable={isModifiable}
+          onDeleteTicket={onDeleteTicket}
         />
       );
     }
@@ -627,7 +649,7 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId, onPreviewTick
       );
     }
 
-    return <StatusMessage title="Awaiting Action" message={`Request status: ${status}. Options management may be pending or completed.`} icon={<Clock className="h-6 w-6" />} bgColor="bg-gray-50" borderColor="border-gray-200" iconColor="text-gray-500" titleColor="text-gray-800" textColor="text-gray-700" />;
+    return <StatusMessage title="Awaiting Action" message={"Options management may be pending or completed."} icon={<Clock className="h-6 w-6" />} bgColor="bg-gray-50" borderColor="border-gray-200" iconColor="text-gray-500" titleColor="text-gray-800" textColor="text-gray-700" />;
   };
 
     const renderDUHeadContent = (status: string) => {
@@ -656,6 +678,8 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId, onPreviewTick
           buttons={selectedViewButtons}
           onPreviewTickets={onPreviewTicket}
           documentPaths={ticketDocumentPath}
+          isModifiable={isModifiable}
+          onDeleteTicket={onDeleteTicket}
           onConfirmTicketOption={canConfirm ? handleApproveTicketByDUHead : undefined}
           customButtons={[
             {
@@ -683,6 +707,8 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId, onPreviewTick
           onPreviewTickets={onPreviewTicket}
           documentPaths={ticketDocumentPath}
           customButtons={[]}
+          isModifiable={isModifiable}
+          onDeleteTicket={onDeleteTicket}
         />
       )
     }
@@ -715,7 +741,9 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId, onPreviewTick
           ticketOptions={uiTicketOptions}
           onPreviewTickets={onPreviewTicket}
           documentPaths={ticketDocumentPath}
+          isModifiable={isModifiable}
           customButtons={[]}
+          onDeleteTicket={onDeleteTicket}
         />
       );
     }
@@ -727,7 +755,9 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId, onPreviewTick
           onPreviewTickets={onPreviewTicket}
           documentPaths={ticketDocumentPath}
           buttons={[]}
+          isModifiable={isModifiable}
           customButtons={[]}
+          onDeleteTicket={onDeleteTicket}
         />
       );
     }
@@ -750,9 +780,69 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId, onPreviewTick
         onPreviewTickets={onPreviewTicket}
         documentPaths={ticketDocumentPath}
         buttons={selectedOption ? [] : []}
+        isModifiable={isModifiable}
         customButtons={[]}
+        onDeleteTicket={onDeleteTicket}
       />
     );
+  };
+
+  // console.log("Department: " + departmentName);
+  const renderEMTContent = (status: string) => {
+    if (status == 'Approved') {
+      return (
+        <UploadTicketView
+          ticketOptions={uiTicketOptions}
+          newOption={newOptionText}
+          editingOption={editingOptionApiItem ? editingOptionApiItem.optionId.toString() : null}
+          editText={editText}
+          onChangeNewOption={setNewOptionText}
+          onAddOption={handleAddOption}
+          onEditOption={handleInitiateEditOption}
+          onDeleteOption={handleDeleteOption}
+          onSaveEdit={() => handleSaveEdit()}
+          onCancelEdit={() => { setEditingOptionApiItem(null); setEditText(''); }}
+          onChangeEditText={setEditText}
+          onUploadOptions={handleClearAllOptionsByAdmin} 
+          customButtons={[]}
+        />
+      );
+    }
+    
+    if (status === 'OptionsListed') {
+      return (
+        <SelectTicketView
+          ticketOptions={uiTicketOptions}
+          onSelectOption={handlePendingSelectionChange}
+          onUploadOptions={handleConfirmSelectionByApprover}
+          selectedOptionId={pendingSelectedOptionId}
+        />
+      );
+    }
+    
+    if (status === 'OptionSelected') {
+      return (
+        <SelectedView
+          requestId={requestId}
+          ticketOptions={uiTicketOptions}
+          onPreviewTickets={onPreviewTicket}
+          documentPaths={ticketDocumentPath}
+          isModifiable={isModifiable}
+          onDeleteTicket={onDeleteTicket}
+          customButtons={[]}
+        />
+      );
+    }
+
+    if (['DUApproved', 'TicketsDispatched', 'InTransit', 'Returned', 'Closed'].includes(status)) {
+      return renderEmployeeContent(status);
+    }
+
+    if (status === 'PendingReview') {
+        return <StatusMessage title="Pending EMT Action" message="This request is pending review. Ticket options will be available after approval." icon={<Clock className="h-6 w-6" />} bgColor="bg-blue-50" borderColor="border-blue-200" iconColor="text-blue-500" titleColor="text-blue-800" textColor="text-blue-700" />;
+    }
+
+    return <StatusMessage title="Processing" message={`Request status: ${status}.`} icon={<Clock className="h-6 w-6" />} bgColor={''} borderColor={''} iconColor={''} titleColor={''} textColor={''} />;
   };
 
   return (

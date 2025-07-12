@@ -1,5 +1,6 @@
 import React from 'react';
-import { Upload, Check, FileText, Download, Ticket } from 'lucide-react';
+// ADDED: Import Trash2 icon
+import { Upload, Check, FileText, Download, Ticket, Trash2 } from 'lucide-react';
 
 interface UITicketOption {
   id: string;
@@ -15,11 +16,14 @@ interface CustomButton {
   disabled?: boolean;
 }
 
+// ADDED: New props for delete functionality
 interface Props {
   requestId: string;
   ticketOptions: UITicketOption[];
   documentPaths?: string | string[];
+  isModifiable: boolean; // ADDED: To control when the delete button appears
   onPreviewTickets: (url: string, index: number) => void;
+  onDeleteTicket?: (index: number) => void; // ADDED: The delete handler function
   onUploadTickets?: () => void;
   onConfirmTicketOption?: () => void;
   buttons?: ('uploadTickets' | 'confirmTicketOption')[];
@@ -30,7 +34,9 @@ const SelectedView: React.FC<Props> = ({
   requestId,
   ticketOptions,
   documentPaths = [],
+  isModifiable, // ADDED
   onPreviewTickets,
+  onDeleteTicket, // ADDED
   onUploadTickets,
   onConfirmTicketOption,
   buttons = [],
@@ -117,24 +123,38 @@ const SelectedView: React.FC<Props> = ({
                     >
                       <div
                         onClick={() => onPreviewTickets(docUrl, index)}
-                        className="flex items-center gap-3 flex-grow cursor-pointer"
+                        className="flex items-center gap-3 flex-grow cursor-pointer min-w-0"
                       >
                         <FileText className="h-5 w-5 text-gray-400 flex-shrink-0" />
-                        <div className="flex-grow">
+                        <div className="flex-grow min-w-0">
                           <p className="font-medium text-gray-800">{`Ticket Document ${index + 1}`}</p>
                           <p className="text-xs text-gray-500 truncate">{getDocName(docUrl, index)}</p>
                         </div>
                       </div>
-
-                      <a
-                        href={downloadUrl}
-                        download
-                        title={`Download Ticket ${index + 1}`}
-                        className="p-2 ml-2 text-gray-500 rounded-full hover:bg-gray-200 hover:text-blue-600 flex-shrink-0"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <Download className="h-5 w-5" />
-                      </a>
+                      
+                      {/* ADDED: Container for action icons */}
+                      <div className="flex items-center gap-1 flex-shrink-0 ml-2">
+                        {/* ADDED: Conditional rendering for the Delete button */}
+                        {isModifiable && onDeleteTicket && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); onDeleteTicket(index); }}
+                            title={`Delete Ticket ${index + 1}`}
+                            className="p-2 text-gray-500 rounded-full hover:bg-red-100 hover:text-red-600"
+                          >
+                            <Trash2 className="h-5 w-5" />
+                          </button>
+                        )}
+                        
+                        <a
+                          href={downloadUrl}
+                          download
+                          title={`Download Ticket ${index + 1}`}
+                          className="p-2 text-gray-500 rounded-full hover:bg-gray-200 hover:text-blue-600 flex-shrink-0"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <Download className="h-5 w-5" />
+                        </a>
+                      </div>
                     </div>
                   );
                 })}

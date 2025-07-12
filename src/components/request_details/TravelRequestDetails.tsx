@@ -14,7 +14,7 @@ import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import DocumentTabs from './IterinaryTabs';
 import toast, { Toaster } from 'react-hot-toast';
-import TicketPreviewModal from './ticket_options/TicketPreviewModal';
+import DocumentPreviewModal from './ticket_options/DocumentPreviewModal';
 
 // --- TYPE DEFINITIONS ---
 export interface ComponentTravelRequest {
@@ -41,16 +41,14 @@ export interface ComponentTravelRequest {
   attendedCct?: boolean;
   travelAgencyName?: string;
   totalExpense?: number;
-  ticketDocumentPath?: string | string[];
-  // ------------
-  accommodationDocumentPath?: string;
-  insuranceDocumentPath?: string;
-  // ------------
+  ticketDocumentPath?: string[];
+  accommodationDocumentPath?: string[];
+  insuranceDocumentPath?: string[];
   updatedAt?: string;
   employeeName?: string;
   isInternational?: boolean;
   isRoundTrip?: boolean;
-  projectName?: string;
+  projectCode?: string;
   selectedTicketOptionId?: number;
   createdAt?: string;
   currentStatusId: number;
@@ -121,9 +119,11 @@ const TravelRequestDetails: React.FC = () => {
   const [selectedDocs, setSelectedDocs] = useState<Set<string>>(new Set());
 
   const [modalInputText, setModalInputText] = useState('');
-  const [isTicketPreviewModalOpen, setIsTicketPreviewModalOpen] = useState(false);
-  // const [ticketPreviewUrl, setTicketPreviewUrl] = useState<string>('');
-  const [ticketPreviewData, setTicketPreviewData] = useState<{ url: string; index: number } | null>(null);
+  const [previewModalData, setPreviewModalData] = useState<{
+    docType: 'Ticket' | 'Accommodation' | 'Insurance';
+    index: number;
+    url: string;
+  } | null>(null);
 
   const userString = localStorage.getItem('user');
   let role = '';
@@ -138,31 +138,56 @@ const TravelRequestDetails: React.FC = () => {
   }
 
   const fetchTravelRequest = useCallback(async () => {
-    if (!id) { setIsLoading(false); setError("Travel Request ID is missing."); return; }
+    if (!id) {
+      setIsLoading(false);
+      setError("Travel Request ID is missing.");
+      return;
+    }
     setIsLoading(true);
     setError(null);
     try {
-      const response = await fetch(`http://localhost:5030/api/TravelRequest/${id}`);
-      if (!response.ok) throw new Error(`Failed to fetch: ${response.statusText}`);
+      const response = await axios.get<{ isSuccess: boolean; result: any }>(`http://localhost:5030/api/TravelRequest/${id}`);
 
-      const data = await response.json();
+      if (response.data.isSuccess && response.data.result) {
+        const apiData = response.data.result;
 
-      // console.log("API response for TravelRequestDetails:", data.result);
+        const parsePath = (path: any): string[] => {
+          if (Array.isArray(path)) return path;
 
-      if (data.isSuccess && data.result) {
-        const apiData = data.result;
-        setTravelRequestData({
+          if (typeof path === 'string' && path.startsWith('[') && path.endsWith(']')) {
+            try {
+              const parsed = JSON.parse(path);
+              return Array.isArray(parsed) ? parsed : [];
+            } catch (e) {
+              console.error("Failed to parse document path JSON string:", path, e);
+              return [];
+            }
+          }
+
+          if (typeof path === 'string' && path.length > 0) {
+            return [path];
+          }
+
+          return [];
+        };
+
+        const formattedData = {
           ...apiData,
           id: apiData.requestId,
           purpose: apiData.purposeOfTravel,
-          status: INDEX_TO_STATUS_MAP[apiData.currentStatusId] || 'PendingReview',
+          status: INDEX_TO_STATUS_MAP[apiData.currentStatusId] || 'Unknown',
           employeeName: apiData.employeeName,
-          ticketDocumentPath: apiData.ticketDocumentPath,
-          // accommodationDocumentPath: apiData.accommodationDocumentPath, 
-          // insuranceDocumentPath: apiData.insuranceDocumentPath,
-        });
+          ticketDocumentPath: parsePath(apiData.ticketDocumentPath),
+          accommodationDocumentPath: parsePath(apiData.accomodationDocumentPath), // typo match
+          insuranceDocumentPath: parsePath(apiData.insuranceDocumentPath),
+        };
+
+        // console.log("Data formatted for state:", formattedData);
+
+        setTravelRequestData(formattedData as ComponentTravelRequest);
+
       } else {
-        throw new Error(data.errorMessages?.join(', ') || 'Data not found.');
+        throw new Error('Data not found.');
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -206,62 +231,83 @@ const TravelRequestDetails: React.FC = () => {
     setModalInputText('');
   };
 
-  // ---------- TODO: fixing -------------
   const handleOpenDownloadModal = async () => {
     if (!id || !travelRequestData?.userId) return;
     setIsPreparingDocs(true);
     try {
       let docs: DocumentInfo[] = [];
 
-      let ticketPaths: string[] = [];
-      if (travelRequestData.ticketDocumentPath) {
+      const getFileExtensionFromUrl = (url: string): string => {
         try {
-          const parsedPaths = typeof travelRequestData.ticketDocumentPath === 'string'
-            ? JSON.parse(travelRequestData.ticketDocumentPath)
-            : travelRequestData.ticketDocumentPath;
-
-          ticketPaths = Array.isArray(parsedPaths)
-            ? parsedPaths
-            : [parsedPaths].filter(Boolean);
+          const path = new URL(url).pathname;
+          const filename = path.split('/').pop() || '';
+          const extension = filename.slice(filename.lastIndexOf('.'));
+          return extension.length > 1 ? extension : '.pdf'; 
         } catch (e) {
-          ticketPaths = [travelRequestData.ticketDocumentPath].flat().filter((v): v is string => typeof v === 'string' && Boolean(v));
+          return '.pdf';
+        }
+      };
+
+      const processDocumentList = (
+        paths: string[] | string | undefined, 
+        docType: 'Ticket' | 'Accommodation' | 'Insurance'
+      ) => {
+        if (!paths) return;
+
+        let urlList: string[] = [];
+        try {
+          const parsedPaths = typeof paths === 'string' ? JSON.parse(paths) : paths;
+          urlList = Array.isArray(parsedPaths) ? parsedPaths.filter(Boolean) : [parsedPaths].filter(Boolean);
+        } catch (e) {
+          // Fallback for non-JSON strings or other errors
+          urlList = [paths].flat().filter((v): v is string => typeof v === 'string' && Boolean(v));
+        }
+        
+        urlList.forEach((url, index) => {
+          if (!url) return;
+          
+          let downloadUrl = url;
+          if (docType === 'Ticket') {
+            downloadUrl = `http://localhost:5030/api/TravelRequest/${id}/downloadticket?index=${index}`;
+          }
+
+          const fileExtension = getFileExtensionFromUrl(url);
+
+          const friendlyName = `${docType} Document ${index + 1}${fileExtension}`;
+
+          docs.push({
+            id: `${docType.toLowerCase()}_${id}_${index}`,
+            url: downloadUrl,
+            friendlyName: friendlyName,
+            docData: { type: docType }
+          });
+        });
+      };
+
+      processDocumentList(travelRequestData.ticketDocumentPath, 'Ticket');
+      processDocumentList(travelRequestData.accommodationDocumentPath, 'Accommodation');
+      processDocumentList(travelRequestData.insuranceDocumentPath, 'Insurance');
+      
+      const response = await fetch(`http://localhost:5030/api/Documents/User/${travelRequestData.userId}`);
+      if (response.ok) {
+        const userDocs = await response.json();
+        if (Array.isArray(userDocs)) {
+          userDocs.forEach((doc: any) => {
+            if (doc.documentPath) {
+              docs.push({
+                id: `userdoc_${doc.id}`,
+                url: doc.documentPath,
+                friendlyName: getFriendlyFilename(doc) || `User Document ${doc.id}`,
+                docData: doc
+              });
+            }
+          });
         }
       }
 
-      // console.log("Processed ticket paths:", ticketPaths);
-
-      ticketPaths.forEach((url, index) => {
-        if (!url) return;
-
-        const urlObj = new URL(url);
-        const pathParts = urlObj.pathname.split('/');
-        const originalFilename = pathParts[pathParts.length - 1];
-        const extension = originalFilename.split('.').pop() || 'file';
-
-        docs.push({
-          id: `ticket_${id}_${index}`,
-          url: `http://localhost:5030/api/TravelRequest/${id}/downloadticket?index=${index}`,
-          friendlyName: `Ticket-${travelRequestData.id}-${index + 1}.${extension}`,
-          docData: {}
-        });
-      });
-
-      const response = await fetch(`http://localhost:5030/api/Documents/User/${travelRequestData.userId}`);
-      if (response.ok) {
-        (await response.json())?.forEach((doc: any) => {
-          if (doc.documentPath) {
-            docs.push({
-              id: `doc_${doc.id}`,
-              url: doc.documentPath,
-              friendlyName: getFriendlyFilename(doc),
-              docData: doc
-            });
-          }
-        });
-      }
-
+      // --- Display the modal if documents were found ---
       if (docs.length === 0) {
-        toast.error('No documents available.');
+        toast.error('No documents are available to download.');
         return;
       }
 
@@ -269,9 +315,10 @@ const TravelRequestDetails: React.FC = () => {
       setSelectedDocs(new Set(docs.map(d => d.id)));
       setActiveModal('download');
       showModalContainer(<></>);
+
     } catch (error) {
-      console.error("Error preparing documents:", error);
-      toast.error("Failed to prepare documents for download");
+      console.error("Error preparing documents for download:", error);
+      toast.error("An error occurred while preparing the documents.");
     } finally {
       setIsPreparingDocs(false);
     }
@@ -303,15 +350,13 @@ const TravelRequestDetails: React.FC = () => {
     }
   };
 
-  const handlePreviewTicket = (urlToPreview: string, index: number) => {
-    if (urlToPreview && typeof urlToPreview === 'string') {
-        // Store both pieces of data
-        setTicketPreviewData({ url: urlToPreview, index: index });
-        setIsTicketPreviewModalOpen(true);
-    } else {
-        toast.error("An invalid document URL was provided.");
-    }
-};
+  const handlePreviewTicket = (url: string, index: number) => {
+    setPreviewModalData({ docType: 'Ticket', url, index });
+  };
+
+  const handlePreviewDocument = (docType: 'Accommodation' | 'Insurance', url: string, index: number) => {
+    setPreviewModalData({ docType, url, index });
+  };
 
   const handleSelectionChange = (docId: string) => {
     setSelectedDocs(prev => { const newSet = new Set(prev); newSet.has(docId) ? newSet.delete(docId) : newSet.add(docId); return newSet; });
@@ -443,6 +488,8 @@ const TravelRequestDetails: React.FC = () => {
   const isEmployee = role === 'employee';
   const isAdmin = role === 'admin';
   const isManager = role === 'manager';
+  const isEmtRequest = travelRequestData.projectCode?.toLowerCase() === 'emt'; // EMT
+  const showAdminEmtActions = isAdmin && isEmtRequest && travelRequestData.status === 'PendingReview'; // EMT
   const showFeedbackButton = isEmployee && travelRequestData.status === 'Returned' && !feedbackSubmitted;
   const showCloseRequestButton = isAdmin && travelRequestData.status === 'Returned' && !requestClosed;
   const showManagerActionButtons = isManager && travelRequestData.status === 'PendingReview' && !actionTaken;
@@ -456,14 +503,13 @@ const TravelRequestDetails: React.FC = () => {
     <div className="space-y-6 animate-fadeIn">
       <Toaster position="top-right" reverseOrder={false} containerStyle={{ top: 70 }} />
       <ConfirmationModal isOpen={isOpen} onClose={handleCloseModal} title={modalTitle} content={modalContent} buttons={modalButtons} />
-      {id && ticketPreviewData && (
-        <TicketPreviewModal
-          isOpen={isTicketPreviewModalOpen}
-          onClose={() => setIsTicketPreviewModalOpen(false)}
-          ticketUrl={ticketPreviewData.url}
-          // downloadUrl={`http://localhost:5030/api/TravelRequest/${id}/downloadticket`}
-          requestId={id}
-          ticketIndex={ticketPreviewData.index}
+      {previewModalData && (
+        <DocumentPreviewModal
+          isOpen={!!previewModalData}
+          onClose={() => setPreviewModalData(null)}
+          documentName={`${previewModalData.docType} Document ${previewModalData.index + 1}`}
+          documentUrl={previewModalData.url}
+          downloadUrl={previewModalData.docType === 'Ticket' ? `http://localhost:5030/api/TravelRequest/${id}/downloadticket?index=${previewModalData.index}` : previewModalData.url}
         />
       )}
 
@@ -485,6 +531,30 @@ const TravelRequestDetails: React.FC = () => {
             <button className="bg-green-600 hover:bg-green-700 text-white rounded-md px-3 py-2 text-sm font-medium flex items-center" onClick={() => { setModalInputText(''); setActiveModal('approve'); showModalContainer(<></>); }}><Check className="h-4 w-4 mr-2" />Approve</button>
             <button className="bg-red-600 hover:bg-red-700 text-white rounded-md px-3 py-2 text-sm font-medium flex items-center" onClick={() => { setModalInputText(''); setActiveModal('reject'); showModalContainer(<></>); }}><X className="h-4 w-4 mr-2" />Reject</button>
           </>)}
+
+          {/* EMT */}
+          {showAdminEmtActions && (
+            <>
+              <button 
+                className="bg-green-600 hover:bg-green-700 text-white rounded-md px-3 py-2 text-sm font-medium flex items-center" 
+                onClick={() => { 
+                  setModalInputText('Approved by Admin for EMT project.'); 
+                  setActiveModal('approve'); 
+                  showModalContainer(<></>); 
+                }}>
+                <Check className="h-4 w-4 mr-2" /> Approve (EMT)
+              </button>
+              <button 
+                className="bg-gray-500 hover:bg-gray-600 text-white rounded-md px-3 py-2 text-sm font-medium flex items-center" 
+                onClick={() => { 
+                  setActiveModal('cancel'); 
+                  showModalContainer(<></>); 
+                }}>
+                <Slash className="h-4 w-4 mr-2" /> Cancel (EMT)
+              </button>
+            </>
+          )}
+
           {showCancelButton && (<button className="bg-gray-500 hover:bg-gray-600 text-white rounded-md px-3 py-2 text-sm font-medium flex items-center" onClick={() => { setModalInputText(''); setActiveModal('cancel'); showModalContainer(<></>); }}><Slash className="h-4 w-4 mr-2" />Cancel Request</button>)}
           <button className="btn-primary flex items-center" onClick={handleOpenDownloadModal} disabled={!areAnyDocumentsAvailable || isPreparingDocs}>{isPreparingDocs ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Preparing...</> : <><Download className="h-4 w-4 mr-2" />Travel Docs</>}</button>
           <button className="btn-accent flex items-center"><FileText className="h-4 w-4 mr-2" />Export</button>
@@ -499,10 +569,13 @@ const TravelRequestDetails: React.FC = () => {
           {id && (
             <DocumentTabs
               requestId={id}
+              currentStatusId={travelRequestData.currentStatusId}
               onPreviewTicket={handlePreviewTicket}
+              onPreviewDocument={handlePreviewDocument}
               ticketDocumentPath={travelRequestData.ticketDocumentPath}
               accommodationDocumentPath={travelRequestData.accommodationDocumentPath}
               insuranceDocumentPath={travelRequestData.insuranceDocumentPath}
+              refreshRequestData={fetchTravelRequest}
             />
           )}
         </div>
