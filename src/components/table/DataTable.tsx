@@ -53,7 +53,7 @@ const DataTable = <T extends Record<string, any>>({
   getStatusColor,
   getTypeColor,
   getTripTypeColor,
-  renderActions,
+  // renderActions,
   onRowClick,
 }: DataTableProps<T>) => {
   const navigate = useNavigate();
@@ -76,7 +76,7 @@ const DataTable = <T extends Record<string, any>>({
   const [visibleColumns, setVisibleColumns] = useState<string[]>(() => {
     const savedColumns = localStorage.getItem(`${title}TableColumns`);
     const defaultCols = headers.map(h => h.key);
-    if (renderActions) defaultCols.push('actions');
+    // if (renderActions) defaultCols.push('actions');
     return savedColumns ? JSON.parse(savedColumns) : defaultCols;
   });
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
@@ -448,11 +448,11 @@ const DataTable = <T extends Record<string, any>>({
                       <input type="checkbox" checked={visibleColumns.includes(h.key)} readOnly className="mr-2 pointer-events-none" />{h.displayName}
                     </button>
                   ))}
-                  {renderActions && (
+                  {/* {renderActions && (
                     <button className="text-left px-3 py-1.5 text-sm hover:bg-gray-100 flex items-center" onClick={() => handleColumnToggle('actions')}>
                       <input type="checkbox" checked={visibleColumns.includes('actions')} readOnly className="mr-2 pointer-events-none" />Actions
                     </button>
-                  )}
+                  )} */}
                 </div>
               </div>
             )}
@@ -496,11 +496,11 @@ const DataTable = <T extends Record<string, any>>({
                     )}
                   </th>
                 ))}
-                {renderActions && visibleColumns.includes('actions') && (
+                {/* {renderActions && visibleColumns.includes('actions') && (
                   <th className={`text-right py-3 px-4 font-medium text-muted-foreground whitespace-nowrap sticky right-0 z-10 border-l border-gray-300 ${stickyHeaderBg}`}>
                     Actions
                   </th>
-                )}
+                )} */}
               </tr>
             </thead>
             <tbody>
@@ -538,11 +538,11 @@ const DataTable = <T extends Record<string, any>>({
                       ) : ( String(item[header.key] ?? 'N/A') )}
                     </td>
                   ))}
-                  {renderActions && visibleColumns.includes('actions') && (
+                  {/* {renderActions && visibleColumns.includes('actions') && (
                     <td className={`py-3 px-4 text-right space-x-2 whitespace-nowrap sticky right-0 z-10 border-l border-gray-300 ${stickyCellBg}`}>
                       {renderActions(item)}
                     </td>
-                  )}
+                  )} */}
                 </tr>
               ))}
             </tbody>

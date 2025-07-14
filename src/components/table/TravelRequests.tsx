@@ -102,8 +102,9 @@ const TravelRequests: React.FC = () => {
           { key: 'returnArrivalDate', displayName: 'Inbound Arrival', sortable: true, filterable: true },
           { key: 'duId', displayName: 'Department', sortable: true, filterable: true },
           { key: 'purposeOfTravel', displayName: 'Purpose', sortable: true, filterable: true },
-          { key: 'comments', displayName: 'Comments', sortable: true, filterable: true },
+          // { key: 'comments', displayName: 'Comments', sortable: true, filterable: true },
           { key: 'createdAt', displayName: 'Created At', sortable: true, filterable: true }, // This uses the formatted date for display
+          { key: 'updatedAt', displayName: 'Updated At', sortable: true, filterable: true }, // This uses the formatted date for display
         ];
 
         const dynamicHeaders: Header[] = [];
@@ -127,7 +128,10 @@ const TravelRequests: React.FC = () => {
             'sourcePlace',
             'sourceCountry',
             'destinationPlace',
-            'destinationCountry'
+            'destinationCountry',
+            'isAccommodationRequired',
+            'comments',
+            'selectedTicketOptionId',
           ]);
 
           Object.keys(sampleItem).forEach((key) => {
@@ -188,6 +192,7 @@ const TravelRequests: React.FC = () => {
           
           // ** FIX **: Format createdAt for display, but keep the original for filtering.
           const createdAtFormatted = formatDateTime(item.createdAt);
+          const updatedAtFormatted = formatDateTime(item.updatedAt);
 
           return {
             ...item,
@@ -210,8 +215,10 @@ const TravelRequests: React.FC = () => {
             
             // ** FIX **: Use the formatted date for the 'createdAt' display column
             createdAt: createdAtFormatted, 
+            updatedAt: updatedAtFormatted, // Use the formatted date for the 'updatedAt' display column
             // ** FIX **: Add a new field with the RAW date for filtering
             requestCreationDate: item.createdAt, 
+            requestUpdatedDate: item.updatedAt, 
           };
         });
 
@@ -311,7 +318,7 @@ const TravelRequests: React.FC = () => {
       statusOptions={statusOptions}
       typeOptions={['Domestic', 'International']}
       // ** FIX **: Point the date filter to the new raw date field
-      dateFilterKey="requestCreationDate"
+      dateFilterKey="requestUpdatedDate"
       getStatusColor={getStatusColor}
       getTypeColor={(type: string) =>
         type === 'Domestic' ? 'bg-primary/10 text-primary' : 'bg-secondary/10 text-secondary'
