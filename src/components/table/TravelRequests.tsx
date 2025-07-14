@@ -102,9 +102,9 @@ const TravelRequests: React.FC = () => {
           { key: 'returnArrivalDate', displayName: 'Inbound Arrival', sortable: true, filterable: true },
           { key: 'duId', displayName: 'Department', sortable: true, filterable: true },
           { key: 'purposeOfTravel', displayName: 'Purpose', sortable: true, filterable: true },
-          { key: 'comments', displayName: 'Comments', sortable: true, filterable: true },
+          // { key: 'comments', displayName: 'Comments', sortable: true, filterable: true },
           { key: 'createdAt', displayName: 'Created At', sortable: true, filterable: true }, // This uses the formatted date for display
-          { key: 'updatedAt', displayName: 'updatedAt', sortable: true, filterable: true }, // This uses the formatted date for display
+          { key: 'updatedAt', displayName: 'Updated At', sortable: true, filterable: true }, // This uses the formatted date for display
         ];
 
         const dynamicHeaders: Header[] = [];
@@ -130,7 +130,8 @@ const TravelRequests: React.FC = () => {
             'destinationPlace',
             'destinationCountry',
             'isAccommodationRequired',
-            'comments'
+            'comments',
+            'selectedTicketOptionId',
           ]);
 
           Object.keys(sampleItem).forEach((key) => {
@@ -191,6 +192,7 @@ const TravelRequests: React.FC = () => {
           
           // ** FIX **: Format createdAt for display, but keep the original for filtering.
           const createdAtFormatted = formatDateTime(item.createdAt);
+          const updatedAtFormatted = formatDateTime(item.updatedAt);
 
           return {
             ...item,
@@ -213,6 +215,7 @@ const TravelRequests: React.FC = () => {
             
             // ** FIX **: Use the formatted date for the 'createdAt' display column
             createdAt: createdAtFormatted, 
+            updatedAt: updatedAtFormatted, // Use the formatted date for the 'updatedAt' display column
             // ** FIX **: Add a new field with the RAW date for filtering
             requestCreationDate: item.createdAt, 
             requestUpdatedDate: item.updatedAt, 
