@@ -42,7 +42,7 @@ export default function DocumentTabs(props: DocumentTabsProps) {
     if (userData) setCurrentUser(JSON.parse(userData));
   }, []);
 
-  const allowedStatusIds = [5, 6, 7, 8];
+  const allowedStatusIds = [5, 6, 7, 8]; // DUApproved, BUApproved, TicketDispatched, Intransit
   const isModifiable = currentUser?.role === 'admin' && allowedStatusIds.includes(currentStatusId);
 
   const handleConfirmUpload = async (docType: 'Accommodation' | 'Insurance', fileUrls: string[]) => {

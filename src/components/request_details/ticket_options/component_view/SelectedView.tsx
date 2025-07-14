@@ -34,9 +34,9 @@ const SelectedView: React.FC<Props> = ({
   requestId,
   ticketOptions,
   documentPaths = [],
-  isModifiable, // ADDED
+  isModifiable,
   onPreviewTickets,
-  onDeleteTicket, // ADDED
+  onDeleteTicket,
   onUploadTickets,
   onConfirmTicketOption,
   buttons = [],
@@ -132,9 +132,9 @@ const SelectedView: React.FC<Props> = ({
                         </div>
                       </div>
                       
-                      {/* ADDED: Container for action icons */}
+                      {/* Container for action icons */}
                       <div className="flex items-center gap-1 flex-shrink-0 ml-2">
-                        {/* ADDED: Conditional rendering for the Delete button */}
+                        {/* Conditional rendering for the Delete button */}
                         {isModifiable && onDeleteTicket && (
                           <button
                             onClick={(e) => { e.stopPropagation(); onDeleteTicket(index); }}

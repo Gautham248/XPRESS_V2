@@ -346,7 +346,14 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId, onPreviewTick
         setError("Please select an option before uploading.");
         return;
     }
-    await handleSelectOption(pendingSelectedOptionId);
+    
+    const isEmtUser = currentUser?.userDU === 'EMT';
+
+    if (isEmtUser) {
+      await handleEmtSelectAndApprove(pendingSelectedOptionId);
+    } else {
+      await handleSelectOption(pendingSelectedOptionId);
+    }
   };
 
   const handleInitiateEditOption = (uiOptionToEdit: UITicketOption) => {
@@ -551,6 +558,36 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId, onPreviewTick
     } finally {
       setIsLoadingOptions(false);
     }
+  };
+
+  // EMT Ticket selection with DU Head approval bypass
+  const handleEmtSelectAndApprove = async (optionIdString: string) => {
+      if (!currentUser || !requestId) return;
+
+      const optionId = parseInt(optionIdString, 10);
+      const userId = parseInt(currentUser.userId, 10);
+      if (isNaN(optionId) || isNaN(userId)) {
+          setError("Invalid option or user ID.");
+          return;
+      }
+
+      const endpoint = `${API_BASE_URL}/Approvals/${requestId}/ticketoptions/${optionId}/emt-select-and-approve`;
+      const payload: SelectTicketOptionPayload = { selectingUserId: userId, comments: "Option selected and auto-approved for EMT." };
+
+      setIsLoadingOptions(true);
+      try {
+          const response = await axios.put(endpoint, payload);
+          if (response.data.isSuccess) {
+              await fetchTravelRequestData();
+          } else {
+              setError(response.data.errorMessages?.join(', ') || 'Failed to select and approve option.');
+          }
+      } catch (err) {
+          console.error("Error during EMT select and approve:", err);
+          setError(axios.isAxiosError(err) ? err.message : 'An error occurred during the process.');
+      } finally {
+          setIsLoadingOptions(false);
+      }
   };
 
   const renderContent = () => {
@@ -790,23 +827,7 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId, onPreviewTick
   // console.log("Department: " + departmentName);
   const renderEMTContent = (status: string) => {
     if (status == 'Approved') {
-      return (
-        <UploadTicketView
-          ticketOptions={uiTicketOptions}
-          newOption={newOptionText}
-          editingOption={editingOptionApiItem ? editingOptionApiItem.optionId.toString() : null}
-          editText={editText}
-          onChangeNewOption={setNewOptionText}
-          onAddOption={handleAddOption}
-          onEditOption={handleInitiateEditOption}
-          onDeleteOption={handleDeleteOption}
-          onSaveEdit={() => handleSaveEdit()}
-          onCancelEdit={() => { setEditingOptionApiItem(null); setEditText(''); }}
-          onChangeEditText={setEditText}
-          onUploadOptions={handleClearAllOptionsByAdmin} 
-          customButtons={[]}
-        />
-      );
+      return renderAdminContent(status);
     }
     
     if (status === 'OptionsListed') {
@@ -835,7 +856,11 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId, onPreviewTick
     }
 
     if (['DUApproved', 'TicketsDispatched', 'InTransit', 'Returned', 'Closed'].includes(status)) {
-      return renderEmployeeContent(status);
+       if (currentUser?.role === 'admin') {
+            return renderAdminContent(status);
+        } else {
+            return renderEmployeeContent(status);
+        }
     }
 
     if (status === 'PendingReview') {

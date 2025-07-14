@@ -45,6 +45,8 @@ const UploadTicketsModal: React.FC<UploadTicketsModalProps> = memo(({
 
     const [airlineOptions, setAirlineOptions] = useState<string[]>([]);
 
+    console.log("Transport: " + transportationType);
+
     useEffect(() => {
         const fetchAirlines = async () => {
             try {
@@ -323,7 +325,6 @@ const UploadTicketsModal: React.FC<UploadTicketsModalProps> = memo(({
                         {errors.totalExpense && <p className="mt-1 text-xs text-red-600">{errors.totalExpense}</p>}
                     </div>
 
-                    {/* CHANGE 6: FileUploader props are updated */}
                     <div className="border border-gray-200 rounded-lg p-4">
                         <h3 className="text-sm font-medium text-gray-900 mb-2">Attach Tickets <span className='text-red-500'>*</span></h3>
                         <FileUploader
@@ -340,7 +341,6 @@ const UploadTicketsModal: React.FC<UploadTicketsModalProps> = memo(({
                         Cancel
                     </button>
                     <button onClick={handleSubmit}
-                        // CHANGE 7: disabled check is updated
                         disabled={isSubmitting || !agencyName.trim() || !agencyExpense.trim() || !totalExpense.trim() || selectedFiles.length === 0 }
                         className="px-6 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded hover:bg-blue-700 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center min-w-[100px]"
                     >
