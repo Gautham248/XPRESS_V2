@@ -36,7 +36,7 @@ const NotFound: React.FC = () => {
         </button>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl">
+      {/* <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl">
         <div className="card hover:shadow-elevation-3 transition-all p-4">
           <div className="flex flex-col items-center">
             <div className="p-3 rounded-full bg-primary/10 mb-4">
@@ -73,7 +73,7 @@ const NotFound: React.FC = () => {
             </button>
           </div>
         </div>
-      </div>
+      </div> */}
     </div>
   );
 };
