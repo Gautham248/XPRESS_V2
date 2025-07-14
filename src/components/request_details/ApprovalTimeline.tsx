@@ -52,6 +52,24 @@ const LINEAR_PROGRESSION_STATUSES = [
 
 type LinearStatus = typeof LINEAR_PROGRESSION_STATUSES[number];
 
+// Define allowed statuses - only these will be displayed
+const ALLOWED_STATUSES = [
+  'PendingReview',
+  'Approved',
+  'OptionsListed',
+  'OptionSelected',
+  'DUApproved',
+  'BUApproved',
+  'TicketDispatched',
+  'InTransit',
+  'Returned',
+  'Closed',
+  'Cancelled',
+  'Rejected',
+  'Modified',
+  'OptionEdited',
+] as const;
+
 // Map API status types to internal status keys
 const API_TO_INTERNAL_STATUS_MAP: Record<string, string> = {
   'Pending': 'PendingReview',
@@ -191,13 +209,17 @@ const ApprovalTimeline: React.FC<ApprovalTimelineProps> = ({ requestId }) => {
     // Normalize the current status
     const normalizedCurrentStatus = normalizeApiStatus(rawStatus);
 
-    // Filter out 'BUApproved' events and normalize event types
+    // Filter out events that are not in the allowed statuses list and normalize event types
     const normalizedEvents = timelineEvents
-      .filter(event => normalizeApiStatus(event.type) !== 'BUApproved')
       .map(event => ({
         ...event,
         type: normalizeApiStatus(event.type)
-      }));
+      }))
+      .filter(event => {
+        // Only include events that are in our allowed statuses
+        return ALLOWED_STATUSES.includes(event.type as any);
+      })
+      .filter(event => event.type !== 'BUApproved'); // Keep existing BUApproved filter
 
     // Merge duplicate events (e.g., OptionSelected)
     const mergedEvents = normalizedEvents.reduce((acc: ApiTimelineEvent[], event: ApiTimelineEvent) => {
