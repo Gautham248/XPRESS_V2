@@ -36,6 +36,7 @@ export interface ComponentTravelRequest {
   isDropOffRequired?: boolean;
   pickupPlace?: string;
   dropoffPlace?: string;
+  isBillable: boolean;
   comments?: string;
   isVegetarian?: boolean;
   attendedCct?: boolean;
@@ -112,6 +113,7 @@ const TravelRequestDetails: React.FC = () => {
   const [requestClosed, setRequestClosed] = useState(false);
 
   const [activeModal, setActiveModal] = useState<string | null>(null);
+  const [isBillable, setIsBillable] = useState(false);
 
   const [isPreparingDocs, setIsPreparingDocs] = useState(false);
   const [isZipping, setIsZipping] = useState(false);
@@ -174,6 +176,7 @@ const TravelRequestDetails: React.FC = () => {
         const formattedData = {
           ...apiData,
           id: apiData.requestId,
+          isBillable: apiData.isBillable, 
           purpose: apiData.purposeOfTravel,
           status: INDEX_TO_STATUS_MAP[apiData.currentStatusId] || 'Unknown',
           employeeName: apiData.employeeName,
@@ -181,8 +184,6 @@ const TravelRequestDetails: React.FC = () => {
           accommodationDocumentPath: parsePath(apiData.accomodationDocumentPath), // typo match
           insuranceDocumentPath: parsePath(apiData.insuranceDocumentPath),
         };
-
-        // console.log("Data formatted for state:", formattedData);
 
         setTravelRequestData(formattedData as ComponentTravelRequest);
 
@@ -374,10 +375,31 @@ const TravelRequestDetails: React.FC = () => {
     handleCloseModal();
   };
   const handleSubmitApproval = async () => {
-    await fetch(`http://localhost:5030/api/Approvals/${id}/manager/approve`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ approvingUserId: userId, comments: modalInputText }) });
-    setActionTaken(true);
-    fetchTravelRequest();
-    handleCloseModal();
+    try {
+      const response = await fetch(`http://localhost:5030/api/Approvals/${id}/manager/approve`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          approvingUserId: userId,
+          comments: modalInputText,
+          isBillable: isBillable
+        })
+      });
+
+      const responseData = await response.json();
+      if (!response.ok || !responseData.isSuccess) {
+        toast.error(responseData.errorMessages?.join(', ') || 'Failed to approve request.');
+        return;
+      }
+      
+      toast.success('Request approved successfully!');
+      setActionTaken(true);
+      fetchTravelRequest(); 
+      handleCloseModal();
+    } catch (error) {
+        console.error("Approval Error:", error);
+        toast.error("An unexpected error occurred during approval.");
+    }
   };
   const handleSubmitRejection = async () => {
     if (!modalInputText.trim()) { toast.error('Please provide a rejection reason.'); return; }
@@ -472,7 +494,21 @@ const TravelRequestDetails: React.FC = () => {
       break;
     case 'approve':
       modalTitle = 'Approve Travel Request';
-      modalContent = <textarea className="w-full p-2 border rounded" placeholder="Approval comments (optional)..." rows={4} value={modalInputText} onChange={(e) => setModalInputText(e.target.value)} />;
+      modalContent = <>
+        <div className="flex items-center space-x-3 mb-4 p-3 bg-red-50 rounded-md">
+          <input
+            id="isBillableCheckbox"
+            type="checkbox"
+            className="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+            checked={isBillable}
+            onChange={(e) => setIsBillable(e.target.checked)}
+          />
+          <label htmlFor="isBillableCheckbox" className="text-gray-800 font-medium cursor-pointer">
+            Is this project billable/chargeable.
+          </label>
+        </div>
+        <textarea className="w-full p-2 border rounded" placeholder="Approval comments (optional)..." rows={4} value={modalInputText} onChange={(e) => setModalInputText(e.target.value)} />
+      </>
       modalButtons = [{ text: 'Cancel', bgColor: 'bg-gray-300', textColor: 'text-black', onClick: handleCloseModal }, { text: 'Confirm Approval', bgColor: 'bg-blue-600', onClick: handleSubmitApproval }];
       break;
     case 'reject':
