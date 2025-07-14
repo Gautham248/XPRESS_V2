@@ -203,8 +203,8 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId, onPreviewTick
         const statusId = response.data.result.currentStatusId;
         const statusName = INDEX_TO_STATUS_MAP[statusId];
 
-        const transportType = response.data.result.transportation?.toLowerCase() || '';
-        setTransportationType(transportType);
+        // const transportType = response.data.result.transportation?.toLowerCase() || '';
+        // setTransportationType(transportType);
 
         setTravelRequestStatus(statusName);
 

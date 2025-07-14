@@ -45,7 +45,7 @@ const UploadTicketsModal: React.FC<UploadTicketsModalProps> = memo(({
 
     const [airlineOptions, setAirlineOptions] = useState<string[]>([]);
 
-    console.log("Transport: " + transportationType);
+    // console.log("Transport: " + transportationType);
 
     useEffect(() => {
         const fetchAirlines = async () => {
@@ -211,8 +211,7 @@ const UploadTicketsModal: React.FC<UploadTicketsModalProps> = memo(({
 
     if (!isOpen) return null;
 
-    console.log(transportationType.toLowerCase());
-    
+    // console.log(transportationType.toLowerCase());
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
