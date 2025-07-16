@@ -15,7 +15,6 @@ import {
   travelExpensesByMonth,
   topDestinations 
 } from '../../data/mockData';
-import { format, parseISO } from 'date-fns';
 
 const ManagerDashboard: React.FC = () => {
   return (
