@@ -16,7 +16,6 @@ const StatCard: React.FC<StatCardProps> = ({
   subtitle,
   icon,
   iconClass,
-  iconBgClass,
   children
 }) => {
   return (
