@@ -29,10 +29,10 @@ const Modal: React.FC<ModalProps> = ({
 
   const formatDate = (date?: string): string => {
     if (!date) return 'Not specified';
-    return new Date(date).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
+    return new Date(date).toLocaleDateString('en-GB', {
       day: 'numeric',
+      month: 'long',
+      year: 'numeric',
     });
   };
 

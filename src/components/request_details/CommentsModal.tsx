@@ -19,7 +19,7 @@ const CommentsModal: React.FC<CommentsModalProps> = ({ isOpen, onClose, comments
   if (!isOpen) return null;
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString('en-US', {
+    return new Date(dateString).toLocaleString('en-GB', {
       year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
     });
   };

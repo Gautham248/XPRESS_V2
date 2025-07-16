@@ -351,6 +351,7 @@ const Calendar: React.FC = () => {
   const formatWeekRange = (): string => {
     const startOfWeek = new Date(currentDate);
     startOfWeek.setUTCDate(currentDate.getUTCDate() - currentDate.getUTCDay());
+
     const endOfWeek = new Date(startOfWeek);
     endOfWeek.setUTCDate(startOfWeek.getUTCDate() + 6);
     
@@ -366,12 +367,12 @@ const Calendar: React.FC = () => {
     };
     
     if (startOfWeek.getUTCFullYear() !== endOfWeek.getUTCFullYear()) {
-      return `${startOfWeek.toLocaleDateString('en-US', yearOpt)} - ${endOfWeek.toLocaleDateString('en-US', yearOpt)}`;
+      return `${startOfWeek.toLocaleDateString('enGB', yearOpt)} - ${endOfWeek.toLocaleDateString('en-GB', yearOpt)}`;
     }
     if (startOfWeek.getUTCMonth() !== endOfWeek.getUTCMonth()) {
-      return `${startOfWeek.toLocaleDateString('en-US', options)} - ${endOfWeek.toLocaleDateString('en-US', options)}, ${endOfWeek.getUTCFullYear()}`;
+      return `${startOfWeek.toLocaleDateString('en-GB', options)} - ${endOfWeek.toLocaleDateString('en-GB', options)}, ${endOfWeek.getUTCFullYear()}`;
     }
-    return `${startOfWeek.toLocaleDateString('en-US', { month: 'long', day: 'numeric', timeZone: 'UTC' })} - ${endOfWeek.toLocaleDateString('en-US', { day: 'numeric', timeZone: 'UTC' })}, ${endOfWeek.getUTCFullYear()}`;
+    return `${startOfWeek.toLocaleDateString('en-GB', options)} - ${endOfWeek.toLocaleDateString('en-GB', options)}, ${endOfWeek.getUTCFullYear()}`;
   };
 
   return (

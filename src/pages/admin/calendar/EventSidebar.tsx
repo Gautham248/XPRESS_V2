@@ -58,7 +58,7 @@ const EventSidebar: React.FC<EventSidebarProps> = ({
       timeZone: 'UTC' 
     };
     
-    return `${date.toLocaleDateString('en-US', dateOptions)}, ${date.toLocaleTimeString('en-US', timeOptions)}`;
+    return `${date.toLocaleDateString('en-GB', dateOptions)}, ${date.toLocaleTimeString('en-GB', timeOptions)}`;
   };
 
   const formatTravelDates = (departureDate: string | null | undefined, arrivalDate: string | null | undefined): string => {
@@ -106,7 +106,7 @@ const EventSidebar: React.FC<EventSidebarProps> = ({
       'Closed': 'bg-gray-100 text-gray-800 border-gray-200',
       'PendingReview': 'bg-orange-100 text-orange-800 border-orange-200'
     };
-    return statusMap[status] || 'bg-gray-100 text-gray-600 border-gray-200';
+    return statusMap[status as keyof typeof statusMap] || 'bg-gray-100 text-gray-600 border-gray-200';
   };
 
   return (
@@ -119,7 +119,7 @@ const EventSidebar: React.FC<EventSidebarProps> = ({
           </div>
           <div>
             <h2 className="text-lg sm:text-xl font-bold text-gray-800 leading-tight">
-              {selectedDate.toLocaleDateString('en-US', { 
+              {selectedDate.toLocaleDateString('en-GB', { 
                 weekday: 'long', 
                 month: 'long', 
                 day: 'numeric',

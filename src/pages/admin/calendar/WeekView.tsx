@@ -120,7 +120,7 @@ const WeekView: React.FC<WeekViewProps> = ({
           return (
             <div key={index} className={containerClasses}>
               <div className={headerClasses}>
-                <div>{dayDate.toLocaleDateString('en-US', { weekday: 'short', timeZone: 'UTC' })}</div>
+                <div>{dayDate.toLocaleDateString('en-GB', { weekday: 'short', timeZone: 'UTC' })}</div>
                 <div
                   className={`text-lg font-semibold mt-1 cursor-pointer ${
                     isSelected ? 'text-blue-700' : isToday ? 'text-blue-600' : 'text-gray-800'
