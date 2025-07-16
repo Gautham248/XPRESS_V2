@@ -130,15 +130,15 @@ const TravelRequestDetails: React.FC = () => {
   const userString = localStorage.getItem('user');
   let role = '';
   let userId: number | undefined = undefined;
-
-  // console.log(travelRequestData?.ticketDocumentPath);
-
+  
+  
   if (userString) {
     const user = JSON.parse(userString);
     role = user.role;
     userId = parseInt(user.userId, 10);
   }
-
+  
+  // console.log(travelRequestData?.ticketDocumentPath);
   const fetchTravelRequest = useCallback(async () => {
     if (!id) {
       setIsLoading(false);
