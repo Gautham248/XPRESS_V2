@@ -555,7 +555,18 @@ const TravelRequestDetails: React.FC = () => {
           <button onClick={() => navigate(-1)} className="p-2 rounded-full bg-gray-200 hover:bg-gray-300" aria-label="Go back"><ChevronLeft className="h-5 w-5" /></button>
           <div>
             <h2 className="text-2xl font-bold flex items-center gap-3">{travelRequestData.id}<span className={`px-3 py-1.5 rounded-full text-xs font-semibold ${statusBadgeClasses}`}>{displayStatusName}</span></h2>
-            <p className="text-sm text-gray-500 mt-1">{travelRequestData.destination || travelRequestData.purpose} • {formatDate(travelRequestData.outboundDepartureDate)} to {formatDate(travelRequestData.returnArrivalDate || travelRequestData.returnDepartureDate)}</p>
+            <p className="text-sm text-gray-500 mt-1">
+              {travelRequestData.destination || travelRequestData.purpose} • {travelRequestData.isRoundTrip ? (
+                // Round trip - show both dates
+                <>
+                  {formatDate(travelRequestData.outboundDepartureDate)} to{' '}
+                  {formatDate(travelRequestData.returnArrivalDate || travelRequestData.returnDepartureDate)}
+                </>
+              ) : (
+                // One way - just show departure date
+                formatDate(travelRequestData.outboundDepartureDate)
+              )}
+            </p>
           </div>
         </div>
 
