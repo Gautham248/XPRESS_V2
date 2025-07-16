@@ -33,6 +33,7 @@ interface ApiTravelInfoItem {
   isVegetarian: boolean;
   isDropOffRequired: boolean;
   isPickUpRequired: boolean;
+  isBillable: boolean;
   dropOffLocation: string | null;
   pickUpLocation: string | null;
   travelFeedback: string | null;
@@ -65,6 +66,7 @@ interface TravelRequestData {
   dropOffLocation: string | null;
   travelFeedback: string | null;
   comments: Comment[];
+  isBillable: boolean;
   // travelerName: string;
   // initialComments: string | null;
   // foodComment: string | null;
@@ -140,6 +142,7 @@ const TravelInfo: React.FC<TravelInfoProps> = ({ requestId }) => {
             travelType: apiData.isInternational ? "International" : "Domestic",
             purpose: apiData.purposeOfTravel,
             foodPreference: apiData.isVegetarian ? "Vegetarian" : "Non-Vegetarian",
+            isBillable: apiData.isBillable,
             pickUpLocation: apiData.pickUpLocation,
             dropOffLocation: apiData.dropOffLocation,
             travelFeedback: apiData.travelFeedback,
@@ -250,7 +253,22 @@ const TravelInfo: React.FC<TravelInfoProps> = ({ requestId }) => {
         
         {/* --- HEADER --- */}
         <div className="flex justify-between items-start mb-6">
-            <h3 className="text-xl font-semibold text-gray-900">Travel Information</h3>
+            <div className='flex gap-5 items-center'>
+              <h3 className="text-xl font-semibold text-gray-900">Travel Information</h3>
+              <h2 className="text-2xl font-bold flex items-center gap-3">
+                {travelRequest.isBillable && (
+                  <span className={`
+                    px-4 py-2 rounded-md text-sm font-semibold flex items-center gap-2
+                    'bg-green-50 text-green-700 border border-green-200'
+                    }
+                  `}>
+                    <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                    Billable
+                  </span>
+                )}
+              </h2>
+            </div>
+
             {/* "View Comments" button only appears if there are comments */}
             {travelRequest.comments && travelRequest.comments.length > 0 && (
                 <button
