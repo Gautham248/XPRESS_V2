@@ -325,8 +325,8 @@ const DataTable = <T extends Record<string, any>>({
     if (currentPage > newTotalPages) setCurrentPage(newTotalPages);
   }, [sortedData.length, itemsPerPage, currentPage]);
   
-  const stickyHeaderBg = 'bg-gray-50';
-  const stickyCellBg = 'bg-gray-50';
+  // const stickyHeaderBg = 'bg-gray-50';
+  // const stickyCellBg = 'bg-gray-50';
 
   return (
     <div className="space-y-6 animate-fadeIn">
