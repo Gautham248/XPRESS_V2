@@ -12,7 +12,7 @@ import { useModal } from './confirmation_modal/hooks/useModal';
 import ConfirmationModal, { ButtonConfig } from './confirmation_modal/ConfirmationModal';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
-import DocumentTabs from './IterinaryTabs';
+import DocumentTabs from './ItineraryTabs';
 import toast, { Toaster } from 'react-hot-toast';
 import DocumentPreviewModal from './ticket_options/DocumentPreviewModal';
 

@@ -42,11 +42,11 @@ const UploadTicketView: React.FC<Props> = ({
   customButtons = [],
 }) => {
   return (
-    <div className="flex flex-col h-full">
+    <div className="card flex flex-col h-full">
       <div className="flex-1 overflow-y-auto">
         <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <h4 className="text-lg font-bold text-gray-800">Create Ticket Options</h4>
+            <h4 className="text-lg font-bold text-gray-800">Add Ticket Options</h4>
             <span className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
               {ticketOptions.length} option{ticketOptions.length !== 1 ? 's' : ''}
             </span>

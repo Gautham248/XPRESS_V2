@@ -1,5 +1,4 @@
 import React from 'react';
-import { Button } from '@mui/material';
 import { Upload, FileText, Download, Trash2, Loader2, Ban } from 'lucide-react';
 
 interface DocumentListViewProps {
@@ -101,15 +100,15 @@ const DocumentListView: React.FC<DocumentListViewProps> = ({
 
       {/* Upload button at the bottom (only shows if modifiable) */}
       {isModifiable && (
-        <div className="flex justify-center pt-4 border-t mt-4">
-          <Button
-            variant="contained"
+        <div className="flex justify-center pt-4 mt-4">
+          <button
+            className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:transform-none disabled:hover:shadow-lg"
             onClick={onUploadClick}
-            startIcon={isLoading ? <Loader2 className="animate-spin" size={16}/> : <Upload size={16} />}
             disabled={isLoading}
           >
-            {isLoading ? `Saving...` : `Upload New ${documentType} Doc`}
-          </Button>
+            {isLoading ? <Loader2 className="animate-spin" size={16}/> : <Upload size={16} />}
+            {isLoading ? `Saving...` : `Upload ${documentType} Doc`}
+          </button>
         </div>
       )}
     </div>
