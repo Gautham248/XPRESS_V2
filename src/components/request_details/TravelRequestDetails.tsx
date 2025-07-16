@@ -79,7 +79,8 @@ const getDisplayStatusName = (rawStatus?: ComponentTravelRequest['status'] | str
   if (rawStatus && typeof rawStatus === 'string') return STATUS_DISPLAY_NAMES_HEADER[rawStatus] || rawStatus.replace(/([A-Z])/g, ' $1').trim();
   return 'Status Unknown';
 };
-const getStatusBadgeStyles = (status?: ComponentTravelRequest['status'] | string): string => {
+
+export const getStatusBadgeStyles = (status?: ComponentTravelRequest['status'] | string): string => {
   if (!status) return 'bg-gray-200 text-gray-800 border border-gray-400';
   switch (status) {
     case 'PendingReview': return 'bg-yellow-100 text-yellow-700 border border-yellow-300';
@@ -205,7 +206,7 @@ const TravelRequestDetails: React.FC = () => {
     if (isNaN(date.getTime())) return dateString;
 
     const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0'); // months are 0-indexed
+    const month = String(date.getMonth() + 1).padStart(2, '0');
     const year = date.getFullYear();
 
     return `${day}-${month}-${year}`;
