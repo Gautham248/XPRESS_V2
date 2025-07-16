@@ -3,6 +3,11 @@ import axios from 'axios';
 import toast from 'react-hot-toast';
 import { Box, Paper, Tab } from '@mui/material';
 import { TabContext, TabList, TabPanel } from '@mui/lab';
+import { 
+  ConfirmationNumberOutlined as TicketIcon,
+  BusinessOutlined as AccommodationIcon,
+  SecurityOutlined as InsuranceIcon
+} from '@mui/icons-material';
 import { useModal } from './confirmation_modal/hooks/useModal';
 import TicketOptionComponent from './ticket_options/TicketOptionsComponent';
 import DocumentListView from './ticket_options/DocumentListView';
@@ -25,8 +30,8 @@ const API_BASE_URL = 'http://localhost:5030/api';
 
 export default function DocumentTabs(props: DocumentTabsProps) {
   const { 
-    requestId, currentStatusId, onPreviewTicket, onPreviewDocument,
-    ticketDocumentPath = [], accommodationDocumentPath = [], insuranceDocumentPath = [],
+    requestId, currentStatusId, onPreviewDocument,
+    accommodationDocumentPath = [], insuranceDocumentPath = [],
     refreshRequestData,
   } = props;
 
@@ -81,23 +86,149 @@ export default function DocumentTabs(props: DocumentTabsProps) {
   if (!currentUser) return <Box sx={{ p: 3, textAlign: 'center' }}>Loading...</Box>;
 
   return (
-    <Paper variant="outlined" sx={{ bgcolor: 'background.paper', borderRadius: '8px' }}>
+    <Paper 
+      variant="outlined" 
+      sx={{ 
+        bgcolor: 'background.paper', 
+        borderRadius: '8px',
+        boxShadow: '0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)',
+        border: '1px solid #e5e7eb',
+        overflow: 'hidden'
+      }}
+    >
       <TabContext value={value}>
-        <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-          <TabList onChange={(_e, v) => setValue(v)} aria-label="document tabs" variant="fullWidth">
-            <Tab label="Tickets" value="1" />
-            <Tab label="Accommodation" value="2" />
-            <Tab label="Insurance" value="3" />
+        <Box sx={{ 
+          borderBottom: 0,
+          padding: '16px',
+          // background: '#f8f9fa',
+          borderRadius: '12px 12px 0 0'
+        }}>
+          <TabList 
+            onChange={(_e, v) => setValue(v)} 
+            aria-label="document tabs" 
+            variant="fullWidth"
+            sx={{
+              borderRadius: '8px',
+              padding: '2px',
+              margin: '0',
+              minHeight: 'auto',
+              '& .MuiTabs-indicator': {
+                display: 'none'
+              },
+              '& .MuiTabs-flexContainer': {
+                gap: '4px'
+              }
+            }}
+          >
+            <Tab 
+              icon={<TicketIcon sx={{ fontSize: '20px'}} />}
+              label="Tickets" 
+              value="1" 
+              sx={{
+                flex: 1,
+                padding: '15px 20px',
+                textAlign: 'center',
+                borderRadius: '10px',
+                transition: 'all 0.2s ease',
+                fontWeight: 500,
+                color: '#6b7280',
+                minHeight: 'auto',
+                textTransform: 'none',
+                fontSize: '14px',
+                flexDirection: 'row',
+                gap: '8px',
+                '& .MuiTab-iconWrapper': {
+                  marginBottom: 0,
+                  marginRight: 0
+                },
+                '&.Mui-selected': {
+                  background: 'white',
+                  color: '#0555eb',
+                  fontWeight: 600,
+                  border: '1px solid #e5e7eb'
+                },
+                '&:hover:not(.Mui-selected)': {
+                  background: 'rgba(255,255,255,0.7)',
+                  color: '#374151'
+                }
+              }}
+            />
+            <Tab 
+              icon={<AccommodationIcon sx={{ fontSize: '20px'}} />}
+              label="Accommodation" 
+              value="2" 
+              sx={{
+                flex: 1,
+                padding: '15px 20px',
+                textAlign: 'center',
+                borderRadius: '10px',
+                transition: 'all 0.2s ease',
+                fontWeight: 500,
+                color: '#6b7280',
+                minHeight: 'auto',
+                textTransform: 'none',
+                fontSize: '14px',
+                flexDirection: 'row',
+                gap: '8px',
+                '& .MuiTab-iconWrapper': {
+                  marginBottom: 0,
+                  marginRight: 0
+                },
+                '&.Mui-selected': {
+                  background: 'white',
+                  color: '#0555eb',
+                  fontWeight: 600,
+                  border: '1px solid #e5e7eb'
+                },
+                '&:hover:not(.Mui-selected)': {
+                  background: 'rgba(255,255,255,0.7)',
+                  color: '#374151'
+                }
+              }}
+            />
+            <Tab 
+              icon={<InsuranceIcon sx={{ fontSize: '20px' }} />}
+              label="Insurance" 
+              value="3" 
+              sx={{
+                flex: 1,
+                padding: '15px 20px',
+                textAlign: 'center',
+                borderRadius: '10px',
+                transition: 'all 0.2s ease',
+                fontWeight: 500,
+                color: '#6b7280',
+                minHeight: 'auto',
+                textTransform: 'none',
+                fontSize: '14px',
+                flexDirection: 'row',
+                gap: '8px',
+                '& .MuiTab-iconWrapper': {
+                  marginBottom: 0,
+                  marginRight: 0
+                },
+                '&.Mui-selected': {
+                  background: 'white',
+                  color: '#0555eb',
+                  fontWeight: 600,
+                  border: '1px solid #e5e7eb'
+                },
+                '&:hover:not(.Mui-selected)': {
+                  background: 'rgba(255,255,255,0.7)',
+                  color: '#374151'
+                }
+              }}
+            />
           </TabList>
         </Box>
-        <TabPanel value="1" sx={{ p: 3 }}>
+        <TabPanel value="1" sx={{ p: '20px', color: '#333' }}>
           <TicketOptionComponent 
             {...props}
             isModifiable={isModifiable}
             onDeleteTicket={(index) => handleDelete('Ticket', index)}
           />
         </TabPanel>
-        <TabPanel value="2" sx={{ p: 2 }}>
+        <TabPanel value="2" sx={{ p: '20px', color: '#333' }}>
           <DocumentListView
             documentType="Accommodation"
             documentPaths={accommodationDocumentPath}
@@ -108,7 +239,7 @@ export default function DocumentTabs(props: DocumentTabsProps) {
             isLoading={isLoading}
           />
         </TabPanel>
-        <TabPanel value="3" sx={{ p: 2 }}>
+        <TabPanel value="3" sx={{ p: '20px', color: '#333' }}>
           <DocumentListView
             documentType="Insurance"
             documentPaths={insuranceDocumentPath}

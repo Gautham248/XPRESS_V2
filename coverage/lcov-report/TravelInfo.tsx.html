@@ -957,7 +957,7 @@ const TravelInfo: React.FC&lt;TravelInfoProps&gt; = ({ requestId }) =&gt; {
   const formatDate = (dateString: string | null | undefined) =&gt; {
     if (!dateString) return '-';
     try {
-      return new Date(dateString).toLocaleDateString('en-US', {
+      return new Date(dateString).toLocaleDateString('en-GB', {
         year: 'numeric',
         month: 'long',
         day: 'numeric',

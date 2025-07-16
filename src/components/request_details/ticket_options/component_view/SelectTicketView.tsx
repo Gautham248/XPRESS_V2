@@ -18,7 +18,7 @@ const SelectTicketView: React.FC<Props> = ({
    const hasPendingSelection = selectedOptionId !== null;
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="card flex flex-col h-full">
       <div className="flex-1 overflow-y-auto pb-6">
         <div className="space-y-6">
           <div className="flex items-center justify-between">

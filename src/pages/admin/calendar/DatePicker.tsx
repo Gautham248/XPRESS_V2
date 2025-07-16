@@ -141,7 +141,7 @@ const DatePicker: React.FC<DatePickerProps> = ({ currentDate, view, onDateSelect
   todayIST.setHours(0, 0, 0, 0);
 
   const formatMonth = (date: Date): string => {
-    return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    return date.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
   };
 
   const renderYearSelectionGrid = (): JSX.Element => {
@@ -285,7 +285,7 @@ const DatePicker: React.FC<DatePickerProps> = ({ currentDate, view, onDateSelect
               className="text-gray-800 font-semibold text-lg hover:text-blue-600 cursor-pointer transition-colors duration-200"
               onClick={() => setPickerView('Months')}
             >
-              {pickerDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+              {pickerDate.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })}
             </button>
           </div>
         </div>
@@ -404,7 +404,7 @@ const DatePickerDemo = () => {
     const endOfWeek = new Date(startOfWeek);
     endOfWeek.setDate(startOfWeek.getDate() + 6);
     
-    return `${startOfWeek.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${endOfWeek.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+    return `${startOfWeek.toLocaleDateString('en-GB', { month: 'short', day: 'numeric' })} - ${endOfWeek.toLocaleDateString('en-GB', { month: 'short', day: 'numeric', year: 'numeric' })}`;
   };
 
   return (
@@ -446,7 +446,7 @@ const DatePickerDemo = () => {
             
             <div className="text-right">
               <div className="text-2xl font-bold text-gray-800">
-                {currentDate.toLocaleDateString('en-US', { 
+                {currentDate.toLocaleDateString('en-GB', { 
                   weekday: 'long', 
                   month: 'long', 
                   day: 'numeric', 

@@ -12,7 +12,7 @@ import { useModal } from './confirmation_modal/hooks/useModal';
 import ConfirmationModal, { ButtonConfig } from './confirmation_modal/ConfirmationModal';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
-import DocumentTabs from './IterinaryTabs';
+import DocumentTabs from './ItineraryTabs';
 import toast, { Toaster } from 'react-hot-toast';
 import DocumentPreviewModal from './ticket_options/DocumentPreviewModal';
 
@@ -79,7 +79,8 @@ const getDisplayStatusName = (rawStatus?: ComponentTravelRequest['status'] | str
   if (rawStatus && typeof rawStatus === 'string') return STATUS_DISPLAY_NAMES_HEADER[rawStatus] || rawStatus.replace(/([A-Z])/g, ' $1').trim();
   return 'Status Unknown';
 };
-const getStatusBadgeStyles = (status?: ComponentTravelRequest['status'] | string): string => {
+
+export const getStatusBadgeStyles = (status?: ComponentTravelRequest['status'] | string): string => {
   if (!status) return 'bg-gray-200 text-gray-800 border border-gray-400';
   switch (status) {
     case 'PendingReview': return 'bg-yellow-100 text-yellow-700 border border-yellow-300';
@@ -130,15 +131,15 @@ const TravelRequestDetails: React.FC = () => {
   const userString = localStorage.getItem('user');
   let role = '';
   let userId: number | undefined = undefined;
-
-  // console.log(travelRequestData?.ticketDocumentPath);
-
+  
+  
   if (userString) {
     const user = JSON.parse(userString);
     role = user.role;
     userId = parseInt(user.userId, 10);
   }
-
+  
+  // console.log(travelRequestData?.ticketDocumentPath);
   const fetchTravelRequest = useCallback(async () => {
     if (!id) {
       setIsLoading(false);
@@ -202,7 +203,13 @@ const TravelRequestDetails: React.FC = () => {
   const formatDate = (dateString: string | undefined): string => {
     if (!dateString) return 'N/A';
     const date = new Date(dateString);
-    return isNaN(date.getTime()) ? dateString : date.toLocaleDateString('en-GB');
+    if (isNaN(date.getTime())) return dateString;
+
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+
+    return `${day}-${month}-${year}`;
   };
 
   const getFriendlyFilename = (doc: any): string => {
@@ -555,7 +562,18 @@ const TravelRequestDetails: React.FC = () => {
           <button onClick={() => navigate(-1)} className="p-2 rounded-full bg-gray-200 hover:bg-gray-300" aria-label="Go back"><ChevronLeft className="h-5 w-5" /></button>
           <div>
             <h2 className="text-2xl font-bold flex items-center gap-3">{travelRequestData.id}<span className={`px-3 py-1.5 rounded-full text-xs font-semibold ${statusBadgeClasses}`}>{displayStatusName}</span></h2>
-            <p className="text-sm text-gray-500 mt-1">{travelRequestData.destination || travelRequestData.purpose} • {formatDate(travelRequestData.outboundDepartureDate)} to {formatDate(travelRequestData.returnArrivalDate || travelRequestData.returnDepartureDate)}</p>
+            <p className="text-sm text-gray-500 mt-1">
+              {travelRequestData.destination || travelRequestData.purpose} • {travelRequestData.isRoundTrip ? (
+                // Round trip - show both dates
+                <>
+                  {formatDate(travelRequestData.outboundDepartureDate)} to{' '}
+                  {formatDate(travelRequestData.returnArrivalDate || travelRequestData.returnDepartureDate)}
+                </>
+              ) : (
+                // One way - just show departure date
+                formatDate(travelRequestData.outboundDepartureDate)
+              )}
+            </p>
           </div>
         </div>
 

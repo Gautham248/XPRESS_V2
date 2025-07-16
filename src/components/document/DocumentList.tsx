@@ -178,28 +178,40 @@ const handleDownload = async (url: string) => {
 
   return (
     <>
-      <ul className="space-y-3">
-        {documents.map((doc) => (
-          <li
-            key={doc.id}
-            className="flex justify-between items-start p-4 bg-gray-100 rounded shadow-sm"
-          >
-            <div className="text-sm text-gray-800 space-y-1">
-              {renderDetails(doc)}
-            </div>
-            <div className="flex gap-3 mt-1">
-              <Download
-                className="w-5 h-5 text-blue-600 cursor-pointer"
-                onClick={() => handleDownload(doc.documentPath)}
-              />
-              <Trash2
-                className="w-5 h-5 text-red-600 cursor-pointer"
-                onClick={() => confirmDelete(doc)}
-              />
-            </div>
-          </li>
-        ))}
-      </ul>
+      {documents.length === 0 ? (
+        <div className="text-center py-12 px-6 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
+          <div className="text-gray-400 mb-4">
+            <svg className="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+          </div>
+          <p className="text-lg font-medium text-gray-600 mb-2">No {docType.toLowerCase()} documents yet</p>
+          <p className="text-sm text-gray-500">Upload your first document above to get started</p>
+        </div>
+      ) : (
+        <ul className="space-y-3">
+          {documents.map((doc) => (
+            <li
+              key={doc.id}
+              className="flex justify-between items-start p-4 bg-gray-100 rounded shadow-sm"
+            >
+              <div className="text-sm text-gray-800 space-y-1">
+                {renderDetails(doc)}
+              </div>
+              <div className="flex gap-3 mt-1">
+                <Download
+                  className="w-5 h-5 text-blue-600 cursor-pointer"
+                  onClick={() => handleDownload(doc.documentPath)}
+                />
+                <Trash2
+                  className="w-5 h-5 text-red-600 cursor-pointer"
+                  onClick={() => confirmDelete(doc)}
+                />
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
       {showConfirm && docToDelete && (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded shadow-md w-full max-w-sm text-center space-y-4">

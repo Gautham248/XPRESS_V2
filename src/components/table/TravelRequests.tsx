@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { format, parseISO } from 'date-fns';
 import DataTable from './DataTable';
 import { Eye, CheckCircle, XCircle } from 'lucide-react';
+import { getStatusBadgeStyles } from '../request_details/TravelRequestDetails';
 
 interface TravelRequest {
   [key: string]: any;
@@ -243,21 +244,21 @@ const TravelRequests: React.FC = () => {
     return `${role.charAt(0).toUpperCase() + role.slice(1)} Dashboard`;
   };
 
-  const getStatusColor = (status: string | undefined): string => {
-    if (!status) return 'bg-gray-100 text-gray-800';
-    switch (status.toLowerCase()) {
-      case 'pendingreview':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'duapproved':
-        return 'bg-blue-100 text-blue-800';
-      case 'optionselected':
-        return 'bg-purple-100 text-purple-800';
-      case 'rejected':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
+  // const getStatusColor = (status: string | undefined): string => {
+  //   if (!status) return 'bg-gray-100 text-gray-800';
+  //   switch (status.toLowerCase()) {
+  //     case 'pendingreview':
+  //       return 'bg-yellow-100 text-yellow-800';
+  //     case 'duapproved':
+  //       return 'bg-blue-100 text-blue-800';
+  //     case 'optionselected':
+  //       return 'bg-purple-100 text-purple-800';
+  //     case 'rejected':
+  //       return 'bg-red-100 text-red-800';
+  //     default:
+  //       return 'bg-gray-100 text-gray-800';
+  //   }
+  // };
 
   const getTripTypeColor = (tripType: string | undefined): string => {
     if (!tripType) return 'bg-gray-100 text-gray-800';
@@ -319,7 +320,7 @@ const TravelRequests: React.FC = () => {
       typeOptions={['Domestic', 'International']}
       // ** FIX **: Point the date filter to the new raw date field
       dateFilterKey="requestUpdatedDate"
-      getStatusColor={getStatusColor}
+      getStatusColor={getStatusBadgeStyles}
       getTypeColor={(type: string) =>
         type === 'Domestic' ? 'bg-primary/10 text-primary' : 'bg-secondary/10 text-secondary'
       }

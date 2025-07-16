@@ -322,7 +322,8 @@ const EmployeeDashboard: React.FC = () => {
         };
     }
   };
- 
+
+  const capitalizedRole = currentUser.role.charAt(0).toUpperCase() + currentUser.role.slice(1).toLowerCase();
  
   return (
     <div className="container mx-auto p-6 space-y-6">
@@ -333,7 +334,7 @@ const EmployeeDashboard: React.FC = () => {
           <User className="h-10 w-10 text-gray-600" />
           <div>
             <h2 className="text-xl font-semibold">{currentUser.name}</h2>
-            <p className="text-sm text-gray-500">{currentUser.role} | {currentUser.department}</p>
+            <p className="text-sm text-gray-500">{capitalizedRole} | {currentUser.department}</p>
           </div>
         </div>
         <div className="flex space-x-4 mt-4 md:mt-0">

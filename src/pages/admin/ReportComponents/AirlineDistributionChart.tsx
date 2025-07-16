@@ -466,7 +466,7 @@ const AirlineDistributionChart: React.FC<AirlineDistributionChartProps> = ({
                   dataKey="value"
                   paddingAngle={2}
                 >
-                  {chartData.map((entry, index) => (
+                  {chartData.map((_entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>

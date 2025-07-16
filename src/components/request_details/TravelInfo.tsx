@@ -191,7 +191,7 @@ const TravelInfo: React.FC<TravelInfoProps> = ({ requestId }) => {
   const formatDate = (dateString: string | null | undefined) => {
     if (!dateString) return '-';
     try {
-      return new Date(dateString).toLocaleDateString('en-US', {
+      return new Date(dateString).toLocaleDateString('en-GB', {
         year: 'numeric',
         month: 'long',
         day: 'numeric',

@@ -204,7 +204,7 @@ const CommentsModal: React.FC&lt;CommentsModalProps&gt; = ({ isOpen, onClose, co
   if (!isOpen) return null;
 &nbsp;
   const formatDate = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >(d</span>ateString: string) =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >    return new Date(dateString).toLocaleString('en-US', {</span>
+<span class="cstat-no" title="statement not covered" >    return new Date(dateString).toLocaleString('en-GB', {</span>
       year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
     });
   };
