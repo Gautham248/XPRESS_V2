@@ -25,8 +25,8 @@ const API_BASE_URL = 'http://localhost:5030/api';
 
 export default function DocumentTabs(props: DocumentTabsProps) {
   const { 
-    requestId, currentStatusId, onPreviewTicket, onPreviewDocument,
-    ticketDocumentPath = [], accommodationDocumentPath = [], insuranceDocumentPath = [],
+    requestId, currentStatusId, onPreviewDocument,
+    accommodationDocumentPath = [], insuranceDocumentPath = [],
     refreshRequestData,
   } = props;
 
