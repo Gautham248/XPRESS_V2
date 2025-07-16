@@ -202,7 +202,13 @@ const TravelRequestDetails: React.FC = () => {
   const formatDate = (dateString: string | undefined): string => {
     if (!dateString) return 'N/A';
     const date = new Date(dateString);
-    return isNaN(date.getTime()) ? dateString : date.toLocaleDateString('en-GB');
+    if (isNaN(date.getTime())) return dateString;
+
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0'); // months are 0-indexed
+    const year = date.getFullYear();
+
+    return `${day}-${month}-${year}`;
   };
 
   const getFriendlyFilename = (doc: any): string => {
