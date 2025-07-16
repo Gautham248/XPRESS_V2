@@ -21,6 +21,19 @@ const Header: React.FC<HeaderProps> = ({ pageTitle, toggleSidebar, sidebarOpen }
     }
   }, []);
 
+  // Function to get initials from full name
+  const getInitials = (name: string) => {
+    if (!name) return 'U';
+    const nameParts = name.trim().split(' ');
+    if (nameParts.length === 1) {
+      return nameParts[0][0].toUpperCase();
+    }
+    // Get first letter of first name and first letter of last name
+    const firstInitial = nameParts[0][0];
+    const lastInitial = nameParts[nameParts.length - 1][0];
+    return (firstInitial + lastInitial).toUpperCase();
+  };
+
   return (
     <header className="bg-card border-b h-16 flex items-center z-30 sticky top-0">
       <div className="flex items-center justify-between w-full px-4">
@@ -33,7 +46,18 @@ const Header: React.FC<HeaderProps> = ({ pageTitle, toggleSidebar, sidebarOpen }
               <Menu className="h-5 w-5" />
             </button>
           )}
-          <h1 className="text-xl font-semibold">{pageTitle}</h1>
+          
+          {/* Logo and App Name */}
+          <div className="flex items-center space-x-3">
+            {/* Dummy Logo */}
+            <div className="h-8 w-8 rounded-md bg-primary flex items-center justify-center">
+              <div className="h-5 w-5 bg-white rounded-sm flex items-center justify-center">
+                <span className="text-primary text-xs font-bold">X</span>
+              </div>
+            </div>
+            {/* App Name */}
+            <h1 className="text-xl font-semibold">XPRESS</h1>
+          </div>
         </div>
         
         <div className="flex items-center space-x-3">
@@ -92,7 +116,7 @@ const Header: React.FC<HeaderProps> = ({ pageTitle, toggleSidebar, sidebarOpen }
           <div className="hidden md:flex items-center space-x-2">
             <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center text-white">
               <span className="text-sm font-medium">
-                {userName ? userName.split(' ').map(word => word[0]).join('').toUpperCase() : 'U'}
+                {getInitials(userName || 'User')}
               </span>
             </div>
             <div className="flex items-center">
