@@ -15,6 +15,7 @@ import NotFound from './components/not_found/NotFound';
 import CreateRequest from './components/Create Request/CreateRequest';
 import Documents from './components/document/Documents';
 import Dashboard from './pages/admin/ReportComponents/Dashboard';
+import ConfirmActionPage from './pages/ConfirmActionPage';
 
 function App() {
   return (
@@ -22,6 +23,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/confirm-action" element={<ConfirmActionPage/>} />
         
         {/* Admin Routes */}
         <Route path="/admin" element={
