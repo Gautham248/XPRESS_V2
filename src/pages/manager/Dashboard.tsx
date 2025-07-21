@@ -15,6 +15,7 @@ import {
   travelExpensesByMonth,
   topDestinations 
 } from '../../data/mockData';
+import { getStatusBadgeStyles } from '../../components/request_details/TravelRequestDetails';
 
 const ManagerDashboard: React.FC = () => {
   return (
@@ -166,13 +167,7 @@ const ManagerDashboard: React.FC = () => {
                   <td className="py-3 px-4">{trip.traveler}</td>
                   <td className="py-3 px-4">
                     <span 
-                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        trip.status === 'Approved' 
-                          ? 'bg-success/20 text-success' 
-                          : trip.status === 'Pending' 
-                            ? 'bg-warning/20 text-warning' 
-                            : 'bg-error/20 text-error'
-                      }`}
+                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusBadgeStyles(trip.status)}`}
                     >
                       {trip.status}
                     </span>
