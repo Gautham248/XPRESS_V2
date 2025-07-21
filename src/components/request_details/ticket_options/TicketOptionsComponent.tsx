@@ -57,6 +57,7 @@ interface TicketProps {
   ticketDocumentPath?: string | string[];
   isModifiable: boolean;
   onDeleteTicket?: (index: number) => void;
+  refreshRequestData: () => void;
 }
 interface User {
   userId: string;
@@ -73,7 +74,7 @@ interface UITicketOption {
 
 const API_BASE_URL = 'http://localhost:5030/api';
 
-const TicketOptionComponent: React.FC<TicketProps> = ({ requestId, onPreviewTicket, ticketDocumentPath, isModifiable, onDeleteTicket }) => {
+const TicketOptionComponent: React.FC<TicketProps> = ({ requestId, onPreviewTicket, ticketDocumentPath, isModifiable, onDeleteTicket, refreshRequestData }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [travelRequestStatus, setTravelRequestStatus] = useState<string | null>(null);
   const [transportationType, setTransportationType] = useState('');
@@ -375,8 +376,10 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId, onPreviewTick
       try {
         const response = await axios.put<{ isSuccess: boolean, errorMessages?: string[] }>(`${API_BASE_URL}/travelrequests/${requestId}/ticketoptions/${editingOptionApiItem.optionId}`, payload);
         if (response.data.isSuccess) {
-          setEditingOptionApiItem(null); setEditText('');
-          await fetchTicketOptions(requestId);
+          setEditingOptionApiItem(null);
+          setEditText('');
+          // await fetchTicketOptions(requestId);
+          refreshRequestData(); 
         } else { setError(response.data.errorMessages?.join(', ') || 'Failed to save edit.'); }
       } catch (err) {
         console.error("Error saving edit:", err);
