@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
-import { format, parseISO } from 'date-fns';
+import { format } from 'date-fns';
 import * as XLSX from 'xlsx';
 
 interface Header {
@@ -62,7 +62,7 @@ const DataTable = <T extends Record<string, any>>({
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
-  const [sortBy, setSortBy] = useState<string>(headers[0]?.key || '');
+  const [sortBy, setSortBy] = useState<string | null>(null); // Changed to null to indicate no user sorting
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [statusFilter, setStatusFilter] = useState<Set<string>>(new Set());
   const [typeFilter, setTypeFilter] = useState<string>('All');
@@ -125,7 +125,7 @@ const DataTable = <T extends Record<string, any>>({
   }, [visibleColumns, title]);
 
   useEffect(() => {
-    if (headers.length > 0 && !headers.some(h => h.key === sortBy)) {
+    if (sortBy && headers.length > 0 && !headers.some(h => h.key === sortBy)) {
       setSortBy(headers[0].key);
     }
   }, [headers, sortBy]);
@@ -169,6 +169,7 @@ const DataTable = <T extends Record<string, any>>({
     setColumnFilters({});
     setActiveColumnFilterKey(null);
     setCurrentPage(1);
+    setSortBy(null); // Reset sorting to preserve API order
     if (location.search) navigate(location.pathname, { replace: true });
   };
 
@@ -206,57 +207,58 @@ const DataTable = <T extends Record<string, any>>({
   const dateFilteredData = filteredData.filter(item => {
     if (!dateFilterKey || (!startDate && !endDate)) return true;
 
-    const convertUtcToIstDate = (utcDate: string | null): Date | null => {
-      if (!utcDate) return null;
-      const date = parseISO(utcDate);
-      const istOffset = 5.5 * 60 * 60 * 1000; // IST is UTC+5:30
-      return new Date(date.getTime() + istOffset);
-    };
-
     if (dateFilterType === 'requestDate') {
       const itemDateValue = item[dateFilterKey];
       if (!itemDateValue) return false;
-      const dateValueIst = convertUtcToIstDate(itemDateValue);
-      if (!dateValueIst || isNaN(dateValueIst.getTime())) return false;
+      const dateValue = new Date(itemDateValue);
+      if (isNaN(dateValue.getTime())) return false;
 
       const sDate = startDate ? new Date(new Date(startDate).setHours(0, 0, 0, 0)) : null;
       const eDate = endDate ? new Date(new Date(endDate).setHours(23, 59, 59, 999)) : null;
 
-      const itemDay = new Date(dateValueIst.setHours(0, 0, 0, 0));
+      const itemDay = new Date(new Date(dateValue).setHours(0, 0, 0, 0));
 
       if (sDate && eDate && sDate.getTime() === new Date(new Date(eDate).setHours(0, 0, 0, 0)).getTime()) {
         return itemDay.getTime() === sDate.getTime();
       }
-      if (sDate && eDate) return dateValueIst >= sDate && dateValueIst <= eDate;
-      if (sDate) return dateValueIst >= sDate;
-      if (eDate) return dateValueIst <= eDate;
+      if (sDate && eDate) return dateValue >= sDate && dateValue <= eDate;
+      if (sDate) return dateValue >= sDate;
+      if (eDate) return dateValue <= eDate;
       return true;
     } else {
-      const departureDateIst = convertUtcToIstDate(item.departureDate);
-      const returnDateIst = convertUtcToIstDate(item.returnDate);
-      if (!departureDateIst || !returnDateIst || isNaN(departureDateIst.getTime()) || isNaN(returnDateIst.getTime())) return false;
+      const departureDate = item.departureDate ? new Date(item.departureDate) : null;
+      const returnDate = item.returnDate ? new Date(item.returnDate) : null;
+      if (!departureDate || !returnDate || isNaN(departureDate.getTime()) || isNaN(returnDate.getTime())) return false;
 
       const sDate = startDate ? new Date(new Date(startDate).setHours(0, 0, 0, 0)) : null;
       const eDate = endDate ? new Date(new Date(endDate).setHours(23, 59, 59, 999)) : null;
 
-      const departureDay = new Date(departureDateIst.setHours(0, 0, 0, 0));
-      const returnDay = new Date(returnDateIst.setHours(0, 0, 0, 0));
+      const departureDay = departureDate ? new Date(new Date(departureDate).setHours(0, 0, 0, 0)) : null;
+      const returnDay = returnDate ? new Date(new Date(returnDate).setHours(0, 0, 0, 0)) : null;
 
       if (sDate && eDate && sDate.getTime() === new Date(new Date(eDate).setHours(0, 0, 0, 0)).getTime()) {
-        return departureDay.getTime() <= sDate.getTime() && returnDay.getTime() >= sDate.getTime();
+        return departureDay && returnDay && departureDay.getTime() <= sDate.getTime() && returnDay.getTime() >= sDate.getTime();
       }
       if (sDate && eDate) {
-        return departureDateIst <= eDate && returnDateIst >= sDate;
+        return departureDate <= eDate && returnDate >= sDate;
       }
-      if (sDate) return returnDateIst >= sDate;
-      if (eDate) return departureDateIst <= eDate;
+      if (sDate) return returnDate >= sDate;
+      if (eDate) return departureDate <= eDate;
       return true;
     }
   });
 
-  const sortedData = [...dateFilteredData].sort((a, b) => {
+  const sortedData = sortBy ? [...dateFilteredData].sort((a, b) => {
     const aSortValue = a[sortBy];
     const bSortValue = b[sortBy];
+    if (sortBy === 'createdAt') {
+      const aDate = new Date(aSortValue);
+      const bDate = new Date(bSortValue);
+      if (isNaN(aDate.getTime()) || isNaN(bDate.getTime())) {
+        return String(aSortValue ?? '').localeCompare(String(bSortValue ?? ''));
+      }
+      return sortOrder === 'asc' ? aDate.getTime() - bDate.getTime() : bDate.getTime() - aDate.getTime();
+    }
     if (sortOrder === 'asc') {
       if (typeof aSortValue === 'string' && typeof bSortValue === 'string') return aSortValue.localeCompare(bSortValue);
       if (typeof aSortValue === 'number' && typeof bSortValue === 'number') return aSortValue - bSortValue;
@@ -266,15 +268,19 @@ const DataTable = <T extends Record<string, any>>({
       if (typeof aSortValue === 'number' && typeof bSortValue === 'number') return bSortValue - aSortValue;
       return String(bSortValue ?? '').localeCompare(String(aSortValue ?? ''));
     }
-  });
+  }) : dateFilteredData; // Preserve API order if no sortBy is set
 
   const totalPages = Math.max(1, Math.ceil(sortedData.length / itemsPerPage));
   const startIndex = (currentPage - 1) * itemsPerPage;
   const paginatedData = sortedData.slice(startIndex, startIndex + itemsPerPage);
 
   const handleSort = (column: string) => {
-    if (sortBy === column) setSortOrder(prevOrder => (prevOrder === 'asc' ? 'desc' : 'asc'));
-    else { setSortBy(column); setSortOrder('asc'); }
+    if (sortBy === column) {
+      setSortOrder(prevOrder => (prevOrder === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortBy(column);
+      setSortOrder('asc');
+    }
   };
 
   const getSortIcon = (column: string) => {
@@ -283,7 +289,6 @@ const DataTable = <T extends Record<string, any>>({
   };
 
   const formatDateForDisplay = (dateInput: string | Date): string => {
-    if (typeof dateInput === 'string') return dateInput;
     try { return format(new Date(dateInput), 'dd-MM-yyyy'); } 
     catch (e) { return String(dateInput); }
   };
@@ -295,6 +300,8 @@ const DataTable = <T extends Record<string, any>>({
         if (visibleColumns.includes(header.key)) {
           if (header.key === 'travelDates' && item.departureDate && item.returnDate) { 
             exportItem[header.displayName] = `${formatDateForDisplay(item.departureDate)} - ${formatDateForDisplay(item.returnDate)}`;
+          } else if (header.key === 'createdAt') {
+            exportItem[header.displayName] = item[header.key] ?? 'N/A';
           } else {
             exportItem[header.displayName] = item[header.key] ?? 'N/A';
           }
@@ -519,7 +526,7 @@ const DataTable = <T extends Record<string, any>>({
                       {header.key === 'travelDates' && item.departureDate && item.returnDate ? (
                         <div className="flex items-center">
                           <Calendar className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
-                          <span>{item[header.key]}</span>
+                          <span>{formatDateForDisplay(item.departureDate)} - {formatDateForDisplay(item.returnDate)}</span>
                         </div>
                       ) : header.key === 'currentStatusName' && getStatusColor ? (
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(item[header.key])}`}>

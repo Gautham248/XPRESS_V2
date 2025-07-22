@@ -1,4 +1,5 @@
 import axios, { AxiosError } from 'axios';
+import { Nullable } from 'vitest';
 
 export interface Location {
   country: string;
@@ -46,15 +47,15 @@ interface TravelRequestCreateDTO {
   travelModeId: number;
   isInternational: boolean;
   isRoundTrip: boolean;
-  projectCode: string;
+  projectCode:string;
   sourcePlace: string;
   sourceCountry: string;
   destinationPlace: string;
   destinationCountry: string;
   outboundDepartureDate: string; 
-  outboundArrivalDate: string;   
+  outboundArrivalDate: string | null;   
   returnDepartureDate?: string;  
-  returnArrivalDate?: string;    
+  returnArrivalDate?: string | null;    
   isAccommodationRequired: boolean;
   isDropOffRequired: boolean;
   dropOffPlace?: string;         
@@ -74,7 +75,7 @@ interface ApiResponse {
   data?: any;
 }
 
-// Travel mode mapping
+
 const getTravelModeId = (transportMode: string): number => {
   const modeMap: { [key: string]: number } = {
     'flight': 1,
@@ -106,7 +107,7 @@ class TravelRequestService {
   private baseUrl: string;
   private timeout: number;
 
-  constructor(baseUrl: string = 'http://localhost:5030/api', timeout: number = 60000) {
+  constructor(baseUrl: string = 'https://xpress-deployment.onrender.com/api', timeout: number = 60000) {
     this.baseUrl = baseUrl;
     this.timeout = timeout;
     console.log(`TravelRequestService initialized with baseUrl: ${this.baseUrl}`);
@@ -127,24 +128,33 @@ class TravelRequestService {
     
     const outboundDeparture = combineDateAndTime(state.outboundDepartureDate, state.outboundDepartureTime);
     
-    
     const outboundArrival = state.outboundArrivalDate 
       ? combineDateAndTime(state.outboundArrivalDate, state.outboundArrivalTime)
-      : outboundDeparture; 
+      : null; 
+
+    
+    if (outboundArrival && outboundDeparture.getTime() === outboundArrival.getTime()) {
+      throw new Error("Outbound departure and arrival date/time cannot be the same.");
+    }
 
     let returnDeparture: Date | undefined;
-    let returnArrival: Date | undefined;
+    let returnArrival: Date | null | undefined;
 
     if (state.tripType === 'roundTrip') {
       if (!state.returnDepartureDate) {
         throw new Error("Return departure date is required for round trips.");
       }
       returnDeparture = combineDateAndTime(state.returnDepartureDate, state.returnDepartureTime);
+      
+
       returnArrival = state.returnArrivalDate 
         ? combineDateAndTime(state.returnArrivalDate, state.returnArrivalTime)
-        : returnDeparture;
+        : null;
+     
+      if (returnDeparture && returnArrival && returnDeparture.getTime() === returnArrival.getTime()) {
+          throw new Error("Return departure and arrival date/time cannot be the same.");
+      }
     }
-
     
     const isVegetarian = state.requiresFoodPreference ? state.foodPreference === 'veg' : false;
     const foodComment = state.requiresFoodPreference && state.foodPreferenceComment 
@@ -171,9 +181,9 @@ class TravelRequestService {
       destinationPlace: state.destination.city,
       destinationCountry: state.destination.country,
       outboundDepartureDate: outboundDeparture.toISOString(),
-      outboundArrivalDate: outboundArrival.toISOString(),
+      outboundArrivalDate: outboundArrival ? outboundArrival.toISOString() : null,
       returnDepartureDate: returnDeparture?.toISOString(),
-      returnArrivalDate: returnArrival?.toISOString(),
+      returnArrivalDate: returnArrival ? returnArrival.toISOString() : null,
       isAccommodationRequired: state.requiresAccommodation,
       isDropOffRequired: state.requiresDropoff,
       dropOffPlace: dropOffPlace,               
@@ -184,7 +194,6 @@ class TravelRequestService {
       isVegetarian: isVegetarian,
       foodComment: foodComment,
       attendedCCT: state.attendedCct,
-
     };
 
     return dto;
@@ -254,7 +263,6 @@ class TravelRequestService {
           if (axiosError.response.data?.message) {
             errorMessage += axiosError.response.data.message;
           } else if (axiosError.response.data?.errors) {
-            // Handle validation errors if your API returns them
             const validationErrors = Object.values(axiosError.response.data.errors).flat();
             errorMessage += validationErrors.join(', ');
           } else if (typeof axiosError.response.data === 'string') {
@@ -330,4 +338,4 @@ class TravelRequestService {
   }
 }
 
-export const travelRequestService = new TravelRequestService('http://localhost:5030/api', 60000);
+export const travelRequestService = new TravelRequestService('https://xpress-deployment.onrender.com/api', 60000);

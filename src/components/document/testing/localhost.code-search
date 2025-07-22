@@ -1,0 +1,18 @@
+# Query: localhost
+# ContextLines: 1
+
+5 results - 2 files
+
+public\confirm-action.html:
+  51          // !!! IMPORTANT: Adjust this to your actual ASP.NET Core API's base URL !!!
+  52:         const API_DOMAIN = 'https://xpress-deployment.onrender.com'; // Example: Your .NET API domain (e.g., https://localhost:7051 or http://localhost:5000)
+  53          const APPROVALS_API_BASE_PATH = '/api/Approvals';       // For manager/duhead approvals/rejections
+
+  93                  // Optional: Redirect to login page
+  94:                 // const loginUrl = "http://localhost:5173/login"; // Your React app's login route
+  95                  // window.location.href = `${loginUrl}?returnUrl=${encodeURIComponent(window.location.href)}`;
+
+src\components\document\testing\FileUploader.test.tsx:
+  15  global.fetch = jest.fn();
+  16: window.URL.createObjectURL = jest.fn(() => 'blob:http://localhost/mock-preview-url');
+  17  

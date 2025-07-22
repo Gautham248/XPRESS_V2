@@ -33,6 +33,7 @@ const TravelDetailsSection: React.FC = () => {
   } = state;
 
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [showDateFields, setShowDateFields] = useState<boolean>(false);
 
   const [projectCodesList, setProjectCodesList] = useState<ProjectCodeOption[]>([]);
   const [projectCodesLoading, setProjectCodesLoading] = useState<boolean>(true);
@@ -75,7 +76,7 @@ const TravelDetailsSection: React.FC = () => {
       setProjectCodesLoading(true);
       setProjectCodesError(null);
       try {
-        const response = await fetch('http://localhost:5030/api/RMT/project-codes');
+        const response = await fetch('https://xpress-deployment.onrender.com/api/RMT/project-codes');
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -184,7 +185,7 @@ const TravelDetailsSection: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Source Location
+              Source Location *
             </label>
             <div className="relative">
               <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5 z-10 pointer-events-none" />
@@ -204,7 +205,7 @@ const TravelDetailsSection: React.FC = () => {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Destination
+              Destination *
             </label>
             <div className="relative">
               <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5 z-10 pointer-events-none" />
@@ -223,54 +224,80 @@ const TravelDetailsSection: React.FC = () => {
           </div>
         </div>
 
-        <div className="max-w-md">
-          <label htmlFor="projectCodeSelect" className="block text-sm font-medium text-gray-700 mb-2">
-            Project Code *
-          </label>
-          {projectCodesLoading ? (
-            <div className="block w-full rounded-md border border-gray-200 bg-gray-50 px-4 py-3 text-gray-500">
-              Loading project codes...
+        <div className="flex flex-col lg:flex-row lg:items-end lg:gap-6">
+          <div className="flex-1 max-w-md">
+            <label htmlFor="projectCodeSelect" className="block text-sm font-medium text-gray-700 mb-2">
+              Project Code *
+            </label>
+            {projectCodesLoading ? (
+              <div className="block w-full rounded-md border border-gray-200 bg-gray-50 px-4 py-3 text-gray-500">
+                Loading project codes...
+              </div>
+            ) : (
+              <>
+                <Select
+                  inputId="projectCodeSelect"
+                  options={projectCodesList}
+                  value={projectCodesList.find(option => option.value === projectCode) || null}
+                  onChange={(selectedOption: ProjectCodeOption | null) =>
+                    dispatch({ type: 'SET_PROJECT_CODE', payload: selectedOption ? selectedOption.value : '' })
+                  }
+                  placeholder="Select or type to search project code..."
+                  isClearable
+                  isSearchable
+                  isLoading={projectCodesLoading}
+                  isDisabled={projectCodesLoading}
+                  styles={customSelectStyles}
+                  noOptionsMessage={() => projectCodesError ? 'Error loading codes' : 'No matching project codes'}
+                />
+                {projectCodesError && !projectCodesList.length && (
+                   <>
+                      <p className="text-xs text-red-500 mt-1">{projectCodesError}</p>
+                      <input
+                          type="text"
+                          className="mt-2 block w-full rounded-md border border-gray-200 bg-gray-50 px-4 py-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                          value={projectCode}
+                          onChange={(e) => dispatch({ type: 'SET_PROJECT_CODE', payload: e.target.value })}
+                          placeholder="Enter project code (fallback)"
+                      />
+                   </>
+                )}
+                <input
+                  type="text"
+                  tabIndex={-1}
+                  autoComplete="off"
+                  style={{ opacity: 0, width: "100%", height: 0, position: "absolute", padding: 0, border: 0 }}
+                  value={projectCode}
+                  onChange={() => {}}
+                  required
+                />
+              </>
+            )}
+          </div>
+          
+          <div className="mt-4 lg:mt-0">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Show Arrival Times
+            </label>
+            <div className="flex items-center">
+              <button
+                type="button"
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                  showDateFields ? 'bg-blue-600' : 'bg-gray-200'
+                }`}
+                onClick={() => setShowDateFields(!showDateFields)}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    showDateFields ? 'translate-x-6' : 'translate-x-1'
+                  }`}
+                />
+              </button>
+              <span className="ml-3 text-sm text-gray-600">
+                {showDateFields ? 'Enabled' : 'Disabled'}
+              </span>
             </div>
-          ) : (
-            <>
-              <Select
-                inputId="projectCodeSelect"
-                options={projectCodesList}
-                value={projectCodesList.find(option => option.value === projectCode) || null}
-                onChange={(selectedOption: ProjectCodeOption | null) =>
-                  dispatch({ type: 'SET_PROJECT_CODE', payload: selectedOption ? selectedOption.value : '' })
-                }
-                placeholder="Select or type to search project code..."
-                isClearable
-                isSearchable
-                isLoading={projectCodesLoading}
-                isDisabled={projectCodesLoading}
-                styles={customSelectStyles}
-                noOptionsMessage={() => projectCodesError ? 'Error loading codes' : 'No matching project codes'}
-              />
-              {projectCodesError && !projectCodesList.length && (
-                 <>
-                    <p className="text-xs text-red-500 mt-1">{projectCodesError}</p>
-                    <input
-                        type="text"
-                        className="mt-2 block w-full rounded-md border border-gray-200 bg-gray-50 px-4 py-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-                        value={projectCode}
-                        onChange={(e) => dispatch({ type: 'SET_PROJECT_CODE', payload: e.target.value })}
-                        placeholder="Enter project code (fallback)"
-                    />
-                 </>
-              )}
-              <input
-                type="text"
-                tabIndex={-1}
-                autoComplete="off"
-                style={{ opacity: 0, width: "100%", height: 0, position: "absolute", padding: 0, border: 0 }}
-                value={projectCode}
-                onChange={() => {}}
-                required
-              />
-            </>
-          )}
+          </div>
         </div>
         
         {/* Departure Section */}
@@ -314,38 +341,40 @@ const TravelDetailsSection: React.FC = () => {
               </div>
             </div>
 
-            <div className="flex gap-4"> 
-              <div className="flex-1">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Arrival Date
-                </label>
-                <div className="relative">
-                  <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5 z-10" />
-                  <DatePicker
-                    selected={outboundArrivalDate}
-                    onChange={(date) => dispatch({ type: 'SET_OUTBOUND_ARRIVAL_DATE', payload: date })}
-                    className="block w-full rounded-md border border-gray-200 bg-gray-50 pl-10 pr-4 py-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-                    minDate={outboundDepartureDate || new Date()}
-                    placeholderText="Select arrival date"
-                    dateFormat="dd/MM/yy"
-                  />
+            {showDateFields && (
+              <div className="flex gap-4"> 
+                <div className="flex-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Arrival Date
+                  </label>
+                  <div className="relative">
+                    <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5 z-10" />
+                    <DatePicker
+                      selected={outboundArrivalDate}
+                      onChange={(date) => dispatch({ type: 'SET_OUTBOUND_ARRIVAL_DATE', payload: date })}
+                      className="block w-full rounded-md border border-gray-200 bg-gray-50 pl-10 pr-4 py-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                      minDate={outboundDepartureDate || new Date()}
+                      placeholderText="Select arrival date"
+                      dateFormat="dd/MM/yy"
+                    />
+                  </div>
+                </div>
+                <div className="w-32">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Time
+                  </label>
+                  <div className="relative">
+                    <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4 z-10" />
+                    <input
+                      type="time"
+                      className="block w-full rounded-md border border-gray-200 bg-gray-50 pl-9 pr-2 py-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-sm"
+                      value={outboundArrivalTime || ''}
+                      onChange={(e) => dispatch({ type: 'SET_OUTBOUND_ARRIVAL_TIME', payload: e.target.value })}
+                    />
+                  </div>
                 </div>
               </div>
-              <div className="w-32">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Time
-                </label>
-                <div className="relative">
-                  <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4 z-10" />
-                  <input
-                    type="time"
-                    className="block w-full rounded-md border border-gray-200 bg-gray-50 pl-9 pr-2 py-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-sm"
-                    value={outboundArrivalTime || ''}
-                    onChange={(e) => dispatch({ type: 'SET_OUTBOUND_ARRIVAL_TIME', payload: e.target.value })}
-                  />
-                </div>
-              </div>
-            </div>
+            )}
           </div>
         </div>
 
@@ -360,7 +389,7 @@ const TravelDetailsSection: React.FC = () => {
               <div className="flex gap-4">
                 <div className="flex-1">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Departure Date
+                    Return Date *
                   </label>
                   <div className="relative">
                     <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5 z-10" />
@@ -391,45 +420,47 @@ const TravelDetailsSection: React.FC = () => {
                 </div>
               </div>
 
-              <div className="flex gap-4">
-                <div className="flex-1">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Arrival Date
-                  </label>
-                  <div className="relative">
-                    <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5 z-10" />
-                    <DatePicker
-                      selected={returnArrivalDate}
-                      onChange={(date) => dispatch({ type: 'SET_RETURN_ARRIVAL_DATE', payload: date })}
-                      className="block w-full rounded-md border border-gray-200 bg-gray-50 pl-10 pr-4 py-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-                      minDate={returnDepartureDate || outboundArrivalDate || outboundDepartureDate || new Date()}
-                      placeholderText="Select return arrival"
-                      dateFormat="dd/MM/yy"
-                    />
+              {showDateFields && (
+                <div className="flex gap-4">
+                  <div className="flex-1">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Arrival Date
+                    </label>
+                    <div className="relative">
+                      <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5 z-10" />
+                      <DatePicker
+                        selected={returnArrivalDate}
+                        onChange={(date) => dispatch({ type: 'SET_RETURN_ARRIVAL_DATE', payload: date })}
+                        className="block w-full rounded-md border border-gray-200 bg-gray-50 pl-10 pr-4 py-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                        minDate={returnDepartureDate || outboundArrivalDate || outboundDepartureDate || new Date()}
+                        placeholderText="Select return arrival"
+                        dateFormat="dd/MM/yy"
+                      />
+                    </div>
+                  </div>
+                  <div className="w-32">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Time
+                    </label>
+                    <div className="relative">
+                      <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4 z-10" />
+                      <input
+                        type="time"
+                        className="block w-full rounded-md border border-gray-200 bg-gray-50 pl-9 pr-2 py-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-sm"
+                        value={returnArrivalTime || ''}
+                        onChange={(e) => dispatch({ type: 'SET_RETURN_ARRIVAL_TIME', payload: e.target.value })}
+                      />
+                    </div>
                   </div>
                 </div>
-                <div className="w-32">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Time
-                  </label>
-                  <div className="relative">
-                    <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4 z-10" />
-                    <input
-                      type="time"
-                      className="block w-full rounded-md border border-gray-200 bg-gray-50 pl-9 pr-2 py-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-sm"
-                      value={returnArrivalTime || ''}
-                      onChange={(e) => dispatch({ type: 'SET_RETURN_ARRIVAL_TIME', payload: e.target.value })}
-                    />
-                  </div>
-                </div>
-              </div>
+              )}
             </div>
           </div>
         )}
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-3">
-            Mode of Transport
+            Mode of Transport *
           </label>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {transportOptions.map(({ value, label, icon: Icon }) => (
@@ -453,7 +484,7 @@ const TravelDetailsSection: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Purpose of Travel
+              Purpose of Travel *
             </label>
             <textarea
               className="block w-full rounded-md border border-gray-200 bg-gray-50 px-4 py-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition resize-none"

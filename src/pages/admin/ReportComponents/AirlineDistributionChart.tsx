@@ -64,7 +64,7 @@ const AirlineDistributionChart: React.FC<AirlineDistributionChartProps> = ({
       
       try {
         const response = await fetch(
-          `http://localhost:5030/api/AirlineReports?startDate=${startDate}&endDate=${endDate}`
+          `https://xpress-deployment.onrender.com/api/AirlineReports?startDate=${startDate}&endDate=${endDate}`
         );
         
         if (!response.ok) {

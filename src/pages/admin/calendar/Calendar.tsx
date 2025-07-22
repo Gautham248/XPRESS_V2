@@ -7,7 +7,7 @@ import MonthView from './MonthView';
 import EventSidebar from './EventSidebar'; 
 import ViewToggle from './ViewToggle';   
 
-const API_BASE_URL = 'http://localhost:5030';
+const API_BASE_URL = 'https://xpress-deployment.onrender.com';
 
 export interface TravelRequest {
   requestId: string;

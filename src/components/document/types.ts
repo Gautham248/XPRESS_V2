@@ -1,11 +1,5 @@
-// src/components/types.ts
-
-// The types of documents the application supports.
 export type DocumentType = 'Passport' | 'Visa' | 'Aadhar';
 
-// This is the "master" data structure for the form's state.
-// All possible fields from all forms are defined here.
-// We use `Date | null` for date fields for type safety and compatibility with react-datepicker.
 export interface FormState {
   // Passport Fields
   passportNumber: string | null;
@@ -22,58 +16,85 @@ export interface FormState {
   fullName: string | null;
 }
 
-// The complete application state, holding a FormState for each document type.
 export type DocumentState = Record<DocumentType, FormState>;
 
-// This interface defines the configuration for a single form field, driving the form builder.
 export interface FormField {
-  key: keyof FormState; // Use `keyof` for strong type-checking against FormState.
+  key: keyof FormState; 
   label: string;
   type: 'text' | 'date' | 'select';
   required?: boolean;
-  options?: string[]; // For 'select' type
-  maxDate?: Date;     // For 'date' type
-  minDate?: Date;     // For 'date' type
+  options?: string[];
+  maxDate?: Date;     
+  minDate?: Date;
+  validationRegex?: RegExp;
+  validationMessage?: string;
 }
 
-// --- Form Field Configurations ---
+const passportRegex = /^([A-Z]{1,2}\d{6,8}|\d{9}|[A-Z]\d{7}[A-Z]?)$/;
+const aadharRegex = /^\d{12}$/;
+const visaClassRegex = /^[A-Z]{1,3}\d{1,2}[A-Z]?$/;
+const visaNumberRegex = /^([A-Z]{1}\d{6,10}|\d{8,9})$/;
 
 const passportFormConfig: FormField[] = [
-  { key: 'passportNumber', label: 'Passport Number', type: 'text', required: true },
+  { 
+    key: 'passportNumber', 
+    label: 'Passport Number', 
+    type: 'text', 
+    required: true,
+    validationRegex: passportRegex,
+    validationMessage: "Invalid passport number format."
+  },
   { key: 'issuingCountry', label: 'Issuing Country', type: 'text', required: true },
   { key: 'issueDate', label: 'Issue Date', type: 'date', maxDate: new Date(), required: true },
   { key: 'expiryDate', label: 'Expiry Date', type: 'date', minDate: new Date(), required: true }
 ];
 
 const visaFormConfig: FormField[] = [
-  { key: 'visaNumber', label: 'Visa Number', type: 'text', required: false },
-  { key: 'visaClass', label: 'Visa Class/Type', type: 'text', required: true },
+  { 
+    key: 'visaNumber', 
+    label: 'Visa Number', 
+    type: 'text', 
+    required: false, 
+    validationRegex: visaNumberRegex,
+    validationMessage: "Invalid visa number format."
+  },
+  { 
+    key: 'visaClass', 
+    label: 'Visa Class/Type', 
+    type: 'text', 
+    required: true,
+    validationRegex: visaClassRegex,
+    validationMessage: "Invalid visa class/type format."
+  },
   { key: 'issuingCountry', label: 'Issuing Country / Post', type: 'text', required: true }, 
   { key: 'issueDate', label: 'Issue Date', type: 'date', maxDate: new Date(), required: true },
   { key: 'expiryDate', label: 'Expiry Date', type: 'date', minDate: new Date(), required: true }
 ];
 
 const aadharFormConfig: FormField[] = [
-  { key: 'idNumber', label: 'Aadhar Number', type: 'text', required: true }, 
+  { 
+    key: 'idNumber', 
+    label: 'Aadhar Number', 
+    type: 'text', 
+    required: true,
+    validationRegex: aadharRegex,
+    validationMessage: "Aadhar number must be 12 digits."
+  }, 
   { key: 'fullName', label: 'Full Name (as per Aadhar)', type: 'text', required: true } 
 ];
 
-// A map to easily access the correct form configuration based on the document type.
 export const formConfigMap: Record<DocumentType, FormField[]> = {
   Passport: passportFormConfig,
   Visa: visaFormConfig,
   Aadhar: aadharFormConfig,
 };
 
-// The initial state for the form reducer.
-// Each object must be a complete FormState, with unused fields set to null.
 export const initialState: DocumentState = {
   Passport: {
     passportNumber: '',
     issuingCountry: '',
     issueDate: null,
     expiryDate: null,
-    // Add other unused keys as null
     visaNumber: null, 
     visaClass: null, 
     idNumber: null, 
@@ -85,7 +106,6 @@ export const initialState: DocumentState = {
     issuingCountry: '', 
     issueDate: null,
     expiryDate: null,
-    // Add other unused keys as null
     passportNumber: null, 
     idNumber: null, 
     fullName: null,
@@ -93,7 +113,6 @@ export const initialState: DocumentState = {
   Aadhar: {
     idNumber: '',     
     fullName: '',
-    // Add other unused keys as null
     passportNumber: null, 
     issuingCountry: null, 
     issueDate: null, 
@@ -103,7 +122,6 @@ export const initialState: DocumentState = {
   },
 };
 
-// The action type for the reducer, using `keyof` for type safety.
 export interface Action {
   type: 'UPDATE_FIELD' | 'RESET_FORM';
   docType: DocumentType;
