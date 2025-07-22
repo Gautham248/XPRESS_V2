@@ -55,11 +55,11 @@ const TravelRequests: React.FC = () => {
 
         let apiUrl = '';
         if (user.role === 'admin') {
-          apiUrl = 'http://localhost:5030/api/TravelRequest/travelrequests';
+          apiUrl = 'https://xpress-backend-v3.onrender.com/api/TravelRequest/travelrequests';
         } else if (user.role === 'duhead') {
-          apiUrl = `http://localhost:5030/api/TravelRequest/ByDUH/${encodeURIComponent(email)}`;
+          apiUrl = `https://xpress-backend-v3.onrender.com/api/TravelRequest/ByDUH/${encodeURIComponent(email)}`;
         } else {
-          apiUrl = `http://localhost:5030/api/TravelRequest/ByProjectManager/${encodeURIComponent(email)}`;
+          apiUrl = `https://xpress-backend-v3.onrender.com/api/TravelRequest/ByProjectManager/${encodeURIComponent(email)}`;
         }
 
         const response = await fetch(apiUrl, {

@@ -71,7 +71,7 @@ interface UITicketOption {
   filePath?: string;
 }
 
-const API_BASE_URL = 'http://localhost:5030/api';
+const API_BASE_URL = 'https://xpress-backend-v3.onrender.com/api';
 
 const TicketOptionComponent: React.FC<TicketProps> = ({ requestId, onPreviewTicket, ticketDocumentPath, isModifiable, onDeleteTicket }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -117,7 +117,7 @@ const TicketOptionComponent: React.FC<TicketProps> = ({ requestId, onPreviewTick
     }
   }, []);
 
-  const apiUrl = 'http://localhost:5030/api/TravelRequest/infobanner';
+  const apiUrl = 'https://xpress-backend-v3.onrender.com/api/TravelRequest/infobanner';
 
   useEffect(() => {
 

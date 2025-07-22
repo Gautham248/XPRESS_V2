@@ -26,7 +26,7 @@ interface DocumentTabsProps {
   refreshRequestData: () => void;
 }
 
-const API_BASE_URL = 'http://localhost:5030/api';
+const API_BASE_URL = 'https://xpress-backend-v3.onrender.com/api';
 
 export default function DocumentTabs(props: DocumentTabsProps) {
   const { 

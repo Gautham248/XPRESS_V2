@@ -50,7 +50,7 @@ const UploadTicketsModal: React.FC<UploadTicketsModalProps> = memo(({
     useEffect(() => {
         const fetchAirlines = async () => {
             try {
-                const response = await axios.get('http://localhost:5030/api/TravelRequest/airlines');
+                const response = await axios.get('https://xpress-backend-v3.onrender.com/api/TravelRequest/airlines');
                 if (response.data.isSuccess && Array.isArray(response.data.result)) {
                     setAirlineOptions(response.data.result);
                 }

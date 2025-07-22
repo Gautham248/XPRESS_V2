@@ -122,7 +122,7 @@ const getDisplayProperties = (internalStatus: string) => {
   );
 };
 
-const API_BASE_URL = 'http://localhost:5030/api';
+const API_BASE_URL = 'https://xpress-backend-v3.onrender.com/api';
 const DATE_FORMAT = 'dd-MM-yyyy HH:mm';
 
 // --- Component ---

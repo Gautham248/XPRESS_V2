@@ -85,7 +85,7 @@ describe('TravelAgencyBarChart', () => {
     
     await waitFor(() => {
       expect(fetch).toHaveBeenCalledWith(
-        'http://localhost:5030/api/TravelAgencyStats/stats?startDate=2024-01-01&endDate=2024-01-31'
+        'https://xpress-backend-v3.onrender.com/api/TravelAgencyStats/stats?startDate=2024-01-01&endDate=2024-01-31'
       );
     });
 

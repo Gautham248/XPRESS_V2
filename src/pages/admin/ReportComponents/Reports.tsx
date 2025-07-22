@@ -119,9 +119,9 @@ const Reports: React.FC = () => {
   const fetchDashboardData = useCallback(async () => {
     setLoading(true);
     setError(null);
-    const dashboardBaseUrl = 'http://localhost:5030/api/Dashboard';
-    const docStatusBaseUrl = 'http://localhost:5030/api/document-status';
-    const processingTimeBaseUrl = 'http://localhost:5030/api/ProcessingTime';
+    const dashboardBaseUrl = 'https://xpress-backend-v3.onrender.com/api/Dashboard';
+    const docStatusBaseUrl = 'https://xpress-backend-v3.onrender.com/api/document-status';
+    const processingTimeBaseUrl = 'https://xpress-backend-v3.onrender.com/api/ProcessingTime';
     const params = `?startDate=${appliedStartDate}&endDate=${appliedEndDate}`;
     
     const endpoints = {

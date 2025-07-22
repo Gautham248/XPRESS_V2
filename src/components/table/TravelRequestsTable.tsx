@@ -435,7 +435,7 @@ const TravelRequestsTable: React.FC<TravelRequestsTableProps> = ({
                     >
                       View
                     </button>
-                    {request.status === 'Pending' && (
+                    {request.status === 'PendingReview' && (
                       <>
                         <button
                           className="text-xs text-green-600 hover:text-green-800 font-medium"
