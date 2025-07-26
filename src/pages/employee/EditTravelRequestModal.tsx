@@ -31,9 +31,9 @@ export interface DetailedTravelRequest {
   returnArrivalDate: string | null;
   isAccommodationRequired: boolean;
   isDropOffRequired: boolean;
-  dropOffPlace: string;
+  dropOffPlace: string | null;
   isPickUpRequired: boolean;
-  pickUpPlace: string;
+  pickUpPlace: string | null;
   comments: string;
   purposeOfTravel: string;
   isVegetarian: boolean;
@@ -92,7 +92,7 @@ const LocationSearch: React.FC<LocationSearchProps> = ({ onSelect, placeholder =
                 setShowDropdown(true);
             }} 
             onFocus={() => query.length > 2 && setShowDropdown(true)} 
-            onBlur={() => setTimeout(() => setShowDropdown(false), 200)} // Hide on blur with a small delay
+            onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
             placeholder={placeholder} 
             className={`w-full p-2 pl-10 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${className} ${disabled ? 'bg-gray-200 cursor-not-allowed' : 'bg-gray-50'}`} 
             disabled={disabled} 
@@ -107,7 +107,6 @@ const LocationSearch: React.FC<LocationSearchProps> = ({ onSelect, placeholder =
     </div>
   );
 };
- 
  
 // --- MAIN MODAL COMPONENT ---
 interface EditTravelRequestModalProps {
@@ -203,8 +202,8 @@ const EditTravelRequestModal: React.FC<EditTravelRequestModalProps> = ({ isOpen,
             setFormData({
                 travelType: request.isInternational ? 'International' : 'Domestic',
                 tripType: request.isRoundTrip ? 'Round Trip' : 'One Way',
-                source: { label: sourceDisplay },
-                destination: { label: destinationDisplay },
+                source: { label: sourceDisplay, city: request.sourcePlace, country: request.sourceCountry },
+                destination: { label: destinationDisplay, city: request.destinationPlace, country: request.destinationCountry },
                 sourceText: sourceDisplay,
                 destinationText: destinationDisplay,
                 projectCode: request.projectCode || '',
@@ -232,68 +231,206 @@ const EditTravelRequestModal: React.FC<EditTravelRequestModalProps> = ({ isOpen,
     }, [request]);
  
     if (!isOpen) return null;
- 
+
+    // IMPROVED extractLocationData function - assumes there will always be a country
+    const extractLocationData = (locationLabel: string) => {
+        if (!locationLabel || locationLabel.trim() === '') {
+            return { place: '', country: '' };
+        }
+        
+        const parts = locationLabel.split(', ').filter(part => part.trim() !== '');
+        
+        if (parts.length === 0) {
+            return { place: '', country: '' };
+        }
+        
+        if (parts.length === 1) {
+            // If only one part, treat it as country with empty place
+            // Since there will always be a country according to requirements
+            return { place: '', country: parts[0].trim() };
+        }
+        
+        // Last part is country, everything else is place
+        const country = parts[parts.length - 1].trim();
+        const place = parts.slice(0, -1).join(', ').trim();
+        
+        return { place, country };
+    };
+
+    // IMPROVED createISODate function with better error handling
+    const createISODate = (date: string, time: string) => {
+        if (!date || date.trim() === '') {
+            return null;
+        }
+        
+        const cleanDate = date.trim();
+        const cleanTime = time?.trim() || '00:00';
+        
+        try {
+            // Validate date format (YYYY-MM-DD)
+            const datePattern = /^\d{4}-\d{2}-\d{2}$/;
+            if (!datePattern.test(cleanDate)) {
+                console.warn(`Invalid date format: ${cleanDate}`);
+                return null;
+            }
+            
+            // Validate time format (HH:MM)
+            const timePattern = /^\d{2}:\d{2}$/;
+            if (!timePattern.test(cleanTime)) {
+                console.warn(`Invalid time format: ${cleanTime}`);
+                return null;
+            }
+            
+            const dateObj = new Date(`${cleanDate}T${cleanTime}:00`);
+            
+            if (isNaN(dateObj.getTime())) {
+                console.warn(`Invalid date/time combination: ${cleanDate} ${cleanTime}`);
+                return null;
+            }
+            
+            return dateObj.toISOString();
+            
+        } catch (error) {
+            console.error("Error creating ISO date:", error);
+            return null;
+        }
+    };
+
+    // Helper function to get travel mode ID
+    const getTravelModeId = (modeOfTransport: string) => {
+        const modeMap: { [key: string]: number } = {
+            'Flight': 1,
+            'Train': 2,
+            'Bus': 3,
+            'Car': 4,
+            'Ship': 5,
+            'Other': 6
+        };
+        return modeMap[modeOfTransport] || 6; // Default to 'Other' if not found
+    };
+
+    // Additional utility function for location validation
+    const validateLocationData = (locationData: { place: string; country: string }, locationName: string) => {
+        if (!locationData.country) {
+            throw new Error(`${locationName} country is required`);
+        }
+        return true;
+    };
+
+    // Enhanced location parsing for different formats
+    const parseLocationString = (locationString: string) => {
+        const cleaned = locationString.trim();
+        
+        // Handle different location formats
+        if (cleaned.includes(',')) {
+            return extractLocationData(cleaned);
+        } else {
+            // If no comma, assume it's just a country
+            return { place: '', country: cleaned };
+        }
+    };
+
+    // IMPROVED handleSubmit with better error handling and country validation
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        
+        try {
+            // Validate required fields
+            if (!formData.departureDate) {
+                alert('Departure date is required');
+                return;
+            }
+            
+            if (!formData.projectCode) {
+                alert('Project code is required');
+                return;
+            }
+            
+            // Get location data with fallbacks
+            const sourceData = extractLocationData(formData.source?.label || formData.sourceText || '');
+            const destinationData = extractLocationData(formData.destination?.label || formData.destinationText || '');
+            
+            // Validate locations - now focusing on country as it's always required
+            if (!sourceData.country) {
+                alert('Source country is required');
+                return;
+            }
+            
+            if (!destinationData.country) {
+                alert('Destination country is required');
+                return;
+            }
+            
+            // Validate dates
+            const outboundDepartureDate = createISODate(formData.departureDate, formData.departureTime);
+            if (!outboundDepartureDate) {
+                alert('Invalid departure date or time format');
+                return;
+            }
+            
+            // Validate return dates for round trips
+            if (formData.tripType === 'Round Trip') {
+                if (!formData.returnDepartureDate) {
+                    alert('Return departure date is required for round trips');
+                    return;
+                }
+                
+                const returnDepartureDate = createISODate(formData.returnDepartureDate, formData.returnDepartureTime);
+                if (!returnDepartureDate) {
+                    alert('Invalid return departure date or time format');
+                    return;
+                }
+            }
+            
+            const mappedData = {
+                travelModeId: getTravelModeId(formData.modeOfTransport),
+                isInternational: formData.travelType === 'International',
+                isRoundTrip: formData.tripType === 'Round Trip',
+                projectCode: formData.projectCode.trim(),
+                sourcePlace: sourceData.place || '',
+                sourceCountry: sourceData.country,
+                destinationPlace: destinationData.place || '',
+                destinationCountry: destinationData.country,
+                outboundDepartureDate: outboundDepartureDate,
+                outboundArrivalDate: createISODate(formData.departureArrivalDate, formData.departureArrivalTime),
+                returnDepartureDate: formData.tripType === 'Round Trip' 
+                    ? createISODate(formData.returnDepartureDate, formData.returnDepartureTime) 
+                    : null,
+                returnArrivalDate: formData.tripType === 'Round Trip' 
+                    ? createISODate(formData.returnArrivalDate, formData.returnArrivalTime) 
+                    : null,
+                isAccommodationRequired: formData.requiresAccommodation,
+                isDropOffRequired: formData.requiresDropoff,
+                dropOffPlace: formData.requiresDropoff && formData.dropoffLocation ? formData.dropoffLocation : request?.dropOffPlace || null,
+                isPickUpRequired: formData.requiresPickup,
+                pickUpPlace: formData.requiresPickup && formData.pickupLocation ? formData.pickupLocation : request?.pickUpPlace || null,
+                comments: formData.comments?.trim() || '',
+                purposeOfTravel: formData.purpose?.trim() || '',
+                isVegetarian: formData.requiresFoodPreference ? formData.foodPreference === 'veg' : false,
+                foodComment: formData.requiresFoodPreference ? (formData.foodPreferenceComment || '') : '',
+                attendedCCT: request?.attendedCCT ?? true,
+                ldCertificatePath: request?.ldCertificatePath ?? ""
+            };
+            
+            // Log the data being sent for debugging
+            console.log('Mapped data being sent:', JSON.stringify(mappedData, null, 2));
+            
+            // Validate that we have the essential data before sending
+            if (!mappedData.sourceCountry || !mappedData.destinationCountry) {
+                throw new Error('Missing required country information');
+            }
+            
+            onUpdate(mappedData);
+            
+        } catch (error) {
+            console.error('Error in form submission:', error);
+            alert('There was an error processing your request. Please check the console for details.');
+        }
+    };
+   
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value, type } = e.target;
         setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value }));
-    };
- 
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        const extractLocationData = (locationLabel: string) => {
-            if (!locationLabel) return { place: '', country: '' };
-            const parts = locationLabel.split(', ').filter(Boolean);
-            if (parts.length === 0) return { place: '', country: '' };
-            const country = parts[parts.length - 1];
-            const place = parts.slice(0, -1).join(', ') || parts[0];
-            return { place, country };
-        };
-        const createISODate = (date: string, time: string) => {
-            if (!date || date.trim() === '') {
-                return null;
-            }
-            const timePart = time || '00:00';
-            try {
-                const dateObj = new Date(`${date}T${timePart}:00`);
-                if (isNaN(dateObj.getTime())) {
-                    console.warn(`createISODate produced an invalid date from "${date} ${time}"`);
-                    return null;
-                }
-                return dateObj.toISOString();
-            } catch (e) {
-                console.error("Error creating date:", e);
-                return null;
-            }
-        };
-        const getTravelModeId = (mode: string) => ({ Flight: 1, Train: 2, Bus: 3, Cab: 4 }[mode] || 0);
-        const sourceData = extractLocationData(formData.source?.label || formData.sourceText);
-        const destinationData = extractLocationData(formData.destination?.label || formData.destinationText);
-        const mappedData = {
-            travelModeId: getTravelModeId(formData.modeOfTransport),
-            isInternational: formData.travelType === 'International',
-            isRoundTrip: formData.tripType === 'Round Trip',
-            projectCode: formData.projectCode,
-            sourcePlace: sourceData.place,
-            sourceCountry: sourceData.country,
-            destinationPlace: destinationData.place,
-            destinationCountry: destinationData.country,
-            outboundDepartureDate: createISODate(formData.departureDate, formData.departureTime),
-            outboundArrivalDate: createISODate(formData.departureArrivalDate, formData.departureArrivalTime),
-            returnDepartureDate: formData.tripType === 'Round Trip' ? createISODate(formData.returnDepartureDate, formData.returnDepartureTime) : null,
-            returnArrivalDate: formData.tripType === 'Round Trip' ? createISODate(formData.returnArrivalDate, formData.returnArrivalTime) : null,
-            isAccommodationRequired: formData.requiresAccommodation,
-            isDropOffRequired: formData.requiresDropoff,
-            dropOffPlace: formData.requiresDropoff ? formData.dropoffLocation : null,
-            isPickUpRequired: formData.requiresPickup,
-            pickUpPlace: formData.requiresPickup ? formData.pickupLocation : null,
-            comments: formData.comments,
-            purposeOfTravel: formData.purpose,
-            isVegetarian: formData.requiresFoodPreference ? formData.foodPreference === 'veg' : false,
-            foodComment: formData.requiresFoodPreference ? formData.foodPreferenceComment : null,
-            attendedCCT: request?.attendedCCT ?? true,
-            ldCertificatePath: request?.ldCertificatePath ?? "string"
-        };
-        onUpdate(mappedData);
     };
    
     const transportOptions = [ { value: 'Flight', label: 'Flight', icon: Plane }, { value: 'Train', label: 'Train', icon: Train }, { value: 'Bus', label: 'Bus', icon: Bus }, { value: 'Cab', label: 'Cab', icon: Car } ];
@@ -323,7 +460,7 @@ const EditTravelRequestModal: React.FC<EditTravelRequestModalProps> = ({ isOpen,
                         <h3 className="font-semibold text-gray-800 text-lg">Travel Details</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div><label className="block text-sm font-medium text-gray-700 mb-1">Source Location</label><LocationSearch onSelect={(loc) => setFormData(p => ({ ...p, source: loc, sourceText: loc.label || '' }))} initialValue={formData.sourceText} placeholder="Search for source..." disabled={isPartiallyLocked}/></div>
-                            <div><label className="block text-sm font-medium text-gray-700 mb-1">Destination</label><LocationSearch onSelect={(loc) => setFormData(p => ({ ...p, destination: loc, destinationText: loc.label || ''}))} initialValue={formData.destinationText} placeholder="Search for destination..."/></div>
+                            <div><label className="block text-sm font-medium text-gray-700 mb-1">Destination</label><LocationSearch onSelect={(loc) => setFormData(p => ({ ...p, destination: loc, destinationText: loc.label || '' }))} initialValue={formData.destinationText} placeholder="Search for destination..."/></div>
                         </div>
                         <div>
                             <label htmlFor="projectCode" className="block text-sm font-medium text-gray-700 mb-1">Project Code *</label>
@@ -344,7 +481,6 @@ const EditTravelRequestModal: React.FC<EditTravelRequestModalProps> = ({ isOpen,
                         <div className="bg-white p-5 rounded-lg border space-y-4">
                             <div className="flex items-center"><div className="h-6 w-1 bg-orange-500 rounded mr-3"></div><h3 className="font-semibold text-gray-800 text-lg">Return</h3></div>
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                                {/* FIX: Chained date validation */}
                                 <div><label className="block text-sm font-medium text-gray-700 mb-1">Departure Date</label><IconInput icon={Calendar} type="date" name="returnDepartureDate" value={formData.returnDepartureDate} onChange={handleChange} min={formData.departureArrivalDate || formData.departureDate} /></div>
                                 <div><label className="block text-sm font-medium text-gray-700 mb-1">Time</label><IconInput icon={Clock} type="time" name="returnDepartureTime" value={formData.returnDepartureTime} onChange={handleChange} /></div>
                                 <div><label className="block text-sm font-medium text-gray-700 mb-1">Arrival Date</label><IconInput icon={Calendar} type="date" name="returnArrivalDate" value={formData.returnArrivalDate} onChange={handleChange} min={formData.returnDepartureDate} /></div>
