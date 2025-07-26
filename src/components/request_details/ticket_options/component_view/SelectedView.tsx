@@ -67,8 +67,8 @@ const SelectedView: React.FC<Props> = ({
   }
 
   return (
-    <div className="card flex flex-col" style={{ height: '100%', minHeight: '400px' }}>
-      <div className="flex-grow space-y-6">
+    <div className="card flex flex-col" style={{ height: '100%'}}>
+      <div className="flex-grow space-y-6 overflow-y-auto pb-4 pr-2">
         {ticketOptions.length === 0 ? (
           <p>No ticket options available yet.</p>
         ) : (
