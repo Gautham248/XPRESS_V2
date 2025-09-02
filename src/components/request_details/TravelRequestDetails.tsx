@@ -511,7 +511,7 @@ const TravelRequestDetails: React.FC = () => {
             onChange={(e) => setIsBillable(e.target.checked)}
           />
           <label htmlFor="isBillableCheckbox" className="text-gray-800 font-medium cursor-pointer">
-            Is this project billable/chargeable.
+            Is this project chargeable to the customer?
           </label>
         </div>
         <textarea className="w-full p-2 border rounded" placeholder="Approval comments (optional)..." rows={4} value={modalInputText} onChange={(e) => setModalInputText(e.target.value)} />
