@@ -322,7 +322,9 @@ const TravelRequestDetails: React.FC = () => {
       processDocumentList(travelRequestData.accommodationDocumentPath, 'Accommodation');
       processDocumentList(travelRequestData.insuranceDocumentPath, 'Insurance');
 
+
       const response = await fetch(`https://xpress-backend-v3.onrender.com/api/Documents/User/${travelRequestData.userId}`);
+
       if (response.ok) {
         const userDocs = await response.json();
         if (Array.isArray(userDocs)) {
