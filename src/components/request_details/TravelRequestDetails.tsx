@@ -323,7 +323,6 @@ const TravelRequestDetails: React.FC = () => {
       processDocumentList(travelRequestData.insuranceDocumentPath, 'Insurance');
 
 
-      
       const response = await fetch(`https://xpress-backend-v3.onrender.com/api/Documents/User/${travelRequestData.userId}`);
 
       if (response.ok) {
@@ -464,7 +463,7 @@ const TravelRequestDetails: React.FC = () => {
   const handleMarkAsReturned = async () => {
     const RETURNED_STATUS_ID = 9;
     try {
-      await axios.put(`http://localhost:5030/api/TravelRequest/${id}/updatestatus`, {
+      await axios.put(`https://xpress-backend-v3.onrender.com/api/TravelRequest/${id}/updatestatus`, {
         requestId: id,
         newStatusId: RETURNED_STATUS_ID,
         userId: userId,
