@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, ReactNode } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, ReactNode } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import {
@@ -128,17 +128,43 @@ const TravelRequestDetails: React.FC = () => {
     url: string;
   } | null>(null);
 
+  const [hasMarkedReturned, setHasMarkedReturned] = useState(false);
+
   const userString = localStorage.getItem('user');
   let role = '';
   let userId: number | undefined = undefined;
-  
-  
+
+
   if (userString) {
     const user = JSON.parse(userString);
     role = user.role;
     userId = parseInt(user.userId, 10);
   }
+
+  const isEmployee = role === 'employee';
+  const isAdmin = role === 'admin';
+  const isManager = role === 'manager';
   
+  // Button to mark travel as returned 
+  const canMarkAsReturned = useMemo(() => {
+      if (!isEmployee || !travelRequestData) return false;
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const returnDate = travelRequestData.returnArrivalDate || travelRequestData.returnDepartureDate;
+      if (!returnDate) return false;
+
+      const returnDateObj = new Date(returnDate);
+      returnDateObj.setHours(0, 0, 0, 0);
+
+      const isReturnDateReached = today >= returnDateObj;
+      const validStatuses = ['InTransit', 'TicketsDispatched'];
+      const hasValidStatus = validStatuses.includes(travelRequestData.status);
+
+      return isReturnDateReached && hasValidStatus && !hasMarkedReturned;
+    }, [isEmployee, travelRequestData, hasMarkedReturned]);
+
   // console.log(travelRequestData?.ticketDocumentPath);
   const fetchTravelRequest = useCallback(async () => {
     if (!id) {
@@ -177,7 +203,7 @@ const TravelRequestDetails: React.FC = () => {
         const formattedData = {
           ...apiData,
           id: apiData.requestId,
-          isBillable: apiData.isBillable, 
+          isBillable: apiData.isBillable,
           purpose: apiData.purposeOfTravel,
           status: INDEX_TO_STATUS_MAP[apiData.currentStatusId] || 'Unknown',
           employeeName: apiData.employeeName,
@@ -250,14 +276,14 @@ const TravelRequestDetails: React.FC = () => {
           const path = new URL(url).pathname;
           const filename = path.split('/').pop() || '';
           const extension = filename.slice(filename.lastIndexOf('.'));
-          return extension.length > 1 ? extension : '.pdf'; 
+          return extension.length > 1 ? extension : '.pdf';
         } catch (e) {
           return '.pdf';
         }
       };
 
       const processDocumentList = (
-        paths: string[] | string | undefined, 
+        paths: string[] | string | undefined,
         docType: 'Ticket' | 'Accommodation' | 'Insurance'
       ) => {
         if (!paths) return;
@@ -270,10 +296,10 @@ const TravelRequestDetails: React.FC = () => {
           // Fallback for non-JSON strings or other errors
           urlList = [paths].flat().filter((v): v is string => typeof v === 'string' && Boolean(v));
         }
-        
+
         urlList.forEach((url, index) => {
           if (!url) return;
-          
+
           let downloadUrl = url;
           if (docType === 'Ticket') {
             downloadUrl = `http://localhost:5030/api/TravelRequest/${id}/downloadticket?index=${index}`;
@@ -295,7 +321,7 @@ const TravelRequestDetails: React.FC = () => {
       processDocumentList(travelRequestData.ticketDocumentPath, 'Ticket');
       processDocumentList(travelRequestData.accommodationDocumentPath, 'Accommodation');
       processDocumentList(travelRequestData.insuranceDocumentPath, 'Insurance');
-      
+
       const response = await fetch(`http://localhost:5030/api/Documents/User/${travelRequestData.userId}`);
       if (response.ok) {
         const userDocs = await response.json();
@@ -398,14 +424,14 @@ const TravelRequestDetails: React.FC = () => {
         toast.error(responseData.errorMessages?.join(', ') || 'Failed to approve request.');
         return;
       }
-      
+
       toast.success('Request approved successfully!');
       setActionTaken(true);
-      fetchTravelRequest(); 
+      fetchTravelRequest();
       handleCloseModal();
     } catch (error) {
-        console.error("Approval Error:", error);
-        toast.error("An unexpected error occurred during approval.");
+      console.error("Approval Error:", error);
+      toast.error("An unexpected error occurred during approval.");
     }
   };
   const handleSubmitRejection = async () => {
@@ -432,6 +458,24 @@ const TravelRequestDetails: React.FC = () => {
     handleCloseModal();
   };
 
+  const handleMarkAsReturned = async () => {
+    const RETURNED_STATUS_ID = 9;
+    try {
+      await axios.put(`http://localhost:5030/api/TravelRequest/${id}/updatestatus`, {
+        requestId: id,
+        newStatusId: RETURNED_STATUS_ID,
+        userId: userId,
+        comments: "Employee has marked as returned from trip",
+        actionType: "MarkReturned"
+      });
+      setHasMarkedReturned(true);
+      toast.success("Successfully marked as returned!");
+      fetchTravelRequest();
+    } catch (error) {
+      console.error("Error marking as returned:", error);
+      toast.error("Failed to mark as returned. Please try again.");
+    }
+  };
 
   if (isLoading) return <div className="p-8 flex justify-center items-center"><Loader2 className="h-8 w-8 animate-spin text-gray-500" /></div>;
   if (error) return <div className="p-8 text-center text-red-600">Error: {error}</div>;
@@ -511,7 +555,7 @@ const TravelRequestDetails: React.FC = () => {
             onChange={(e) => setIsBillable(e.target.checked)}
           />
           <label htmlFor="isBillableCheckbox" className="text-gray-800 font-medium cursor-pointer">
-            Is this project billable/chargeable.
+            Is this project chargeable to the customer?
           </label>
         </div>
         <textarea className="w-full p-2 border rounded" placeholder="Approval comments (optional)..." rows={4} value={modalInputText} onChange={(e) => setModalInputText(e.target.value)} />
@@ -525,12 +569,8 @@ const TravelRequestDetails: React.FC = () => {
       break;
   }
 
-
   const statusBadgeClasses = getStatusBadgeStyles(travelRequestData.status);
   const displayStatusName = getDisplayStatusName(travelRequestData.status);
-  const isEmployee = role === 'employee';
-  const isAdmin = role === 'admin';
-  const isManager = role === 'manager';
   const isEmtRequest = travelRequestData.projectCode?.toLowerCase() === 'emt'; // EMT
   const showAdminEmtActions = isAdmin && isEmtRequest && travelRequestData.status === 'PendingReview'; // EMT
   const showFeedbackButton = isEmployee && travelRequestData.status === 'Returned' && !feedbackSubmitted;
@@ -581,6 +621,18 @@ const TravelRequestDetails: React.FC = () => {
           {/* All action buttons */}
           {showCloseRequestButton && (<button className="btn-secondary flex items-center" onClick={() => { setModalInputText(''); setActiveModal('closeRequest'); showModalContainer(<></>); }}><Lock className="h-4 w-4 mr-2" />Finalize Request</button>)}
           {showFeedbackButton && (<button className="btn-secondary flex items-center" onClick={() => { setModalInputText(''); setActiveModal('feedback'); showModalContainer(<></>); }}><MessageSquare className="h-4 w-4 mr-2" />Submit Feedback</button>)}
+
+          {/* Employee Return Button */}
+          {canMarkAsReturned && (
+            <button
+              className="bg-blue-600 hover:bg-blue-700 text-white rounded-md px-3 py-2 text-sm font-medium flex items-center"
+              onClick={handleMarkAsReturned}
+            >
+              <Check className="h-4 w-4 mr-2" />
+              Mark as Returned
+            </button>
+          )}
+
           {showManagerActionButtons && (<>
             <button className="bg-green-600 hover:bg-green-700 text-white rounded-md px-3 py-2 text-sm font-medium flex items-center" onClick={() => { setModalInputText(''); setActiveModal('approve'); showModalContainer(<></>); }}><Check className="h-4 w-4 mr-2" />Approve</button>
             <button className="bg-red-600 hover:bg-red-700 text-white rounded-md px-3 py-2 text-sm font-medium flex items-center" onClick={() => { setModalInputText(''); setActiveModal('reject'); showModalContainer(<></>); }}><X className="h-4 w-4 mr-2" />Reject</button>
@@ -589,20 +641,20 @@ const TravelRequestDetails: React.FC = () => {
           {/* EMT */}
           {showAdminEmtActions && (
             <>
-              <button 
-                className="bg-green-600 hover:bg-green-700 text-white rounded-md px-3 py-2 text-sm font-medium flex items-center" 
-                onClick={() => { 
-                  setModalInputText('Approved by Admin for EMT project.'); 
-                  setActiveModal('approve'); 
-                  showModalContainer(<></>); 
+              <button
+                className="bg-green-600 hover:bg-green-700 text-white rounded-md px-3 py-2 text-sm font-medium flex items-center"
+                onClick={() => {
+                  setModalInputText('Approved by Admin for EMT project.');
+                  setActiveModal('approve');
+                  showModalContainer(<></>);
                 }}>
                 <Check className="h-4 w-4 mr-2" /> Approve (EMT)
               </button>
-              <button 
-                className="bg-gray-500 hover:bg-gray-600 text-white rounded-md px-3 py-2 text-sm font-medium flex items-center" 
-                onClick={() => { 
-                  setActiveModal('cancel'); 
-                  showModalContainer(<></>); 
+              <button
+                className="bg-gray-500 hover:bg-gray-600 text-white rounded-md px-3 py-2 text-sm font-medium flex items-center"
+                onClick={() => {
+                  setActiveModal('cancel');
+                  showModalContainer(<></>);
                 }}>
                 <Slash className="h-4 w-4 mr-2" /> Cancel (EMT)
               </button>
@@ -611,7 +663,7 @@ const TravelRequestDetails: React.FC = () => {
 
           {showCancelButton && (<button className="bg-gray-500 hover:bg-gray-600 text-white rounded-md px-3 py-2 text-sm font-medium flex items-center" onClick={() => { setModalInputText(''); setActiveModal('cancel'); showModalContainer(<></>); }}><Slash className="h-4 w-4 mr-2" />Cancel Request</button>)}
           <button className="btn-primary flex items-center" onClick={handleOpenDownloadModal} disabled={!areAnyDocumentsAvailable || isPreparingDocs}>{isPreparingDocs ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Preparing...</> : <><Download className="h-4 w-4 mr-2" />Travel Docs</>}</button>
-          <button className="btn-accent flex items-center"><FileText className="h-4 w-4 mr-2" />Export</button>
+          {/* <button className="btn-accent flex items-center"><FileText className="h-4 w-4 mr-2" />Export</button> */}
         </div>
       </div>
 
