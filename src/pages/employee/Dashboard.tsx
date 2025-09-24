@@ -88,7 +88,7 @@ const EmployeeDashboard: React.FC = () => {
   const fetchTravelRequests = useCallback(async () => {
     if (!user?.userId || !user?.token) return;
    
-    const endpoint = `http://localhost:5030/api/TravelRequest/ByUser/${user.userId}`;
+    const endpoint = `https://xpress-backend-v3.onrender.com/api/TravelRequest/ByUser/${user.userId}`;
  
     try {
       const response = await fetch(
@@ -150,7 +150,7 @@ const EmployeeDashboard: React.FC = () => {
         setDocumentsError(null);
  
         const response = await axios.get(
-          `http://localhost:5030/api/Documents/User/${user.userId}`,
+          `https://xpress-backend-v3.onrender.com/api/Documents/User/${user.userId}`,
           {
             headers: {
               Authorization: `Bearer ${user.token}`,
@@ -216,7 +216,7 @@ const EmployeeDashboard: React.FC = () => {
     setIsFetchingDetails(true);
     const loadingToast = toast.loading('Fetching request details...');
     try {
-      const endpoint = `http://localhost:5030/api/TravelRequest/${request.id}`;
+      const endpoint = `https://xpress-backend-v3.onrender.com/api/TravelRequest/${request.id}`;
      
       const response = await axios.get(endpoint, {
         headers: { Authorization: `Bearer ${user.token}` },
@@ -256,7 +256,7 @@ const EmployeeDashboard: React.FC = () => {
           return;
       }
  
-      const endpoint = `http://localhost:5030/api/travelrequests/${humanReadableId}/edit`;
+      const endpoint = `https://xpress-backend-v3.onrender.com/api/travelrequests/${humanReadableId}/edit`;
      
       const loadingToast = toast.loading('Updating request...');
       try {

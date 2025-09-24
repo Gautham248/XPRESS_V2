@@ -113,7 +113,7 @@ const SelectedView: React.FC<Props> = ({
               {paths.length > 0 ? (
                 <div className="space-y-2">
                   {paths.map((docUrl, index) => {
-                    const downloadUrl = `http://localhost:5030/api/TravelRequest/${requestId}/downloadticket?index=${index}`;
+                    const downloadUrl = `https://xpress-backend-v3.onrender.com/api/TravelRequest/${requestId}/downloadticket?index=${index}`;
                     
                     return (
                       <div

@@ -154,7 +154,7 @@ describe('TravelRequestDetails Component', () => {
 
     await waitFor(() => {
       expect(fetchMock).toHaveBeenCalledWith(
-        `http://localhost:5030/api/Approvals/TR-123/manager/approve`,
+        `https://xpress-backend-v3.onrender.com/api/Approvals/TR-123/manager/approve`,
         expect.objectContaining({
           method: 'PUT',
           body: JSON.stringify({ approvingUserId: 101, comments: 'All good. Proceed.' }),
@@ -196,7 +196,7 @@ describe('TravelRequestDetails Component', () => {
 
     await waitFor(() => {
       expect(mockedAxios.put).toHaveBeenCalledWith(
-        `http://localhost:5030/api/TravelRequest/TR-123/updatestatus`,
+        `https://xpress-backend-v3.onrender.com/api/TravelRequest/TR-123/updatestatus`,
         { requestId: 'TR-123', newStatusId: 11, userId: 5, comments: 'Trip postponed.', actionType: 'CancelRequest' }
       );
     });

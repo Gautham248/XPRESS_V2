@@ -175,7 +175,7 @@ const TravelRequestDetails: React.FC = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await axios.get<{ isSuccess: boolean; result: any }>(`http://localhost:5030/api/TravelRequest/${id}`);
+      const response = await axios.get<{ isSuccess: boolean; result: any }>(`https://xpress-backend-v3.onrender.com/api/TravelRequest/${id}`);
 
       if (response.data.isSuccess && response.data.result) {
         const apiData = response.data.result;
@@ -302,7 +302,7 @@ const TravelRequestDetails: React.FC = () => {
 
           let downloadUrl = url;
           if (docType === 'Ticket') {
-            downloadUrl = `http://localhost:5030/api/TravelRequest/${id}/downloadticket?index=${index}`;
+            downloadUrl = `https://xpress-backend-v3.onrender.com/api/TravelRequest/${id}/downloadticket?index=${index}`;
           }
 
           const fileExtension = getFileExtensionFromUrl(url);
@@ -322,7 +322,7 @@ const TravelRequestDetails: React.FC = () => {
       processDocumentList(travelRequestData.accommodationDocumentPath, 'Accommodation');
       processDocumentList(travelRequestData.insuranceDocumentPath, 'Insurance');
 
-      const response = await fetch(`http://localhost:5030/api/Documents/User/${travelRequestData.userId}`);
+      const response = await fetch(`https://xpress-backend-v3.onrender.com/api/Documents/User/${travelRequestData.userId}`);
       if (response.ok) {
         const userDocs = await response.json();
         if (Array.isArray(userDocs)) {
@@ -397,19 +397,19 @@ const TravelRequestDetails: React.FC = () => {
   };
 
   const handleSubmitFeedback = async () => {
-    await fetch(`http://localhost:5030/api/TravelRequest/${id}/travelfeedback`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ feedbackText: modalInputText, submittingUserId: userId }) });
+    await fetch(`https://xpress-backend-v3.onrender.com/api/TravelRequest/${id}/travelfeedback`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ feedbackText: modalInputText, submittingUserId: userId }) });
     setFeedbackSubmitted(true);
     handleCloseModal();
   };
   const handleSubmitCloseRequest = async () => {
-    await axios.put(`http://localhost:5030/api/TravelRequest/${id}/updatestatus`, { requestId: id, newStatusId: 10, userId, comments: modalInputText, actionType: "CloseRequest" });
+    await axios.put(`https://xpress-backend-v3.onrender.com/api/TravelRequest/${id}/updatestatus`, { requestId: id, newStatusId: 10, userId, comments: modalInputText, actionType: "CloseRequest" });
     setRequestClosed(true);
     fetchTravelRequest();
     handleCloseModal();
   };
   const handleSubmitApproval = async () => {
     try {
-      const response = await fetch(`http://localhost:5030/api/Approvals/${id}/manager/approve`, {
+      const response = await fetch(`https://xpress-backend-v3.onrender.com/api/Approvals/${id}/manager/approve`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -436,7 +436,7 @@ const TravelRequestDetails: React.FC = () => {
   };
   const handleSubmitRejection = async () => {
     if (!modalInputText.trim()) { toast.error('Please provide a rejection reason.'); return; }
-    await fetch(`http://localhost:5030/api/Approvals/${id}/manager/reject`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ rejectingUserId: userId, comments: modalInputText }) });
+    await fetch(`https://xpress-backend-v3.onrender.com/api/Approvals/${id}/manager/reject`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ rejectingUserId: userId, comments: modalInputText }) });
     setActionTaken(true);
     fetchTravelRequest();
     handleCloseModal();
@@ -447,7 +447,7 @@ const TravelRequestDetails: React.FC = () => {
       toast.error("A reason for cancellation is required.");
       return;
     }
-    await axios.put(`http://localhost:5030/api/TravelRequest/${id}/updatestatus`, {
+    await axios.put(`https://xpress-backend-v3.onrender.com/api/TravelRequest/${id}/updatestatus`, {
       requestId: id,
       newStatusId: CANCELLED_STATUS_ID,
       userId: userId,
@@ -461,7 +461,7 @@ const TravelRequestDetails: React.FC = () => {
   const handleMarkAsReturned = async () => {
     const RETURNED_STATUS_ID = 9;
     try {
-      await axios.put(`http://localhost:5030/api/TravelRequest/${id}/updatestatus`, {
+      await axios.put(`https://xpress-backend-v3.onrender.com/api/TravelRequest/${id}/updatestatus`, {
         requestId: id,
         newStatusId: RETURNED_STATUS_ID,
         userId: userId,
@@ -592,7 +592,7 @@ const TravelRequestDetails: React.FC = () => {
           onClose={() => setPreviewModalData(null)}
           documentName={`${previewModalData.docType} Document ${previewModalData.index + 1}`}
           documentUrl={previewModalData.url}
-          downloadUrl={previewModalData.docType === 'Ticket' ? `http://localhost:5030/api/TravelRequest/${id}/downloadticket?index=${previewModalData.index}` : previewModalData.url}
+          downloadUrl={previewModalData.docType === 'Ticket' ? `https://xpress-backend-v3.onrender.com/api/TravelRequest/${id}/downloadticket?index=${previewModalData.index}` : previewModalData.url}
         />
       )}
 

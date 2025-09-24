@@ -37,7 +37,7 @@ const DocumentList: React.FC<DocumentListProps> = ({ docType, userId }) => {
   useEffect(() => {
     if (!userId || !docType) return;
     axios
-      .get(`http://localhost:5030/api/Documents/user/${userId}/type/${docType}`)
+      .get(`https://xpress-backend-v3.onrender.com/api/Documents/user/${userId}/type/${docType}`)
       .then((response) => {
         setDocuments(response.data);
       })
@@ -57,7 +57,7 @@ const DocumentList: React.FC<DocumentListProps> = ({ docType, userId }) => {
 
     try {
       await axios.delete(
-        `http://localhost:5030/api/Documents/${docToDelete.id}/type/${docType}`
+        `https://xpress-backend-v3.onrender.com/api/Documents/${docToDelete.id}/type/${docType}`
       );
       toast.success("Document deleted successfully");
       setDocuments((prevDocs) =>

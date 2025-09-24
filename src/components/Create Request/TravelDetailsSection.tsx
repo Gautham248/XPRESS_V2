@@ -76,7 +76,7 @@ const TravelDetailsSection: React.FC = () => {
       setProjectCodesLoading(true);
       setProjectCodesError(null);
       try {
-        const response = await fetch('http://localhost:5030/api/RMT/project-codes');
+        const response = await fetch('https://xpress-backend-v3.onrender.com/api/RMT/project-codes');
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
