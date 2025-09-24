@@ -55,7 +55,7 @@ describe('ApprovalTimeline Component', () => {
     mockedAxios.get.mockResolvedValue(createMockApiResponse());
     render(<ApprovalTimeline requestId="123" />);
     await waitFor(() => expect(screen.queryByText(/Loading timeline.../i)).not.toBeInTheDocument());
-    expect(mockedAxios.get).toHaveBeenCalledWith('http://localhost:5030/api/TravelRequest/123/timeline');
+    expect(mockedAxios.get).toHaveBeenCalledWith('https://xpress-backend-v3.onrender.com/api/TravelRequest/123/timeline');
     expect(screen.getByText('Request Submitted')).toBeInTheDocument();
   });
 

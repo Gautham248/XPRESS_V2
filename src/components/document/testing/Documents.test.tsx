@@ -475,7 +475,7 @@ describe('Documents Component', () => {
       await user.click(screen.getByTestId('save-button'));
       
       await waitFor(() => {
-        expect(mockedAxios.delete).toHaveBeenCalledWith('http://localhost:5030/api/Documents/123/type/Passport');
+        expect(mockedAxios.delete).toHaveBeenCalledWith('https://xpress-backend-v3.onrender.com/api/Documents/123/type/Passport');
         expect(toast.error).toHaveBeenCalledWith('This document is expired and cannot be saved.', { id: 'toast-id' });
       });
     });
