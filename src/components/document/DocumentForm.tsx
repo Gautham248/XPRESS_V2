@@ -1,5 +1,3 @@
-// src/components/DocumentForm.tsx
-
 import React, { useState, useEffect } from 'react'; // Import useEffect
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
@@ -20,13 +18,13 @@ function DocumentForm({ docType, formState, dispatch, onSave, isSaving, isReadyT
   const fields = formConfigMap[docType];
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
-  // --- FIX: Add this useEffect hook ---
+ 
   // This effect will run whenever the docType prop changes (i.e., when the tab switches).
   // It clears any existing validation errors from the previous tab.
   useEffect(() => {
     setValidationErrors({});
   }, [docType]);
-  // --- END FIX ---
+  
 
   const handleChange = (field: keyof FormState, value: string | Date | null) => {
     dispatch({ type: 'UPDATE_FIELD', docType, field, value });
