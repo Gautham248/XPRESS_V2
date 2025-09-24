@@ -10,8 +10,8 @@ import {
 } from 'lucide-react';
 import { format, parseISO, differenceInDays } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
+import { getStatusColor } from '../../data/mockData';
 import EditTravelRequestModal, { DetailedTravelRequest } from './EditTravelRequestModal';
-import { getStatusBadgeStyles } from '../../components/request_details/TravelRequestDetails';
  
 // --- INTERFACES ---
 interface TravelRequest {
@@ -364,7 +364,7 @@ const EmployeeDashboard: React.FC = () => {
                     <td className="py-3 px-4">{trip.destination}</td>
                     <td className="py-3 px-4">{trip.departureDate ? format(parseISO(trip.departureDate), 'MMM dd') : 'N/A'} - {trip.returnDate ? format(parseISO(trip.returnDate), 'MMM dd, yyyy') : 'N/A'}</td>
                     <td className="py-3 px-4">{trip.purpose}</td>
-                    <td className="py-3 px-4"><span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusBadgeStyles(trip.status)}`}>{trip.status}</span></td>
+                    <td className="py-3 px-4"><span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(trip.status)}`}>{trip.status}</span></td>
                     <td className="py-3 px-4 text-right"><button className="text-sm text-blue-600 hover:text-blue-800">View Details</button></td>
                   </tr>
                 )) : <tr><td colSpan={6} className="text-gray-500 text-center py-10">No active requests found.</td></tr>}

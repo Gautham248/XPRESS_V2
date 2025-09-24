@@ -21,6 +21,7 @@ import CommentsModal from './CommentsModal';
 
 interface ApiTravelInfoItem {
   requestId: string;
+  currentStatusId: number;
   outboundDepartureDate: string;
   outboundArrivalDate: string;
   returnDepartureDate: string | null;
@@ -52,6 +53,7 @@ interface TravelInfoApiResponse {
 
 interface TravelRequestData {
   id: string;
+  currentStatusId: number;
   outboundDepartureDate: string;
   outboundArrivalDate: string;
   returnDepartureDate: string | null;
@@ -132,6 +134,7 @@ const TravelInfo: React.FC<TravelInfoProps> = ({ requestId }) => {
           combinedComments.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
           const mappedData: TravelRequestData = {
             id: apiData.requestId,
+            currentStatusId: apiData.currentStatusId,
             outboundDepartureDate: apiData.outboundDepartureDate,
             outboundArrivalDate: apiData.outboundArrivalDate,
             returnDepartureDate: apiData.returnDepartureDate,
@@ -256,14 +259,14 @@ const TravelInfo: React.FC<TravelInfoProps> = ({ requestId }) => {
             <div className='flex gap-5 items-center'>
               <h3 className="text-xl font-semibold text-gray-900">Travel Information</h3>
               <h2 className="text-2xl font-bold flex items-center gap-3">
-                {travelRequest.isBillable && (
+                {(travelRequest.isBillable && travelRequest.currentStatusId > 1) && (
                   <span className={`
                     px-4 py-2 rounded-md text-sm font-semibold flex items-center gap-2
                     'bg-green-50 text-green-700 border border-green-200'
                     }
                   `}>
                     <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                    Billable
+                    Chargeable
                   </span>
                 )}
               </h2>

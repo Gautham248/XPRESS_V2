@@ -116,8 +116,10 @@ const PassportParser: React.FC<PassportParserProps> = ({ rawText, onDataParsed }
 
   return (
     <div className="mt-2 mb-4 p-3 border-l-4 border-blue-400 bg-blue-50">
+      <p className="text-sm text-blue-700">Please verify the auto-filled details and click 'Save' below.</p>
     </div>
   );
 };
 
 export default PassportParser;
+ 
