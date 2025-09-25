@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback, ReactNode } from 'rea
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import {
-  Check, X, FileText, ChevronLeft, Download, MessageSquare, Lock, Loader2,
+  Check, X, ChevronLeft, Download, MessageSquare, Lock, Loader2,
   Slash
 } from 'lucide-react';
 import ApprovalTimeline from './ApprovalTimeline';
@@ -103,7 +103,8 @@ export const getStatusBadgeStyles = (status?: ComponentTravelRequest['status'] |
 const TravelRequestDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { isOpen, openModal: showModalContainer, closeModal: hideModalContainer } = useModal();
+  // const { isOpen, openModal: showModalContainer, closeModal: hideModalContainer } = useModal();
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const [travelRequestData, setTravelRequestData] = useState<ComponentTravelRequest | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -117,6 +118,11 @@ const TravelRequestDetails: React.FC = () => {
   const [isBillable, setIsBillable] = useState(false);
 
   const [isPreparingDocs, setIsPreparingDocs] = useState(false);
+  const [isApprovingRequest, setIsApprovingRequest] = useState(false);
+  const [isRejectingRequest, setIsRejectingRequest] = useState(false);
+  const [isCancellingRequest, setIsCancellingRequest] = useState(false);
+  const [isClosingRequest, setIsClosingRequest] = useState(false);
+  const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
   const [isZipping, setIsZipping] = useState(false);
   const [availableDocs, setAvailableDocs] = useState<DocumentInfo[]>([]);
   const [selectedDocs, setSelectedDocs] = useState<Set<string>>(new Set());
@@ -260,9 +266,16 @@ const TravelRequestDetails: React.FC = () => {
   };
 
   const handleCloseModal = () => {
-    hideModalContainer();
+    setIsModalOpen(false);
     setActiveModal(null);
     setModalInputText('');
+    setIsApprovingRequest(false);
+    setIsRejectingRequest(false);
+    setIsCancellingRequest(false);
+    setIsClosingRequest(false);
+    setIsSubmittingFeedback(false);
+    setIsPreparingDocs(false);
+    setIsZipping(false);
   };
 
   const handleOpenDownloadModal = async () => {
@@ -322,8 +335,6 @@ const TravelRequestDetails: React.FC = () => {
       processDocumentList(travelRequestData.accommodationDocumentPath, 'Accommodation');
       processDocumentList(travelRequestData.insuranceDocumentPath, 'Insurance');
 
-
-      
       const response = await fetch(`https://xpress-backend-v3.onrender.com/api/Documents/User/${travelRequestData.userId}`);
 
       if (response.ok) {
@@ -351,7 +362,7 @@ const TravelRequestDetails: React.FC = () => {
       setAvailableDocs(docs);
       setSelectedDocs(new Set(docs.map(d => d.id)));
       setActiveModal('download');
-      showModalContainer(<></>);
+      setIsModalOpen(true);
 
     } catch (error) {
       console.error("Error preparing documents for download:", error);
@@ -400,49 +411,113 @@ const TravelRequestDetails: React.FC = () => {
   };
 
   const handleSubmitFeedback = async () => {
-    await fetch(`https://xpress-backend-v3.onrender.com/api/TravelRequest/${id}/travelfeedback`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ feedbackText: modalInputText, submittingUserId: userId }) });
-    setFeedbackSubmitted(true);
-    handleCloseModal();
+    setIsSubmittingFeedback(true);
+    try {
+      await fetch(`https://xpress-backend-v3.onrender.com/api/TravelRequest/${id}/travelfeedback`, { 
+        method: 'PUT', 
+        headers: { 'Content-Type': 'application/json' }, 
+        body: JSON.stringify({ feedbackText: modalInputText, submittingUserId: userId }) 
+      });
+      setFeedbackSubmitted(true);
+      handleCloseModal();
+    } catch (error) {
+      toast.error("Failed to submit feedback. Please try again.");
+    } finally {
+      setIsSubmittingFeedback(false);
+    }
   };
   const handleSubmitCloseRequest = async () => {
-    await axios.put(`https://xpress-backend-v3.onrender.com/api/TravelRequest/${id}/updatestatus`, { requestId: id, newStatusId: 10, userId, comments: modalInputText, actionType: "CloseRequest" });
-    setRequestClosed(true);
-    fetchTravelRequest();
-    handleCloseModal();
-  };
-  const handleSubmitApproval = async () => {
+    setIsClosingRequest(true);
     try {
-      const response = await fetch(`https://xpress-backend-v3.onrender.com/api/Approvals/${id}/manager/approve`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          approvingUserId: userId,
-          comments: modalInputText,
-          isBillable: isBillable
-        })
+      await axios.put(`https://xpress-backend-v3.onrender.com/api/TravelRequest/${id}/updatestatus`, { 
+        requestId: id, 
+        newStatusId: 10, 
+        userId, 
+        comments: modalInputText, 
+        actionType: "CloseRequest" 
       });
-
-      const responseData = await response.json();
-      if (!response.ok || !responseData.isSuccess) {
-        toast.error(responseData.errorMessages?.join(', ') || 'Failed to approve request.');
-        return;
-      }
-
-      toast.success('Request approved successfully!');
-      setActionTaken(true);
+      setRequestClosed(true);
       fetchTravelRequest();
       handleCloseModal();
     } catch (error) {
-      console.error("Approval Error:", error);
+      toast.error("Failed to close request. Please try again.");
+    } finally {
+      setIsClosingRequest(false);
+    }
+  };
+  const handleSubmitApproval = async () => {
+    console.log("1. Starting approval process");
+    setIsApprovingRequest(true);
+
+    try {
+      console.log("2. Making API call");
+      const response = await fetch(
+        `https://xpress-backend-v3.onrender.com/api/Approvals/${id}/manager/approve`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            approvingUserId: userId,
+            comments: modalInputText,
+            isBillable: isBillable,
+          }),
+        }
+      );
+
+      console.log("3. Got response:", response.status);
+
+      const text = await response.text();
+      let responseData: any = {};
+      try {
+        responseData = text ? JSON.parse(text) : {};
+        console.log("Response Approval Data: ", responseData);
+      } catch (err) {
+        console.warn("Failed to parse JSON:", err, text);
+      }
+
+      console.log("4. Parsed response data:", responseData);
+
+      if (!response.ok || !responseData.isSuccess) {
+        console.log("5a. Error path");
+        toast.error(
+          responseData.errorMessages?.join(", ") ||
+            "Failed to approve request."
+        );
+        handleCloseModal();
+        return;
+      }
+
+      console.log("5b. Success path");
+      toast.success("Request approved successfully!");
+      setActionTaken(true);
+      handleCloseModal();
+      fetchTravelRequest();
+    } catch (error) {
+      console.error("Error caught:", error);
       toast.error("An unexpected error occurred during approval.");
+      handleCloseModal();
+    } finally {
+      console.log("9. Finally block");
+      setIsApprovingRequest(false);
     }
   };
   const handleSubmitRejection = async () => {
     if (!modalInputText.trim()) { toast.error('Please provide a rejection reason.'); return; }
-    await fetch(`https://xpress-backend-v3.onrender.com/api/Approvals/${id}/manager/reject`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ rejectingUserId: userId, comments: modalInputText }) });
-    setActionTaken(true);
-    fetchTravelRequest();
-    handleCloseModal();
+    setIsRejectingRequest(true);
+    try {
+      await fetch(`https://xpress-backend-v3.onrender.com/api/Approvals/${id}/manager/reject`, { 
+        method: 'PUT', 
+        headers: { 'Content-Type': 'application/json' }, 
+        body: JSON.stringify({ rejectingUserId: userId, comments: modalInputText }) 
+      });
+      setActionTaken(true);
+      await fetchTravelRequest();
+      handleCloseModal();
+    } catch (error) {
+      toast.error("Failed to reject request. Please try again.");
+    } finally {
+      setIsRejectingRequest(false);
+    }
   };
   const handleSubmitCancelRequest = async () => {
     const CANCELLED_STATUS_ID = 11;
@@ -450,21 +525,27 @@ const TravelRequestDetails: React.FC = () => {
       toast.error("A reason for cancellation is required.");
       return;
     }
-    await axios.put(`https://xpress-backend-v3.onrender.com/api/TravelRequest/${id}/updatestatus`, {
-      requestId: id,
-      newStatusId: CANCELLED_STATUS_ID,
-      userId: userId,
-      comments: modalInputText,
-      actionType: "CancelRequest"
-    });
-    fetchTravelRequest();
-    handleCloseModal();
+    setIsCancellingRequest(true);
+    try {
+      await axios.put(`https://xpress-backend-v3.onrender.com/api/TravelRequest/${id}/updatestatus`, {
+        requestId: id,
+        newStatusId: CANCELLED_STATUS_ID,
+        userId: userId,
+        comments: modalInputText,
+        actionType: "CancelRequest"
+      });
+      await fetchTravelRequest();
+      handleCloseModal();
+    } catch (error) {
+      toast.error("Failed to cancel request. Please try again.");
+    } finally {
+      setIsCancellingRequest(false);
+    }
   };
-
   const handleMarkAsReturned = async () => {
     const RETURNED_STATUS_ID = 9;
     try {
-      await axios.put(`http://localhost:5030/api/TravelRequest/${id}/updatestatus`, {
+      await axios.put(`https://xpress-backend-v3.onrender.com/api/TravelRequest/${id}/updatestatus`, {
         requestId: id,
         newStatusId: RETURNED_STATUS_ID,
         userId: userId,
@@ -503,7 +584,7 @@ const TravelRequestDetails: React.FC = () => {
       </>);
       modalButtons = [
         { text: 'Back', bgColor: 'bg-gray-300', textColor: 'text-black', onClick: handleCloseModal },
-        { text: 'Confirm Cancellation', bgColor: 'bg-red-600', onClick: handleSubmitCancelRequest }
+        { text: 'Confirm Cancellation', bgColor: 'bg-red-600', onClick: handleSubmitCancelRequest, isLoading: isCancellingRequest }
       ];
       break;
     case 'download':
@@ -536,7 +617,7 @@ const TravelRequestDetails: React.FC = () => {
     case 'feedback':
       modalTitle = 'Submit Feedback';
       modalContent = <textarea className="w-full p-2 border rounded" placeholder="Enter your feedback..." rows={4} value={modalInputText} onChange={(e) => setModalInputText(e.target.value)} />;
-      modalButtons = [{ text: 'Cancel', bgColor: 'bg-gray-300', textColor: 'text-black', onClick: handleCloseModal }, { text: 'Send', bgColor: 'bg-blue-600', onClick: handleSubmitFeedback }];
+      modalButtons = [{ text: 'Cancel', bgColor: 'bg-gray-300', textColor: 'text-black', onClick: handleCloseModal }, { text: 'Send', bgColor: 'bg-blue-600', onClick: handleSubmitFeedback, isLoading: isSubmittingFeedback }];
       break;
     case 'closeRequest':
       modalTitle = 'Finalize Request';
@@ -544,7 +625,7 @@ const TravelRequestDetails: React.FC = () => {
         <p className="text-red-600 mb-3 italic">This action cannot be undone.</p>
         <textarea className="w-full p-2 border rounded" placeholder="Closing remarks (optional)..." rows={4} value={modalInputText} onChange={(e) => setModalInputText(e.target.value)} />
       </>);
-      modalButtons = [{ text: 'Cancel', bgColor: 'bg-gray-300', textColor: 'text-black', onClick: handleCloseModal }, { text: 'Confirm', bgColor: 'bg-blue-600', onClick: handleSubmitCloseRequest }];
+      modalButtons = [{ text: 'Cancel', bgColor: 'bg-gray-300', textColor: 'text-black', onClick: handleCloseModal }, { text: 'Confirm', bgColor: 'bg-blue-600', onClick: handleSubmitCloseRequest, isLoading: isClosingRequest }];
       break;
     case 'approve':
       modalTitle = 'Approve Travel Request';
@@ -563,12 +644,12 @@ const TravelRequestDetails: React.FC = () => {
         </div>
         <textarea className="w-full p-2 border rounded" placeholder="Approval comments (optional)..." rows={4} value={modalInputText} onChange={(e) => setModalInputText(e.target.value)} />
       </>
-      modalButtons = [{ text: 'Cancel', bgColor: 'bg-gray-300', textColor: 'text-black', onClick: handleCloseModal }, { text: 'Confirm Approval', bgColor: 'bg-blue-600', onClick: handleSubmitApproval }];
+      modalButtons = [{ text: 'Cancel', bgColor: 'bg-gray-300', textColor: 'text-black', onClick: handleCloseModal }, { text: 'Confirm Approval', bgColor: 'bg-blue-600', onClick: handleSubmitApproval, isLoading: isApprovingRequest }];
       break;
     case 'reject':
       modalTitle = 'Reject Travel Request';
       modalContent = <textarea className="w-full p-2 border rounded" placeholder="Rejection reason (required)..." rows={4} value={modalInputText} onChange={(e) => setModalInputText(e.target.value)} />;
-      modalButtons = [{ text: 'Cancel', bgColor: 'bg-gray-300', textColor: 'text-black', onClick: handleCloseModal }, { text: 'Confirm Rejection', bgColor: 'bg-red-600', onClick: handleSubmitRejection }];
+      modalButtons = [{ text: 'Cancel', bgColor: 'bg-gray-300', textColor: 'text-black', onClick: handleCloseModal }, { text: 'Confirm Rejection', bgColor: 'bg-red-600', onClick: handleSubmitRejection, isLoading: isRejectingRequest }];
       break;
   }
 
@@ -588,7 +669,7 @@ const TravelRequestDetails: React.FC = () => {
   return (
     <div className="space-y-6 animate-fadeIn">
       <Toaster position="top-right" reverseOrder={false} containerStyle={{ top: 70 }} />
-      <ConfirmationModal isOpen={isOpen} onClose={handleCloseModal} title={modalTitle} content={modalContent} buttons={modalButtons} />
+      <ConfirmationModal isOpen={isModalOpen} onClose={handleCloseModal} title={modalTitle} content={modalContent} buttons={modalButtons} />
       {previewModalData && (
         <DocumentPreviewModal
           isOpen={!!previewModalData}
@@ -622,8 +703,8 @@ const TravelRequestDetails: React.FC = () => {
 
         <div className="flex flex-wrap gap-3 md:ml-auto">
           {/* All action buttons */}
-          {showCloseRequestButton && (<button className="btn-secondary flex items-center" onClick={() => { setModalInputText(''); setActiveModal('closeRequest'); showModalContainer(<></>); }}><Lock className="h-4 w-4 mr-2" />Finalize Request</button>)}
-          {showFeedbackButton && (<button className="btn-secondary flex items-center" onClick={() => { setModalInputText(''); setActiveModal('feedback'); showModalContainer(<></>); }}><MessageSquare className="h-4 w-4 mr-2" />Submit Feedback</button>)}
+          {showCloseRequestButton && (<button className="btn-secondary flex items-center" onClick={() => { setModalInputText(''); setActiveModal('closeRequest'); setIsModalOpen(true); }}><Lock className="h-4 w-4 mr-2" />Finalize Request</button>)}
+          {showFeedbackButton && (<button className="btn-secondary flex items-center" onClick={() => { setModalInputText(''); setActiveModal('feedback'); setIsModalOpen(true); }}><MessageSquare className="h-4 w-4 mr-2" />Submit Feedback</button>)}
 
           {/* Employee Return Button */}
           {canMarkAsReturned && (
@@ -637,8 +718,8 @@ const TravelRequestDetails: React.FC = () => {
           )}
 
           {showManagerActionButtons && (<>
-            <button className="bg-green-600 hover:bg-green-700 text-white rounded-md px-3 py-2 text-sm font-medium flex items-center" onClick={() => { setModalInputText(''); setActiveModal('approve'); showModalContainer(<></>); }}><Check className="h-4 w-4 mr-2" />Approve</button>
-            <button className="bg-red-600 hover:bg-red-700 text-white rounded-md px-3 py-2 text-sm font-medium flex items-center" onClick={() => { setModalInputText(''); setActiveModal('reject'); showModalContainer(<></>); }}><X className="h-4 w-4 mr-2" />Reject</button>
+            <button className="bg-green-600 hover:bg-green-700 text-white rounded-md px-3 py-2 text-sm font-medium flex items-center" onClick={() => { setModalInputText(''); setActiveModal('approve'); setIsModalOpen(true); }}><Check className="h-4 w-4 mr-2" />Approve</button>
+            <button className="bg-red-600 hover:bg-red-700 text-white rounded-md px-3 py-2 text-sm font-medium flex items-center" onClick={() => { setModalInputText(''); setActiveModal('reject'); setIsModalOpen(true); }}><X className="h-4 w-4 mr-2" />Reject</button>
           </>)}
 
           {/* EMT */}
@@ -649,7 +730,7 @@ const TravelRequestDetails: React.FC = () => {
                 onClick={() => {
                   setModalInputText('Approved by Admin for EMT project.');
                   setActiveModal('approve');
-                  showModalContainer(<></>);
+                  setIsModalOpen(true);
                 }}>
                 <Check className="h-4 w-4 mr-2" /> Approve (EMT)
               </button>
@@ -657,14 +738,14 @@ const TravelRequestDetails: React.FC = () => {
                 className="bg-gray-500 hover:bg-gray-600 text-white rounded-md px-3 py-2 text-sm font-medium flex items-center"
                 onClick={() => {
                   setActiveModal('cancel');
-                  showModalContainer(<></>);
+                  setIsModalOpen(true);
                 }}>
                 <Slash className="h-4 w-4 mr-2" /> Cancel (EMT)
               </button>
             </>
           )}
 
-          {showCancelButton && (<button className="bg-gray-500 hover:bg-gray-600 text-white rounded-md px-3 py-2 text-sm font-medium flex items-center" onClick={() => { setModalInputText(''); setActiveModal('cancel'); showModalContainer(<></>); }}><Slash className="h-4 w-4 mr-2" />Cancel Request</button>)}
+          {showCancelButton && (<button className="bg-gray-500 hover:bg-gray-600 text-white rounded-md px-3 py-2 text-sm font-medium flex items-center" onClick={() => { setModalInputText(''); setActiveModal('cancel'); setIsModalOpen(true); }}><Slash className="h-4 w-4 mr-2" />Cancel Request</button>)}
           <button className="btn-primary flex items-center" onClick={handleOpenDownloadModal} disabled={!areAnyDocumentsAvailable || isPreparingDocs}>{isPreparingDocs ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Preparing...</> : <><Download className="h-4 w-4 mr-2" />Travel Docs</>}</button>
           {/* <button className="btn-accent flex items-center"><FileText className="h-4 w-4 mr-2" />Export</button> */}
         </div>
