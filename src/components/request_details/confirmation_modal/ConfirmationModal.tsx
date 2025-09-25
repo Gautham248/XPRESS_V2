@@ -5,6 +5,7 @@ export interface ButtonConfig {
   bgColor: string;
   textColor?: string;
   onClick: () => void;
+  isLoading?: boolean;
 }
  
 interface ConfirmationModalProps {
@@ -67,12 +68,31 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
             <button
               key={index}
               onClick={button.onClick}
-              className={`px-4 py-2 rounded-md font-medium ${button.bgColor} ${button.textColor || 'text-white'} hover:opacity-90 transition-opacity`}
+              disabled={button.isLoading}
+              className={`px-4 py-2 rounded-md  font-medium ${button.bgColor} ${button.textColor || 'text-white'} hover:opacity-90 transition-opacity flex items-center justify-center min-w-[80px] ${
+                button.isLoading ? 'opacity-75 cursor-not-allowed' : ''
+              }`}
             >
-              {button.text}
+              {button.isLoading ? (
+                <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                  <circle
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeDasharray="32"
+                    strokeDashoffset="32"
+                    className="animate-spin"
+                  />
+                </svg>
+              ) : (
+                button.text
+              )}
             </button>
           ))}
-        </div>
+</div>
       </div>
     </div>
   );
