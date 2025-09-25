@@ -173,11 +173,13 @@ function Documents() {
       }
       
 
+
       console.log('Sending API payload:', payloadForApi);
 
 
       // Step 3: Send the single POST request to your backend
       await axios.post('https://xpress-backend-v3.onrender.com/api/Documents', payloadForApi);
+
 
       toast.success(`${docType} saved successfully!`, { id: toastId });
 
